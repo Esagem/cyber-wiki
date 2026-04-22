@@ -39,3 +39,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | competitive/README.md | scaffold the competitive folder so research can drop in tomorrow
 
 ## [2026-04-22] write | sessions/2026-04-22-slice-1-kickoff.md | add late-evening clarification on report shape - org plus time period
+
+## [2026-04-22] write | _index.md | final index update reflecting all evening writes
