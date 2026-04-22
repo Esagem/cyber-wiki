@@ -25,3 +25,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | _index.md | add vision/slices/slice-1 to index; update statuses
 
 ## [2026-04-22] write | sessions/2026-04-22-slice-1-kickoff.md | first working session log - slice 1 kickoff
+
+## [2026-04-22] write | specs/slice-1.md | major revision - org as top-level entity, report/update as time-bounded snapshot, target as middle layer
