@@ -11,7 +11,7 @@ updated: 2026-04-21
 
 # Research
 
-This category holds our notes on **the world outside CSAK** — papers, blog posts, talks, vendor docs, competitor releases, anything that informs our design thinking.
+This category holds our notes on **the world outside CSAK** — pa pers, blog posts, talks, vendor docs, competitor releases, anything that informs our design thinking.
 
 ## Layout
 
