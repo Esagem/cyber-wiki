@@ -17,7 +17,6 @@ This repo contains two things:
 
 ```
 User ──► Claude.ai ──► Custom Connector ──► Cloudflare Worker ──► GitHub repo
-                                                              (this server)        (wiki/ contents)
 ```
 
 1. You ask Claude to do something wiki-shaped ("write an ADR for our storage backend decision", "summarize the working session we just had", "research DefectDojo for the competitive folder").
@@ -33,10 +32,10 @@ Both collaborators connect the **same** MCP URL to their **own** Claude accounts
 
 ### 1. Create the GitHub repo
 
-Make a **private** repo (this wiki will hold client-sensitive material) and push everything from this scaffold into it:
+Make a repo and push everything from this scaffold into it:
 
 ```bash
-gh repo create <your-org>/cyber-wiki --private
+gh repo create <your-org>/cyber-wiki
 git init
 git remote add origin git@github.com:<your-org>/cyber-wiki.git
 git add .
