@@ -7,3 +7,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ---
 
 ## [2026-04-21] schema | initial scaffold | Created CYBER.md, _index.md, _log.md; seeded product/, architecture/, specs/, decisions/, synthesis/ with starter pages. Phase: pre-design collaborative workspace for designing CSAK.
+
+## [2026-04-22] write | synthesis/smoke-test.md | test | smoke | verify wiki_write end-to-end
