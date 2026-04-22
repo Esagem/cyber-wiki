@@ -31,16 +31,22 @@ Three slices, each independently useful:
 
 Slice 1 was deliberately chosen over slice 2 because cross-tool synthesis is the harder and more defensible part of the product. Plenty of existing orchestrators exist; good synthesis is rarer.
 
-### 3. Target-centric data model
+### 3. Data model — three layers, org at the top
 
-CSAK's primary container is the **target** (the subject of investigation) rather than the **engagement** (the work session). Findings attach to targets and accumulate over time. Engagements or sessions may emerge as a secondary concept later if pain demands it; slice 1 will not have them.
+Late in the session Eli clarified that **reports are organization+time-period scoped** ("April update for acmecorp"). This reshaped the data model.
 
-Tradeoffs acknowledged:
+The model is now three layers with a separate Report entity:
 
-- Gains: continuity, trend analysis, natural dedup across time.
-- Costs: no clean "engagement closed" moment, fuzzy target boundaries (`*.acmecorp.com` is one or many?), weaker multi-client confidentiality.
+- **Org** — the top-level container. Reports are per-org per-period.
+- **Target** — assets owned by an Org (domains, IPs, hosts). Tools produce findings against Targets.
+- **Finding** — a single observation about a Target, denormalized to its Org for query speed.
+- **Artifact** — immutable raw input file.
+- **Report** — frozen snapshot of (org, time window, kind). Generated, not derived on read.
 
-Target nesting (parent target → child targets) is in the data model but the specific rule for when to promote a discovered subdomain into its own child target is still open.
+This replaces the simpler "target-centric" framing earlier in the session. Tradeoffs:
+
+- Gains: continuity across reporting periods, dedup at the org level, multi-org confidentiality at the data layer.
+- Costs: more entities, more edges. Open questions around target nesting and org boundaries.
 
 ### 4. Five starter tools for slice 1
 
@@ -62,50 +68,55 @@ Deterministic core. LLMs evaluated case-by-case per feature. For slice 1, likely
 
 - Drafting fix-it ticket "impact in plain language" sections.
 - Grouping findings into ticket bundles.
+- Period summaries ("what changed since the March update").
 - Maybe explaining finding confidence caveats.
 
-Explicitly NOT for: triage scoring (should be deterministic and explainable), ingest parsing (tool outputs are structured), tool selection (not a slice 1 feature anyway).
+Explicitly NOT for: triage scoring (deterministic and explainable), ingest parsing (tool outputs are structured), tool selection (not slice 1 anyway).
 
 Token efficiency was called out as a design constraint.
 
-## What's still open (from slice 1 spec)
+### 6. CLI-first interface
 
-These surfaced during the session and are now tracked:
+Slice 1 ships with CLI only. Web UI is slice-3-or-later. Reasoning: fits existing analyst workflow, fastest to build, doesn't constrain a future UI (CLI can be wrapped; the inverse is harder).
 
-- **Interface shape.** CLI vs minimal web UI vs both. Leaning CLI-first.
-- **Storage backend.** Leaning sqlite + flat-file artifact store. ADR-004 candidate.
-- **Template language for reports.** Jinja2, Mustache, or pure markdown substitution. ADR-008 candidate.
-- **Target nesting rules.** When does a discovered subdomain become its own target?
-- **Separate engagement entity?** Currently leaning no. Revisit if pain emerges.
-- **Severity scale.** 5-point + null, or 6-point. Leaning 5 + null.
-- **Auto re-triage on rule changes** or only on explicit command?
+### 7. Storage — SQLite + flat-file artifacts
 
-## What's still open (from original open-questions list, re-prioritized)
+Default leaning, pending ADR-004. SQLite for structured data, content-addressed flat files for artifacts. Reports rendered to `reports/<org-slug>/<period>/...` on disk.
 
-Many open questions now have context they didn't before:
+## What was written this session
 
-- "Primary user of v0" — effectively answered: a McCrary-style analyst doing mixed offensive/defensive work for a handful of client orgs. Not FAANG SOCs.
-- "Breadth vs depth" — answered: depth at v0 (5 tools, done excellently). Breadth comes in slice 3.
-- "Plugin protocol for ingestors" — deferred to slice 2.
-- "Fix-it ticket: one format or many" — still open, deferred to slice 1 implementation.
-- "Is CSAK sold or OSS or internal" — deliberately not driving v0 design. Eli's posture: make the best tool possible, let distribution figure itself out.
+- [[product/vision|product/vision.md]] — rewritten end-to-end.
+- [[product/scope|product/scope.md]] — reframed around slices.
+- [[product/slices|product/slices.md]] — new. Slice plan.
+- [[product/users-and-jobs|product/users-and-jobs.md]] — new. First persona sketch.
+- [[specs/slice-1|specs/slice-1.md]] — new. Detailed spec.
+- [[competitive/README|competitive/README.md]] — new. Format and target list.
+- [[synthesis/open-questions|synthesis/open-questions.md]] — re-prioritized; answered questions moved to history.
+- [[_index|_index.md]] — updated.
 
-Full list in [[synthesis/open-questions|Open Questions]] (needs updating to reflect this session — next task).
+## Outstanding for Eli's review (morning)
 
-## Next steps
+In rough priority order:
 
-Priority order:
+1. **Read [[product/vision|vision]] and [[specs/slice-1|slice 1 spec]] end-to-end.** These are the most consequential pages. Push back on anything that puts words in your mouth, especially around the data model and the LLM posture.
+2. **Sanity-check the [[product/users-and-jobs|persona sketch]].** Claude wrote it from inference; correct anything wrong.
+3. **Skim the [[synthesis/open-questions|open questions]].** Look for anything Claude moved to "answered" that you don't actually consider settled.
+4. **Note any tool you'd swap** in the slice 1 starter set.
+5. **Decide whether [[competitive/README|competitive analysis]] should be the next session's focus**, or whether we should go straight to drafting ADR-001 and ADR-004.
 
-1. Eli reviews the three new pages: [[product/vision|vision]], [[product/slices|slices]], [[specs/slice-1|slice-1 spec]]. Push back on anything that feels wrong.
-2. Update [[synthesis/open-questions|Open Questions]] to reflect which are answered, re-prioritized, or deferred.
-3. Write ADR-001 (scope boundary for v0/slice-1) once the slice 1 spec settles — this is the first real ADR.
-4. Write ADR-004 (storage backend) — needed before any implementation.
-5. Write [[product/users-and-jobs|Users & Jobs]] to concretize the "McCrary-style analyst" user.
-6. Competitive analysis: at minimum DefectDojo, reconFTW, and one of the LLM-powered upstarts. Enough to know what we're not rebuilding.
+## Outstanding for Claude (next session)
+
+- Draft **ADR-001 (slice 1 scope boundary)** — only after Eli's review settles slice 1 spec to `active`.
+- Draft **ADR-004 (storage backend)** — needed before any implementation.
+- Begin competitive analysis with DefectDojo, reconFTW, and one LLM-powered upstart.
+- Build out at least one of `architecture/overview.md` or `architecture/data-flow.md` to make the spec concrete.
 
 ## Related
 
-- [[product/vision|Vision (rewritten in this session)]]
-- [[product/slices|Slice Plan (new in this session)]]
-- [[specs/slice-1|Slice 1 Spec (new in this session)]]
-- [[synthesis/open-questions|Open Questions (needs update)]]
+- [[product/vision|Vision]]
+- [[product/slices|Slice Plan]]
+- [[product/users-and-jobs|Users & Jobs]]
+- [[specs/slice-1|Slice 1 Spec]]
+- [[product/scope|Scope]]
+- [[synthesis/open-questions|Open Questions]]
+- [[competitive/README|Competitive Analysis]]
