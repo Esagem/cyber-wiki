@@ -12,9 +12,9 @@ updated: 2026-04-22
 
 ## What this is
 
-The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports.
+The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent periodic reports per organization.
 
-**Phase: pre-design, actively converging.** First slice spec drafted 2026-04-22. See [[CYBER|CYBER.md]] for the operating schema.
+**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. See [[CYBER|CYBER.md]] for the operating schema.
 
 ---
 
@@ -23,9 +23,9 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[product/vision\|Vision]] | draft | medium | what, who, why |
-| [[product/scope\|Scope]] | seed | low | in-scope, out-of-scope |
-| [[product/slices\|Slice Plan]] | draft | medium | slices, roadmap, scope |
-| [[product/users-and-jobs\|Users & Jobs]] | **planned** | — | personas, jobs-to-be-done |
+| [[product/scope\|Scope]] | draft | medium | in-scope, out-of-scope, slices |
+| [[product/slices\|Slice Plan]] | draft | medium | slices, roadmap |
+| [[product/users-and-jobs\|Users & Jobs]] | draft | low | personas, jobs-to-be-done |
 | [[product/glossary\|Glossary]] | seed | low | vocabulary, definitions |
 
 ## Architecture
@@ -48,13 +48,17 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
-| _None yet. Drop sources into [[research/sources\|research/sources/]] and summary pages beside them._ | | | |
+| [[research/README\|Research process]] | active | high | meta, process |
+
+_No research pages yet. Drop sources into [[research/sources|research/sources/]] with summary pages beside them._
 
 ## Competitive
 
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
-| _None yet. One page per competing or adjacent tool as we research them._ | | | |
+| [[competitive/README\|Competitive Analysis Index]] | active | high | meta, format |
+
+_Targets to write: DefectDojo, Faraday, PlexTrac, reconFTW, AttackForge, Splunk, Wazuh, Tenable. Plus one LLM-powered upstart._
 
 ## Decisions (ADRs)
 
@@ -62,7 +66,7 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 |------|--------|------------|------|
 | [[decisions/README\|ADR Format & Index]] | active | high | meta, process |
 
-_No ADRs yet. The forecast list from decisions/README is still accurate; ADR-001 (scope boundary) and ADR-004 (storage) are the two most imminent once slice 1 review settles._
+_No ADRs yet. ADR-001 (slice 1 scope) and ADR-004 (storage) are the two most imminent — both pending Eli's review of slice 1 spec._
 
 ## Sessions
 
@@ -84,13 +88,14 @@ _No ADRs yet. The forecast list from decisions/README is still accurate; ADR-001
 |------|--------|------------|------|
 | [[engagements-RESERVED/README\|engagements-RESERVED/]] | seed | — | placeholder, future |
 
-_Empty until an ADR activates it. See the README for what would change._
+_Empty until an ADR activates it. Note: the existence of an `Org` entity in slice 1 may make this folder less necessary than originally planned. Revisit once slice 1 implementation begins._
 
 ---
 
 ## Recent activity
 
-- **2026-04-22** — First real working session. CSAK reframed from "downstream triager" to "orchestrator and triager." Slice plan drafted (slice 1: ingest & report; slice 2: orchestration; slice 3: recursion). Slice 1 spec drafted with 5 starter tools (Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx). Target-centric data model adopted. See [[sessions/2026-04-22-slice-1-kickoff|session notes]].
+- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity. Vision, scope, slices, users-and-jobs, slice-1 spec, competitive scaffold, and open-questions all updated. See [[sessions/2026-04-22-slice-1-kickoff|session notes]].
+- **2026-04-22 (afternoon)** — First working session. CSAK reframed from "downstream triager" to "orchestrator and triager." Slice plan adopted. Five starter tools chosen: Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx.
 - **2026-04-21** — Initial scaffold.
 
 ---
