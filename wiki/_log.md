@@ -11,3 +11,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | synthesis/smoke-test.md | test | smoke | verify wiki_write end-to-end
 
 ## [2026-04-22] delete | synthesis/smoke-test.md | cleanup of write-smoke-test artifact
+
+## [2026-04-22] write | ONBOARDING.md | onboarding doc for new devices and contributors
