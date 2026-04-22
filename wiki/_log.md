@@ -13,3 +13,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] delete | synthesis/smoke-test.md | cleanup of write-smoke-test artifact
 
 ## [2026-04-22] write | ONBOARDING.md | onboarding doc for new devices and contributors
+
+## [2026-04-22] write | CYBER.md | update tool count and add wiki_delete to schema
