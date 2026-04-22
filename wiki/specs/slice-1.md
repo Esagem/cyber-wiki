@@ -11,11 +11,11 @@ updated: 2026-04-22
 
 # Slice 1 — Ingest & Report
 
-> Draft spec. Reviewed with Eli on 2026-04-22. Still needs convergence on several open items flagged inline.
+> Draft spec. Reviewed with Eli on 2026-04-22. Significant late-evening clarification: **reports are organization+time-period scoped** (e.g. "acmecorp April 2026 update"). That clarification reshaped the data model and is reflected throughout this document.
 
 ## Goal
 
-Take pre-collected security tool output, normalize it into target-centric findings, triage, and emit reports good enough to hand to a real analyst.
+Take pre-collected security tool output, normalize it into org-scoped findings, triage them, and emit periodic reports good enough to hand to a real analyst.
 
 No tool orchestration. No recursion. No LLM-driven anything unless it demonstrably beats a deterministic alternative.
 
@@ -24,21 +24,22 @@ No tool orchestration. No recursion. No LLM-driven anything unless it demonstrab
 ### In scope
 
 - Ingest from 5 tool formats (see below).
-- Target-centric data model with one level of nesting (target → sub-targets).
+- Three-layer entity model: **Org → Target → Finding**, plus an immutable **Artifact** layer for raw inputs and a **Report** layer for time-bounded snapshots.
 - Deterministic triage scoring.
-- Dedup within a single run and across runs against the same target.
-- Two report formats: internal review and fix-it ticket bundle.
-- Minimal CLI or single-page UI for invoking a run. (Pick one — see open questions.)
+- Dedup within a single run and across runs against the same org.
+- Two report formats: internal review and fix-it ticket bundle. Both scoped to (org, time window).
+- Minimal CLI for invoking ingest and report-generation runs.
 
 ### Out of scope
 
 - Tool execution (→ slice 2).
 - Automatic tool selection (→ slice 2).
 - Recursion (→ slice 3).
-- Continuous monitoring or scheduled runs.
+- Continuous monitoring or scheduled report generation.
 - Bidirectional integration with external systems (Jira, Slack, ticketing).
-- Multi-user or multi-tenant features.
+- Multi-user or multi-tenant features beyond org separation in the data model.
 - Auth beyond "single user on their own machine."
+- Web UI.
 
 ## Supported inputs — the 5 starter tools
 
@@ -61,54 +62,93 @@ Each tool produces output in a specific format. Slice 1 must parse all five.
 
 ## Data model
 
-### Core entities
+### Entity layers
 
 ```
-Target
-├── id                   UUID-ish identifier
-├── name                 human-readable: "acmecorp"
-├── type                 org | domain | ip-range | host | person
-├── identifiers          list of concrete handles — domains, IPs, CIDRs, etc.
-├── parent_target_id     optional; enables nesting
-├── created              first time CSAK saw this target
-└── updated              last time anything attached to this target
+Org
+├── id                 UUID
+├── name               human-readable: "acmecorp"
+├── slug               file-safe: "acmecorp"
+├── notes              freeform context
+├── created
+└── updated
 
-Finding
-├── id                   UUID
-├── target_id            which target this attaches to
-├── source_tool          nuclei | nessus | zeek | osquery | subfinder | httpx | manual
-├── source_artifact_id   pointer to the ingested artifact
-├── title                one-line description
-├── severity             critical | high | medium | low | info
-├── confidence           high | medium | low
-├── raw                  the tool's original representation, preserved
-├── normalized           CSAK's internal representation
-├── first_seen           when this finding first appeared
-├── last_seen            when this finding was last observed
-├── status               active | suppressed | accepted-risk | fixed
-└── tags                 freeform
+Target  (an asset or asset class belonging to one Org)
+├── id                 UUID
+├── org_id             which Org owns this target
+├── name               human-readable: "acmecorp.com"
+├── type               domain | subdomain | ip | ip-range | host | url | service | person
+├── identifiers        list of concrete handles — domains, IPs, CIDRs, etc.
+├── parent_target_id   optional; enables nesting (e.g. acmecorp.com → api.acmecorp.com)
+├── first_seen
+└── last_seen
 
-Artifact
-├── id                   UUID
-├── target_id            which target this belongs to
-├── source_tool          which tool produced it
-├── received_at          when CSAK ingested it
-├── path                 on-disk location of the raw file
-└── hash                 content hash, for dedup across identical uploads
+Finding  (a single observation, attached to a Target)
+├── id                 UUID
+├── target_id          which Target this attaches to
+├── org_id             denormalized from Target for query speed
+├── source_tool        nuclei | nessus | zeek | osquery | subfinder | httpx | manual
+├── source_artifact_id pointer to the ingested artifact
+├── title              one-line description
+├── severity           critical | high | medium | low | info | null
+├── confidence         high | medium | low
+├── raw                the tool's original representation, preserved
+├── normalized         CSAK's internal representation
+├── first_seen         when this finding first appeared in any artifact for this org
+├── last_seen          when this finding last appeared
+├── status             active | suppressed | accepted-risk | fixed
+└── tags               freeform
+
+Artifact  (an immutable raw input file)
+├── id                 UUID
+├── org_id             which Org this belongs to
+├── source_tool        which tool produced it
+├── received_at        when CSAK ingested it
+├── path               on-disk location of the raw file
+├── hash               content hash, for dedup across identical uploads
+└── period_hint        optional; when the analyst tells CSAK "this scan covers April 1-30"
+
+Report  (a time-bounded snapshot deliverable)
+├── id                 UUID
+├── org_id             which Org this report covers
+├── period_start       window start
+├── period_end         window end
+├── label              human-readable: "April 2026 update"
+├── generated_at       when CSAK produced this report
+├── kind               internal-review | fix-it-bundle
+├── finding_ids        which findings are included (frozen at generation time)
+├── output_path        on-disk path to the rendered output
+└── notes              freeform; analyst commentary baked into the report at generation time
 ```
 
 ### Why this shape
 
-- **Target-centric** because of the 2026-04-22 decision: findings accumulate against the subject of investigation, not against the work-session.
+- **Org as top-level container**, not Target. The user's reports are organized by org and by date — "acmecorp April update," "acmecorp May update." That's the unit of deliverable, so it's the unit of organization. Targets exist beneath orgs because one org has many assets to investigate.
+- **Target is the middle layer** because tools produce findings against assets (a domain, an IP, a host), not against organizations. The org is the human-meaningful container; the target is the technical container.
 - **Artifact table exists** because the same raw output might produce findings multiple times (re-triaging a past Nessus file against updated rules, for example). The artifact is the immutable input; findings are derived.
+- **Report is a separate entity** because a report is a *snapshot*. Findings are mutable (status changes, new occurrences seen); a report is the frozen view of an org's state during a window. This is what makes "regenerate the April report" different from "re-run triage."
 - **Severity and confidence are independent axes** because they answer different questions. CVSS conflates them and that's a longstanding pain point.
-- **`first_seen` / `last_seen`** lets dedup across runs tell you "this vuln has been present for 6 weeks" without needing a separate time-series store.
+- **`first_seen` / `last_seen`** lets the report query say "findings active during April" without needing a separate time-series store.
+
+### How a report gets generated
+
+```
+1. User: "Generate the April update for acmecorp."
+2. CSAK queries Findings WHERE org_id = acmecorp
+   AND last_seen >= April 1 AND first_seen <= April 30
+   AND status IN (active, accepted-risk).
+3. CSAK groups findings (by severity, by target, or per-finding for tickets).
+4. CSAK renders the Internal Review markdown.
+5. Optionally CSAK renders the Fix-it Ticket bundle (one file per ticket).
+6. Both outputs registered as Reports in the database, with finding_ids frozen.
+```
 
 ### Open data-model questions
 
-- Is there a separate **Engagement** or **Session** entity, or do we rely purely on `first_seen` / `last_seen` timestamps and source_tool to slice findings by time? Leaning toward *no engagement entity* in slice 1, revisit if pain emerges.
-- How does target nesting handle the `*.acmecorp.com` case? Options: (a) each discovered subdomain becomes a child target; (b) subdomains are `identifiers` on one target; (c) hybrid — promote to child target only if findings attach to that subdomain specifically. Leaning toward (c) but this needs a decision before implementation.
-- What happens to findings when a target is deleted? Probably soft-delete only, with the artifacts preserved separately.
+- **Target nesting rules.** When does a discovered subdomain become its own child Target? Options: (a) every discovered subdomain → child Target; (b) subdomains live as `identifiers` on one Target; (c) hybrid — promote to child Target only if findings attach to that subdomain specifically. Leaning (c) but this needs a decision before implementation.
+- **Org boundaries.** Is "the parent company plus its subsidiaries" one Org or many? Probably one Org with parent/child Targets, but `Org` itself doesn't nest in the slice 1 data model. Revisit if pain emerges.
+- **What happens when a report period overlaps with another report's period for the same org?** Probably allowed (periodic reports overlap intentionally), but this means a Finding can appear in multiple Reports.
+- **Soft vs hard delete** for Targets and Orgs. Probably soft only, with Artifacts preserved separately under all conditions.
 
 ## Triage
 
@@ -116,15 +156,15 @@ Artifact
 
 Slice 1 uses **deterministic scoring**. Each finding gets:
 
-- **Severity**: taken from the source tool when provided, mapped onto CSAK's 5-point scale (critical/high/medium/low/info) via a per-tool translation table. For tools that don't emit severity (Zeek events, osquery results), CSAK applies a ruleset keyed on the finding shape.
-- **Confidence**: heuristic. Tool-reported confidence when available; otherwise a CSAK default that reflects how much a given tool tends to hallucinate. (Nessus-reported "Medium confidence" is treated differently from osquery's objective query results.)
-- **Priority**: derived. `priority = severity_weight * confidence_weight * target_weight`. Target weight defaults to 1.0; operator can bump it (e.g. public-facing infra = 1.5).
+- **Severity**: taken from the source tool when provided, mapped onto CSAK's 5-point scale (critical/high/medium/low/info) via a per-tool translation table. For tools that don't emit severity (Zeek events, osquery results), CSAK applies a ruleset keyed on the finding shape. Findings the rules can't classify are `null`, which surfaces in reports as "needs analyst review."
+- **Confidence**: tool-reported when available; otherwise a CSAK default that reflects how much a given tool tends to hallucinate. Nessus's "Medium confidence" is treated differently from osquery's objective query results. The defaults are explicit in a versioned table.
+- **Priority**: derived. `priority = severity_weight × confidence_weight × target_weight`. Target weight defaults to 1.0; the analyst can bump it (e.g. public-facing infra = 1.5).
 
-No LLM involvement in slice 1 triage. The scoring table and rules are explicit and versioned.
+No LLM involvement in slice 1 triage. The scoring tables and rules are explicit, versioned, and surfaceable in the report ("scored High because: Nessus reported Critical (mapped to High by table v3), confidence High, target weight 1.5").
 
 ### Dedup
 
-Two findings are the same if they match on: `target_id`, `source_tool`, and a **tool-specific dedup key**.
+Two findings are the same if they match on: `org_id`, `source_tool`, and a **tool-specific dedup key**.
 
 - **Nuclei**: `template-id + matched-at`
 - **Nessus**: `plugin_id + host + port`
@@ -133,30 +173,48 @@ Two findings are the same if they match on: `target_id`, `source_tool`, and a **
 - **Subfinder**: subdomain
 - **httpx**: URL
 
-Dedup runs at ingest time. Re-ingesting the same artifact hits the Artifact hash first and is a no-op.
+When dedup fires on a re-ingest, the existing finding's `last_seen` advances; a duplicate is not created. Re-ingesting the same artifact (matched by hash) is a no-op at the artifact layer — the finding extraction never runs.
 
 ### Open triage questions
 
-- Do we keep CSAK's severity scale at 5 points or add a 6th "unknown"? Leaning 5 + explicit `null` for un-triagable.
-- Does triage re-run automatically if scoring rules change, or only on explicit re-triage command?
-- How do we surface "this is probably a false positive" without fully suppressing it? Proposed: a separate `probability_real` field independent of confidence.
+- Does triage re-run automatically if scoring rules change, or only on explicit re-triage command? Leaning: explicit only. Auto-re-triage breaks reproducibility.
+- "Probably a false positive" without fully suppressing. Proposed: a separate `probability_real` field, distinct from confidence, that the analyst can override.
+- How do we handle findings that span multiple Targets (e.g. same vuln on three subdomains)? Probably one Finding per (target, dedup-key) — duplication across Targets is correct because the analyst may suppress on one and not the other.
 
 ## Reports
 
 ### Two output families
 
+Both are scoped to **(org, time window)**.
+
 **Internal Review** — for the analyst team.
 
-- One per target per run.
+- One per (org, period, "review" kind).
 - Markdown.
-- Sections: target summary, methodology (what tools produced what), findings grouped by severity, notes on confidence and caveats, raw-data appendix (or pointer to artifacts).
+- Sections: org summary, period covered, methodology (what tools/artifacts contributed), findings grouped by severity (default) or by Target (option), notes on confidence and caveats, raw-data appendix or pointer to artifacts.
 - Technical language assumed. Cross-references between findings. Preserves ambiguity.
 
-**Fix-it Tickets** — for the team being monitored.
+**Fix-it Ticket Bundle** — for the team being monitored.
 
-- One markdown file per ticket. Whether a ticket is one finding or a group is a per-report choice (initially per-finding, group later if it earns it).
-- Sections: title, affected asset(s), impact in plain language, reproduction steps if available, remediation, validation.
-- Plain language. No internal chatter. No speculation.
+- One bundle per (org, period, "fix-it" kind). The bundle is a directory of markdown files, one per ticket.
+- A ticket is a single finding by default; grouping (one ticket covering N closely-related findings) is a per-report option, initially manual.
+- Sections per ticket: title, affected assets, impact in plain language, reproduction steps if available, remediation, validation.
+- Plain language. No internal chatter. No speculation. Designed to be forwarded as-is.
+
+### Naming convention
+
+```
+reports/
+└── <org-slug>/
+    ├── <period-label>/
+    │   ├── internal-review.md
+    │   └── fix-it/
+    │       ├── FIT-001-<short-slug>.md
+    │       ├── FIT-002-<short-slug>.md
+    │       └── ...
+```
+
+Example: `reports/acmecorp/2026-04/internal-review.md`. The period label format is the analyst's choice (`2026-04`, `april-2026`, `2026-04-01-to-2026-04-30`); CSAK stores the canonical start/end dates separately.
 
 ### Template language
 
@@ -164,38 +222,55 @@ Not decided. Options:
 
 - **Jinja2** — most flexible, most popular, Python-native.
 - **Mustache / Handlebars** — logic-less, cleaner separation.
-- **Pure markdown with front matter** — no templating engine, just string substitution. Simplest.
+- **Pure markdown with front matter and string substitution** — no templating engine, simplest.
 
-Leaning Jinja2 unless we find a reason not to. Marked as an ADR candidate (ADR-008 in the forecast list). [[synthesis/open-questions|Open Questions]] tracks.
+Leaning Jinja2 unless we find a reason not to. Marked as ADR-008 in the forecast list.
 
 ### LLM's role in reports
 
 **Under active consideration, case by case:**
 
-- **Drafting the fix-it ticket's "impact in plain language" section** — LLM genuinely adds value here; translating CVE-speak into stakeholder-speak is tedious and LLMs are good at it.
-- **Drafting the internal review's "notes on confidence and caveats"** — maybe. An LLM can articulate why a finding might be a false positive, but needs strong grounding to avoid fabrication.
-- **Grouping findings into ticket bundles** — a good LLM use if done carefully. Probably worth trying in slice 1.
-- **Explaining triage scores** — no. Scoring is deterministic; its explanation should be too.
+- **Drafting the fix-it ticket's "impact in plain language" section.** LLM genuinely adds value here; translating CVE-speak into stakeholder-speak is tedious and LLMs do it well. *Likely yes.*
+- **Drafting the internal review's "notes on confidence and caveats."** An LLM can articulate why a finding might be a false positive, but needs strong grounding to avoid fabrication. *Maybe; prototype.*
+- **Grouping findings into ticket bundles.** A good LLM use if done carefully. *Worth trying.*
+- **Period summary** ("what changed since the March update"). LLM-suitable but needs structured input — a diff of finding lists between reports. *Worth trying.*
+- **Explaining triage scores.** No. Scoring is deterministic; its explanation should be too.
+- **Tool selection or invocation parameters.** No — out of scope for slice 1 anyway, but explicitly excluded.
 
-These are worth prototyping in slice 1 to find out what actually works.
+These are worth prototyping in slice 1 to find out what actually works against real data and the token-efficiency constraint.
 
 ## Interface
 
-Slice 1 ships with **one invocation surface**. Candidates:
+Slice 1 ships with **CLI only**. Sketched commands:
 
-- **CLI only.** `csak ingest --target acmecorp file1.nessus file2.json`. Fast to build, fits existing analyst workflows.
-- **Minimal web UI.** One-page form: pick a target, upload files, get a report. Lower friction for non-CLI users.
-- **Both.** Higher cost, obvious to delay.
+```
+csak org create acmecorp
+csak ingest --org acmecorp --tool nessus path/to/scan.nessus
+csak ingest --org acmecorp --tool zeek path/to/zeek-logs/
+csak triage --org acmecorp                       # re-runs triage on existing findings
+csak report generate --org acmecorp --period 2026-04 --kind internal-review
+csak report generate --org acmecorp --period 2026-04 --kind fit-bundle
+csak findings list --org acmecorp --status active --severity high
+csak target list --org acmecorp
+```
 
-**Open.** Leaning CLI-first because an analyst building up muscle memory is faster than an analyst clicking through a form, and slice 1 is targeted at analyst use.
+CLI-first because:
+
+- Fits an analyst's existing workflow (terminal-heavy).
+- Fastest to build.
+- Doesn't constrain the eventual UI (a web/TUI can wrap a CLI; it's harder the other way).
+
+A web UI is explicitly slice-3-or-later.
 
 ## Storage
 
-Slice 1 needs persistent storage for Targets, Findings, and Artifacts.
+Slice 1 uses **SQLite + a flat-file artifact store**. Decision pending an ADR (ADR-004) but this is the default.
 
-**Leaning sqlite + a flat-file artifact store.** Sqlite for structured data; artifacts as files on disk keyed by hash. This is ADR-004 in the forecast and should be decided before slice 1 coding begins.
+- SQLite for Org, Target, Finding, Report tables.
+- Artifacts stored on disk under `artifacts/<hash-prefix>/<hash>` — content-addressed.
+- Reports rendered to `reports/<org-slug>/<period>/...` per the naming convention above.
 
-Reasons for sqlite over postgres in slice 1: zero operational overhead, embeds in the product, handles anything short of millions of findings without complaint. Reasons to consider postgres: concurrent access (irrelevant at v0), richer query language (overkill at v0).
+Reasons over Postgres in slice 1: zero operational overhead, embeds in the product, handles anything short of millions of findings without complaint. Reasons to consider Postgres later: concurrent multi-user access, richer query language. Neither is a slice 1 problem.
 
 ## What slice 1 explicitly does not solve
 
@@ -207,15 +282,17 @@ For clarity — these are real pain points, they just aren't slice 1's problem:
 - Scheduling, watching for changes over time.
 - Team collaboration features.
 - Integrating with external trackers.
+- A web UI.
 
 ## Exit criteria
 
 Slice 1 is "done" when:
 
 - All 5 tool formats ingest cleanly, including real-world messy examples.
-- A report generated from a mixed-tool run (e.g. Nessus + Zeek) is coherent, not a concatenation of tool outputs.
-- Triage scores are reproducible and explainable.
-- Dedup across runs against the same target actually works (re-ingesting last week's Nessus scan doesn't double-count).
+- A report generated from a mixed-tool run (e.g. Nessus + Zeek for one org's April window) is coherent, not a concatenation of tool outputs.
+- Triage scores are reproducible and explainable. Re-running `csak triage` on unchanged findings produces identical scores.
+- Dedup across runs against the same org actually works. Re-ingesting last week's Nessus scan doesn't double-count.
+- Two consecutive monthly reports for the same org clearly show what's new, what's still active, and what's resolved between them.
 - At least one analyst (Eli) has used it on a real piece of work and not hated it.
 
 ## Related
@@ -223,5 +300,7 @@ Slice 1 is "done" when:
 - [[product/vision|Vision]]
 - [[product/slices|Slice Plan]]
 - [[product/scope|Scope]]
+- [[product/users-and-jobs|Users & Jobs]]
 - [[synthesis/open-questions|Open Questions]]
 - [[decisions/README|ADR Index]]
+- [[sessions/2026-04-22-slice-1-kickoff|Session: Slice 1 Kickoff]]
