@@ -31,3 +31,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | product/vision.md | update data-model section to reflect org as top-level container; reports as time-bounded snapshots
 
 ## [2026-04-22] write | product/scope.md | reconcile scope with new framing - slice 1 scope concrete, deferred items moved to slice 2/3
+
+## [2026-04-22] write | product/users-and-jobs.md | first concrete user persona based on McCrary-style analyst archetype
