@@ -35,3 +35,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | product/users-and-jobs.md | first concrete user persona based on McCrary-style analyst archetype
 
 ## [2026-04-22] write | synthesis/open-questions.md | re-prioritize after slice 1 kickoff session - move answered questions, add slice-1-spec questions
+
+## [2026-04-22] write | competitive/README.md | scaffold the competitive folder so research can drop in tomorrow
