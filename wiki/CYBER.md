@@ -1,3 +1,14 @@
+---
+title: "CYBER.md — Wiki Schema & Operating Guide"
+category: synthesis
+tags: [schema, operating-guide, meta]
+status: active
+confidence: high
+owner: shared
+created: 2026-04-21
+updated: 2026-04-22
+---
+
 # CYBER.md — Wiki Schema & Operating Guide
 
 > This is the operating manual for the **CSAK design wiki**. Any LLM connecting to the `cyber-wiki` MCP server MUST read this file first and follow its conventions.
@@ -46,6 +57,7 @@ wiki/
 ├── _index.md             # Master index. Rebuild on every meaningful change.
 ├── _log.md               # Append-only chronological log.
 ├── CYBER.md              # This file.
+├── ONBOARDING.md         # Per-device and per-contributor setup guide.
 │
 ├── product/              # What CSAK is and who it's for
 │   ├── vision.md         # One-page statement of what CSAK is
@@ -197,7 +209,9 @@ Output to `wiki/synthesis/lint-report.md` with a dated section.
 ## 6. Indexing and logging
 
 - **`_index.md`** — content-oriented master index. Tables by category with status and tags. The LLM's first read for any non-trivial query. Updated on every meaningful change.
-- **`_log.md`** — chronological, append-only. Prefix every entry with `## [YYYY-MM-DD] <op> | <context> | <short>` so it is greppable (`grep "^## \[" _log.md | tail -20`). Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
+- **`_log.md`** — chronological, append-only. Prefix every entry with `## [YYYY-MM-DD] <op> | <context> | <short>` so it is greppable (`grep "^## \[" _log.md | tail -20`). Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`, `delete`.
+
+Note on log formatting: the short description field is plaintext, not further pipe-delimited. Use dashes or commas inside the short description if you need internal separators. Pipes inside the description confuse the format.
 
 ---
 
@@ -220,7 +234,7 @@ If we ever activate `engagements-RESERVED/` and start holding real engagement da
 
 ## 9. Working with the MCP tools
 
-The server exposes five tools:
+The server exposes six tools:
 
 | Tool | Purpose |
 |------|---------|
@@ -228,9 +242,12 @@ The server exposes five tools:
 | `wiki_list` | List pages, optionally filtered by category folder. |
 | `wiki_read` | Read a specific page by relative path (e.g. `specs/triage-model.md`). |
 | `wiki_search` | BM25 search across all pages. Use content terms, not meta terms. |
-| `wiki_write` | Create or update a page. Must include full YAML front matter. Auto-appends to `_log.md`. |
+| `wiki_write` | Create or update a page. Must include full YAML front matter. Auto-appends to `_log.md`. Returns a concurrent-write error if the page was modified between read and write — re-read and retry in that case. |
+| `wiki_delete` | Permanently delete a page. Refuses by default unless the page looks like a test artifact (filename starts with `smoke-test` or `test-`, or path starts with `tmp/`). Pass `force=true` to delete real pages, but prefer setting `status: retired` in the page's front matter instead. |
 
 Canonical query pattern: `wiki_index` → identify candidate pages → `wiki_read` 2–5 of them → synthesize. Use `wiki_search` when the index doesn't surface an obvious hit.
+
+**Important:** scope for `wiki_write` and `wiki_delete` is restricted to paths under the wiki root. Files at the repo root (e.g. `ONBOARDING.md` at the top level, if that's where it ends up) are not reachable through the MCP tools — edit them locally or through the GitHub UI.
 
 ---
 
