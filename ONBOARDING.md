@@ -1,17 +1,6 @@
----
-title: "Onboarding"
-category: meta
-tags: [onboarding, setup, devices]
-status: active
-confidence: high
-owner: shared
-created: 2026-04-22
-updated: 2026-04-22
----
-
 # Onboarding — cyber-wiki
 
-This is the per-device and per-contributor setup guide. It's written tight for the core team (Eli and Christopher). If the team grows later, rewrite this for strangers.
+This is the per-device and per-contributor setup guide. 
 
 ## What you're setting up
 
@@ -210,9 +199,6 @@ Obsidian Git's rebase fallback kicks in when your local branch has commits the r
 **Concurrent write errors from Claude.**
 When two editors try to write the same page at the same time, the MCP server refuses the second write and tells Claude to re-read. You'll occasionally see a "Write blocked" message in chat — that's the system working correctly. Just ask Claude to try again.
 
-**Something else.**
-Ping Eli or Christopher. The wiki is small enough that we can debug anything quickly together.
-
 ---
 
 ## Rotation and hygiene
@@ -224,10 +210,3 @@ These are hygiene items to revisit every quarter or so:
 - **New ADRs trigger index updates.** Every new ADR should be added to [[decisions/README|decisions/README.md]]'s index table. Claude usually does this automatically; a lint pass catches what it missed.
 - **Periodic lint passes.** Ask Claude roughly monthly: "Run a lint pass on the wiki and write the results to `synthesis/lint-report.md`." Keeps the wiki healthy as it grows.
 
----
-
-## Related
-
-- [[CYBER|CYBER.md]] — the operating schema
-- [[_index|Master Index]]
-- [[synthesis/roadmap|Roadmap]]
