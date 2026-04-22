@@ -1,0 +1,29 @@
+# Node / Cloudflare Worker
+node_modules/
+.wrangler/
+dist/
+*.tsbuildinfo
+
+# Secrets — wrangler local dev, dotenv
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# Python (tools/)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Tooling local state
+.claude/
+wiki/.obsidian/

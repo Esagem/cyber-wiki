@@ -14,7 +14,7 @@
 // only if you want a public server (not recommended, since wiki_write is
 // exposed).
 
-import { listPages, readPage, writePage, NotFoundError, ConcurrentWriteError, type GitHubConfig } from "./github";
+import { listPages, readPage, writePage, deletePage, NotFoundError, ConcurrentWriteError, type GitHubConfig } from "./github";
 import { searchWiki } from "./search";
 
 // ---------- Env -------------------------------------------------------------
@@ -145,6 +145,30 @@ const TOOLS = [
         },
       },
       required: ["page_path", "content"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "wiki_delete",
+    description: "Permanently delete a wiki page. Use sparingly — for stale design material the correct move is almost always to set `status: retired` in the page's front matter, not delete the page. This tool is for genuine test artifacts and mistakes. By default refuses to delete anything that doesn't look like a test file (path must start with 'smoke-test', 'test-', or live under 'tmp/'). Pass force=true to override. The reason field is required and lands in the commit message.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_path: {
+          type: "string",
+          description: "Path relative to the wiki root, e.g. 'synthesis/smoke-test.md'.",
+        },
+        reason: {
+          type: "string",
+          description: "Why this page is being deleted. Required. Lands in the git commit message.",
+        },
+        force: {
+          type: "boolean",
+          description: "If true, bypass the test-artifact safety check. Use only when you're sure deletion is correct and you've considered marking the page `status: retired` instead.",
+          default: false,
+        },
+      },
+      required: ["page_path", "reason"],
       additionalProperties: false,
     },
   },
@@ -305,6 +329,88 @@ async function handleToolCall(name: string, args: Record<string, unknown>, env: 
 
       return toolText(
         `Wrote ${pagePath} (blob sha ${writeResult.sha.slice(0, 7)}, commit ${writeResult.commitSha.slice(0, 7)}). ${logStatus}.`,
+      );
+    }
+
+    case "wiki_delete": {
+      const pagePath = args.page_path;
+      const reason = args.reason;
+      const force = args.force === true;
+      if (typeof pagePath !== "string" || pagePath.length === 0) throw new Error("page_path is required");
+      if (!pagePath.endsWith(".md")) throw new Error("page_path must end with .md");
+      if (typeof reason !== "string" || reason.length === 0) throw new Error("reason is required");
+      if (pagePath.startsWith("/") || pagePath.includes("..")) throw new Error("page_path must be a safe relative path");
+
+      // Protect core wiki infrastructure absolutely.
+      const protectedPaths = ["CYBER.md", "_index.md", "_log.md"];
+      if (protectedPaths.includes(pagePath)) {
+        throw new Error(`Refusing to delete protected file '${pagePath}'. This file is part of the wiki's operating infrastructure.`);
+      }
+
+      // Safety gate: by default, only allow deleting obvious test artifacts.
+      const basename = pagePath.split("/").pop() ?? "";
+      const looksLikeTest =
+        basename.startsWith("smoke-test") ||
+        basename.startsWith("test-") ||
+        pagePath.startsWith("tmp/");
+      if (!looksLikeTest && !force) {
+        return toolText(
+          `Refused to delete '${pagePath}'. The page does not look like a test artifact ` +
+          `(filename doesn't start with 'smoke-test' or 'test-', not under 'tmp/'). ` +
+          `For stale design material, the correct move is almost always to set ` +
+          `\`status: retired\` in the page's front matter and keep the page for history. ` +
+          `If you're sure deletion is right, call wiki_delete again with force=true.`,
+        );
+      }
+
+      const commitMsg = `wiki: delete ${pagePath} — ${reason}`;
+      let deleteResult;
+      try {
+        deleteResult = await deletePage(cfg, pagePath, commitMsg);
+      } catch (e) {
+        if (e instanceof NotFoundError) {
+          return toolText(`Page '${pagePath}' does not exist. Nothing to delete.`);
+        }
+        if (e instanceof ConcurrentWriteError) {
+          return toolText(
+            `Delete blocked: the page was modified concurrently. Re-read it, ` +
+            `decide whether deletion is still correct, and try again.\n\n` +
+            `Details: ${e.message}`,
+          );
+        }
+        throw e;
+      }
+
+      // Append to _log.md, same pattern as wiki_write.
+      let logStatus = "log updated";
+      const appendToLog = async (): Promise<void> => {
+        const date = new Date().toISOString().slice(0, 10);
+        const line = `\n## [${date}] delete | ${pagePath} | ${reason}\n`;
+        let existing = "";
+        try {
+          existing = (await readPage(cfg, "_log.md")).text;
+        } catch (e) {
+          if (e instanceof NotFoundError) {
+            existing = "# Wiki Log\n\nAppend-only chronological record. Most recent at the bottom.\n";
+          } else {
+            throw e;
+          }
+        }
+        const newLog = existing.endsWith("\n") ? existing + line : existing + "\n" + line;
+        await writePage(cfg, "_log.md", newLog, `log: ${date} delete ${pagePath}`);
+      };
+      try {
+        await appendToLog();
+      } catch (e) {
+        if (e instanceof ConcurrentWriteError) {
+          try { await appendToLog(); } catch (e2) { logStatus = `log append failed after retry: ${(e2 as Error).message}`; }
+        } else {
+          logStatus = `log append failed: ${(e as Error).message}`;
+        }
+      }
+
+      return toolText(
+        `Deleted '${pagePath}' (commit ${deleteResult.commitSha.slice(0, 7)}). ${logStatus}.`,
       );
     }
 

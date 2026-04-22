@@ -259,6 +259,56 @@ export async function writePage(
   return { sha: data.content.sha, commitSha: data.commit.sha };
 }
 
+/**
+ * Delete a wiki page. Uses the Contents API DELETE endpoint, which requires
+ * the current blob sha (same optimistic-concurrency pattern as writes).
+ */
+export async function deletePage(
+  cfg: GitHubConfig,
+  relativePath: string,
+  commitMessage: string,
+): Promise<{ commitSha: string }> {
+  // Must fetch the current sha fresh — same reasoning as writePage.
+  const existing = await readPageFresh(cfg, relativePath);
+
+  const fullPath = joinPath(cfg.wikiRoot, relativePath);
+  const url = `${GH_API}/repos/${cfg.owner}/${cfg.repo}/contents/${encodePath(fullPath)}`;
+
+  const body = {
+    message: commitMessage,
+    sha: existing.sha,
+    branch: cfg.branch,
+    committer: {
+      name: cfg.commitAuthorName,
+      email: cfg.commitAuthorEmail,
+    },
+  };
+
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      ...ghHeaders(cfg),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (resp.status === 409 || resp.status === 422) {
+    const detail = await resp.text();
+    throw new ConcurrentWriteError(
+      `Page '${relativePath}' was modified between read and delete. ` +
+      `Re-read and retry. (GitHub ${resp.status}: ${detail})`,
+    );
+  }
+  if (!resp.ok) {
+    throw new Error(`GitHub delete failed: ${resp.status} ${await resp.text()}`);
+  }
+
+  const data = (await resp.json()) as { commit: { sha: string } };
+  invalidateCache();
+  return { commitSha: data.commit.sha };
+}
+
 export class NotFoundError extends Error {}
 export class ConcurrentWriteError extends Error {}
 
