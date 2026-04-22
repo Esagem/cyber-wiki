@@ -29,3 +29,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | specs/slice-1.md | major revision - org as top-level entity, report/update as time-bounded snapshot, target as middle layer
 
 ## [2026-04-22] write | product/vision.md | update data-model section to reflect org as top-level container; reports as time-bounded snapshots
+
+## [2026-04-22] write | product/scope.md | reconcile scope with new framing - slice 1 scope concrete, deferred items moved to slice 2/3
