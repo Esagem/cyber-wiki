@@ -19,3 +19,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | product/vision.md | reframe from downstream triager to orchestrator-and-triager; note slice-based plan
 
 ## [2026-04-22] write | product/slices.md | new slice plan capturing the three-slice roadmap from the 2026-04-22 session
+
+## [2026-04-22] write | specs/slice-1.md | new slice 1 spec draft covering 5 starter tools, data model, and report shape
