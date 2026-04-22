@@ -15,3 +15,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | ONBOARDING.md | onboarding doc for new devices and contributors
 
 ## [2026-04-22] write | CYBER.md | update tool count and add wiki_delete to schema
+
+## [2026-04-22] write | product/vision.md | reframe from downstream triager to orchestrator-and-triager; note slice-based plan
