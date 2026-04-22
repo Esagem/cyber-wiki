@@ -1,0 +1,19 @@
+# Node / TypeScript
+server/node_modules/
+server/.wrangler/
+server/dist/
+server/*.log
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+
+# Editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local secrets — never commit these
+*.env
+*.env.local

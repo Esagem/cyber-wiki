@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent template for cyber-wiki-sync on macOS.
+
+  Install:
+    1. Edit the four PATH-LIKE values below to match your machine.
+    2. Copy this file to ~/Library/LaunchAgents/com.cyber-wiki.sync.plist
+    3. Load it:  launchctl load ~/Library/LaunchAgents/com.cyber-wiki.sync.plist
+    4. Confirm it's running:  launchctl list | grep cyber-wiki
+
+  Stop:        launchctl unload ~/Library/LaunchAgents/com.cyber-wiki.sync.plist
+  Logs:        tail -f ~/Library/Logs/cyber-wiki-sync.log
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cyber-wiki.sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/REPLACE/WITH/PATH/TO/cyber-wiki/tools/sync-daemon.py</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>CYBER_WIKI_PATH</key>
+    <string>/REPLACE/WITH/PATH/TO/cyber-wiki</string>
+    <key>GITHUB_TOKEN</key>
+    <string>REPLACE_WITH_FINE_GRAINED_PAT</string>
+    <key>CYBER_WIKI_BRANCH</key>
+    <string>main</string>
+    <key>CYBER_WIKI_POLL_SECONDS</key>
+    <string>3</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/REPLACE/WITH/HOME/Library/Logs/cyber-wiki-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>/REPLACE/WITH/HOME/Library/Logs/cyber-wiki-sync.log</string>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+</dict>
+</plist>

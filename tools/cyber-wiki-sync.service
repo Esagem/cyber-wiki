@@ -1,0 +1,36 @@
+# systemd user unit template for cyber-wiki-sync on Linux.
+#
+# Install:
+#   1. Edit the three PATH-LIKE / TOKEN values below to match your machine.
+#   2. Copy this file to ~/.config/systemd/user/cyber-wiki-sync.service
+#   3. systemctl --user daemon-reload
+#   4. systemctl --user enable --now cyber-wiki-sync.service
+#   5. Confirm:  systemctl --user status cyber-wiki-sync.service
+#
+# To keep it running after logout (on systems where user sessions don't persist):
+#   sudo loginctl enable-linger $USER
+#
+# Stop:  systemctl --user stop cyber-wiki-sync.service
+# Logs:  journalctl --user -u cyber-wiki-sync.service -f
+
+[Unit]
+Description=cyber-wiki local sync daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /REPLACE/WITH/PATH/TO/cyber-wiki/tools/sync-daemon.py
+Environment=CYBER_WIKI_PATH=/REPLACE/WITH/PATH/TO/cyber-wiki
+Environment=GITHUB_TOKEN=REPLACE_WITH_FINE_GRAINED_PAT
+Environment=CYBER_WIKI_BRANCH=main
+Environment=CYBER_WIKI_POLL_SECONDS=3
+Restart=on-failure
+RestartSec=10
+# Optional: tighten what the daemon can do. The two directory paths should
+# match the actual locations on your system.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

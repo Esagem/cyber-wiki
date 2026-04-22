@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "cyber-wiki-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "GITHUB_OWNER": "Esagem",
+    "GITHUB_REPO": "cyber-wiki",
+    "GITHUB_BRANCH": "main",
+    "WIKI_ROOT": "wiki",
+    "COMMIT_AUTHOR_NAME": "cyber-wiki-bot",
+    "COMMIT_AUTHOR_EMAIL": "bot@users.noreply.github.com"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (set via `npx wrangler secret put <NAME>`):
+  //   GITHUB_TOKEN       — fine-grained PAT with Contents: read/write on the repo
+  //   MCP_BEARER_TOKEN   — optional shared secret; clients must send `Authorization: Bearer <token>`.
+  //                        If unset, the server is public (not recommended).
+}

@@ -1,0 +1,22 @@
+{
+  "name": "cyber-wiki-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remote MCP server for the Cybersecurity Swiss Army Knife wiki, backed by a shared GitHub repo.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.19.0",
+    "gray-matter": "^4.0.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.114.0"
+  }
+}
