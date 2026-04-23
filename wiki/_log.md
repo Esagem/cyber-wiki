@@ -103,3 +103,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | synthesis/open-questions.md | move 5 resolved data-model questions to Answered section after spec update
 
 ## [2026-04-23] write | specs/slice-1.md | reports are pure export - drop Report entity, reports are stateless pipeline output, timestamped files, markdown+docx, optional JSON debug export
+
+## [2026-04-23] write | specs/slice-1.md | commit to python-docx for slice 1 docx rendering; two renderers share one structured context; flag styling as a second-pass concern
