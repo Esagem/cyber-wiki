@@ -45,3 +45,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/vision.md | correct periodic-mode drift - CSAK is on-demand-first, reports have time-window structure but invocation is real-time
 
 ## [2026-04-23] write | product/scope.md | clarify invocation modes - on-demand in scope, streaming never, scheduled is slice 4 plus
+
+## [2026-04-23] write | specs/slice-1.md | soften periodic framing - reports are on-demand with time-window structure not scheduled
