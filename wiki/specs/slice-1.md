@@ -2,8 +2,8 @@
 title: "Slice 1 — Ingest & Report"
 category: specs
 tags: [slice-1, ingestion, triage, reporting, spec]
-status: draft
-confidence: medium
+status: active
+confidence: high
 owner: shared
 created: 2026-04-22
 updated: 2026-04-23
@@ -11,7 +11,7 @@ updated: 2026-04-23
 
 # Slice 1 — Ingest & Report
 
-> Finalized 2026-04-23. All open questions closed. Status stays `draft` until Eli's sign-off review; then `active`.
+> Finalized and approved 2026-04-23. All open design questions closed. This is the authoritative spec for slice 1 implementation.
 
 ## Goal
 
