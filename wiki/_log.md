@@ -55,3 +55,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/reconftw.md | reconFTW analysis - covers slice 2 and 3 orchestration and recursion ground; shallower on triage than assumed
 
 ## [2026-04-23] write | competitive/README.md | populate index with DefectDojo and reconFTW analyses and their verdicts
+
+## [2026-04-23] write | synthesis/open-questions.md | add competitive-driven questions on data model 4th layer, CSV escape hatch, false-positive status, reconFTW integration
