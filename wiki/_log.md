@@ -59,3 +59,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | synthesis/open-questions.md | add competitive-driven questions on data model 4th layer, CSV escape hatch, false-positive status, reconFTW integration
 
 ## [2026-04-23] write | _index.md | update index to reflect DefectDojo and reconFTW pages now active
+
+## [2026-04-23] write | competitive/reconftw.md | fix license claim - repo is ambiguous (MIT in LICENSE file, GPLv3 in README) - flag as unresolved before any leverage decision
