@@ -127,3 +127,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/glossary.md | glossary rewritten for slice 1 vocabulary - add Scan and FindingScanOccurrence, formalize Artifact, remove ADR-needing language, mark Engagement/Playbook as future
 
 ## [2026-04-23] write | _index.md | update master index recent-activity with slice 1 finalization and lint pass entries
+
+## [2026-04-23] write | synthesis/roadmap.md | roadmap - check off completed phase 1 items after slice 1 finalization, mark architecture pages as the remaining phase 1 work
