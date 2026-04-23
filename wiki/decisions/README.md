@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-21
-updated: 2026-04-21
+updated: 2026-04-23
 ---
 
 # Architecture Decision Records (ADRs)
@@ -57,10 +57,10 @@ What we're deciding. Written as a single, clear statement. Present tense.
 
 ## Options considered
 
-### Option A — <name>
+### Option A — <n>
 Short description, pros, cons.
 
-### Option B — <name>
+### Option B — <n>
 Short description, pros, cons.
 
 ### Option C — <name, if any>
@@ -94,22 +94,22 @@ Concrete next actions this ADR creates. Link to pages that will need updating.
 
 ## Index
 
-_No ADRs yet. The first few we expect to write (not a commitment, just a forecast):_
-
-- **ADR-001** — Scope boundary for v0 (what's in, what's out).
-- **ADR-002** — Primary user persona for v0.
-- **ADR-003** — Architecture shape (monolith / modular / plugin host).
-- **ADR-004** — Storage backend (sqlite / postgres / flat files / something else).
-- **ADR-005** — Deployment model (CLI / self-hosted service / both).
-- **ADR-006** — Ingestor plugin protocol.
-- **ADR-007** — Triage model (rigid rules / configurable / LLM-assisted).
-- **ADR-008** — Report format definition language (Jinja / markdown templates / something more structured).
-
-Once written, each ADR gets a row in the table below:
-
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| _empty_ | | | |
+| [[decisions/ADR-001-slice-1-scope\|ADR-001]] | Slice 1 scope — Ingest & Report | proposed | 2026-04-23 |
+
+## Forecast — ADRs we expect to write next
+
+Not a commitment, just a pipeline:
+
+- **ADR-002** — Primary user persona for v0. (May be subsumed by [[product/users-and-jobs|users-and-jobs]] if that page stabilizes.)
+- **ADR-003** — Architecture shape (monolith / modular / plugin host).
+- **ADR-004** — Storage backend (SQLite + flat-file / Postgres / pure flat files).
+- **ADR-005** — Deployment model (CLI-only for v0, confirmed; ADR captures the commitment and the alternatives we rejected).
+- **ADR-006** — Ingestor plugin protocol.
+- **ADR-007** — Triage model rigor (rigid rules / configurable / LLM-assisted).
+- **ADR-008** — Report template language (Jinja2 / Mustache / string substitution).
+- **ADR-009** — reconFTW for slice 2 (replace / augment / integrate). Surfaced by [[competitive/reconftw|reconFTW analysis]]; blocks slice 2 work.
 
 ## Related
 
