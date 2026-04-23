@@ -173,3 +173,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | session notes - append 2026-04-23-late update block recording probability_real removal, slice 1 approval, architecture overview completion
 
 ## [2026-04-23] write | _index.md | index recent-activity - add probability_real removal entry, update finalized-description to reflect three-axis scoring
+
+## [2026-04-23] write | competitive/build-vs-adapt.md | build-vs-adapt - remove three probability_real references (tool parsers note, severity tables note, why-not-fork triage rationale)
