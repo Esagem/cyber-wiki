@@ -6,12 +6,12 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # Open Questions
 
-> Every known unknown about CSAK, with an owner and a status. Updated after the 2026-04-22 slice 1 kickoff session.
+> Every known unknown about CSAK, with an owner and a status. Updated after each working session and each piece of competitive research.
 
 Questions are grouped by what they affect. An `ADR:` link means a decision record is pending or in flight to resolve the question.
 
@@ -33,6 +33,16 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | How do Findings spanning multiple Targets get represented? | shared | open | Leaning one Finding per (target, dedup-key). |
 | Should Finding deletion be soft only, hard only, or configurable? | shared | open | Leaning soft only with separate Artifact preservation. |
 | Can a Finding appear in multiple Reports for the same Org? | shared | open | Yes — overlapping report periods are intentional. |
+| Should CSAK have a fourth data-model layer (Scan / Run / Test) between Target and Finding? | shared | open | DefectDojo uses Products → Engagements → Tests → Findings (4 layers). CSAK currently uses Org → Target → Finding (3) with Artifact linkage for grouping. See [[competitive/defectdojo\|DefectDojo analysis]]. |
+| Should Finding status include `false-positive` as distinct from `suppressed`? | shared | open | DefectDojo treats them as different states. Surfaced from [[competitive/defectdojo\|DefectDojo analysis]]. Leaning yes. |
+
+## Slice 1 — Ingest
+
+| Q | Owner | Status | Notes |
+|---|-------|--------|-------|
+| Add a generic-CSV escape-hatch ingest format in slice 1? | shared | open | DefectDojo has one; it's a real analyst value. Low effort. |
+| Add reconFTW's `report/report.json` as a slice 1 ingest format? | shared | open | Would make CSAK immediately useful to reconFTW's existing user base. See [[competitive/reconftw\|reconFTW analysis]]. |
+| Does "ingest" in slice 1 include folder-of-logs (Zeek), or only single files? | shared | open | Zeek produces many log files per day. Probably folder-aware. |
 
 ## Slice 1 — Triage
 
@@ -42,6 +52,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | Separate `probability_real` field for "probably FP"? | shared | open | Proposed in slice 1 spec. |
 | 5-point severity scale + `null`, or 6-point with explicit "unknown"? | shared | open | Leaning 5 + `null`. |
 | How do tool-specific severity translation tables get versioned and surfaced in reports? | shared | open | Slice 1 spec says "explicit and versioned"; mechanism TBD. |
+| Remediation templates keyed on CWE / CVE — slice 1 or later? | shared | open | DefectDojo demonstrates this is real analyst value. Probably slice 1 for fix-it tickets. Surfaced from [[competitive/defectdojo\|DefectDojo analysis]]. |
 
 ## Slice 1 — Reports
 
@@ -73,10 +84,12 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
+| Replace reconFTW, augment it, or integrate with it? | shared | open | ADR-level decision. See [[competitive/reconftw\|reconFTW analysis]]. If we integrate, slice 2 is much smaller; if we replace, much larger. |
 | Tool selection — heuristic, config-driven, LLM-assisted, or all three? | shared | deferred | Slice 2 design. |
 | Execution model — subprocess, container, mixed? | shared | deferred | Slice 2 design. |
 | Parameter inference — how does CSAK know what to feed a tool given a target? | shared | deferred | Slice 2 design. |
 | Long-running tools — how are slow scans handled without blocking the report flow? | shared | deferred | Slice 2 design. |
+| Adaptive rate limiting (backoff on 429/503) — slice 2 requirement? | shared | open | reconFTW treats this as first-class; we should too. |
 
 ## Slice 3 (preview)
 
@@ -84,6 +97,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 |---|-------|--------|-------|
 | Recursion budget shape — time / depth / cost / token / all? | shared | deferred | Slice 3 design. |
 | How does adding a new tool work as a user-facing operation? | shared | deferred | Slice 3 design. |
+| Quick-rescan pattern — skip heavy stages when no new assets? | shared | open | reconFTW does this; smart pattern. Surfaced from [[competitive/reconftw\|reconFTW analysis]]. |
 
 ## Cross-cutting product questions
 
@@ -93,6 +107,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | How does the analyst's client-org relationship vary across clients (paid scans, log access, etc.)? | shared | open | Affects what a "complete" ingest looks like per org. |
 | Is "the analyst" really one persona, or are there meaningfully different sub-personas (consultant vs. blue-team-lead vs. researcher)? | shared | open | Slice 1 treats them as one. [[product/users-and-jobs\|users-and-jobs]] sketches the persona. |
 | Do we need a "team-of-few" mode in slice 1, or strictly single-user? | shared | open | Default: strict single-user. |
+| Positioning vs. DefectDojo — "analyst CLI" complement or direct competitor? | shared | open | DefectDojo is too strong to ignore. See [[competitive/defectdojo\|DefectDojo analysis]]. |
 
 ## Process / non-technical
 
@@ -105,7 +120,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 
 ## Answered / dropped questions
 
-These were answered during the 2026-04-22 session. Moved here for history.
+These were answered during the 2026-04-22 session or via competitive research.
 
 | Q | Resolved by | Outcome |
 |---|-------------|---------|
@@ -118,6 +133,7 @@ These were answered during the 2026-04-22 session. Moved here for history.
 | Where do previously-seen findings get remembered? | 2026-04-22 session | In CSAK's own storage, scoped to the Org. Drives both dedup and cross-period continuity. |
 | Where does the LLM live — optional enhancer, core dependency, configurable per-step? | 2026-04-22 session | Optional enhancer, evaluated case-by-case per feature. Core is deterministic. |
 | Local-first or service-first? | 2026-04-22 session | Local-first (CLI on the analyst's machine) for slices 1 and 2. Service mode is undefined and not on any planned slice. |
+| Real-time vs. periodic invocation? | 2026-04-23 correction | On-demand / real-time is the primary mode, in scope from slice 1. Scheduled/automated is slice 4+. Streaming detection is indefinitely out of scope (SIEM territory). |
 
 ---
 
@@ -127,4 +143,6 @@ These were answered during the 2026-04-22 session. Moved here for history.
 - [[decisions/README\|ADR Index]]
 - [[specs/slice-1\|Slice 1 Spec]]
 - [[product/users-and-jobs\|Users & Jobs]]
+- [[competitive/defectdojo\|DefectDojo]]
+- [[competitive/reconftw\|reconFTW]]
 - [[sessions/2026-04-22-slice-1-kickoff\|2026-04-22 Session Notes]]
