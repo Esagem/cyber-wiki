@@ -43,7 +43,7 @@ The model at end-of-session was three layers with a separate Report entity:
 - **Artifact** — immutable raw input file.
 - **Report** — frozen snapshot of (org, time window, kind). Generated, not derived on read.
 
-This replaced the simpler "target-centric" framing earlier in the session. (Note: this shape was further refined on 2026-04-23 — see Update block below.)
+This replaced the simpler "target-centric" framing earlier in the session. (Note: this shape was further refined on 2026-04-23 — see Update blocks below.)
 
 ### 4. Five starter tools for slice 1
 
@@ -61,7 +61,7 @@ Explicitly deferred: Metasploit/Burp/ZAP (wrong layer), Wazuh/ELK (too big), tri
 
 ### 5. LLM posture
 
-Deterministic core. LLMs evaluated case-by-case per feature. (Note: further refined 2026-04-23 — see Update block below.)
+Deterministic core. LLMs evaluated case-by-case per feature. (Note: further refined 2026-04-23 — see Update blocks below.)
 
 ### 6. CLI-first interface
 
@@ -94,7 +94,7 @@ In rough priority order:
 
 ## Outstanding for Claude (next session)
 
-*(Note: items below were the plan at session end. What actually happened is in the Update block below.)*
+*(Note: items below were the plan at session end. What actually happened is in the Update blocks below.)*
 
 - Draft **ADR-001 (slice 1 scope boundary)** after Eli's review settles slice 1 spec to `active`.
 - Draft **ADR-004 (storage backend)**.
@@ -140,6 +140,28 @@ The plans from the original "Outstanding for Claude" list either happened differ
 - Pitch deck slides 4 and 8 language fix in Canva (still pending from the morning correction).
 - Open a GitHub issue on reconFTW about the LICENSE/README license ambiguity (MIT vs GPL-3.0).
 
+---
+
+## Update — 2026-04-23 late
+
+Three more things happened after the first Update block was written. Logged here so the session-notes record stays honest.
+
+**Second lint pass.** A follow-up lint caught three stale references in the competitive cluster (reconftw's "Design changes" section, competitive/README item 3, build-vs-adapt's reconftw_ai recommendation). All fixed.
+
+**Slice 1 approved.** Eli signed off on the finalized spec. `specs/slice-1.md` flipped `draft` → `active`, confidence `medium` → `high`. The spec is now the authoritative source for slice 1 implementation.
+
+**Architecture overview written.** [[architecture/overview|architecture/overview.md]] was written as the five-minute map to the spec — mermaid system diagram, five module boundaries, one end-to-end walkthrough, extension points, what's deferred to build time. The planned `architecture/data-flow.md` was folded in rather than written separately (the two would have overlapped ~80%). Pre-design is effectively complete.
+
+**`probability_real` removed.** Initially added during slice 1 design as a fourth scoring axis for "probably a false positive but I'm not sure yet" handling. Eli flagged that it was never approved and asked for it to be removed; Claude misread a prior approval signal during the finalization pass. The feature came back out: priority is now three axes (severity × confidence × target_weight). False-positive doubt is expressed via the existing `status = false-positive` value — the analyst commits or leaves the Finding active; slice 1 doesn't offer a fractional downweight. Spec, glossary, vision, scope, users-and-jobs, architecture overview, open-questions, and the leverage-analysis competitive page all updated. Lesson: treat approval signals as requiring explicit restatement when the feature is substantive; don't infer from adjacent answers.
+
+**Real outstanding work now (end of 2026-04-23):**
+
+- More competitive pages (Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart). Not blocking implementation.
+- Pitch deck slides 4 and 8 language fix in Canva.
+- Open a GitHub issue on reconFTW about the LICENSE/README license ambiguity.
+- Christopher's onboarding (repo collab, Claude connector, Obsidian+Git).
+- Start slice 1 implementation in Claude Code.
+
 ## Related
 
 - [[product/vision|Vision]]
@@ -149,4 +171,5 @@ The plans from the original "Outstanding for Claude" list either happened differ
 - [[product/scope|Scope]]
 - [[synthesis/open-questions|Open Questions]]
 - [[synthesis/lint-report|Lint Report]]
+- [[architecture/overview|Architecture Overview]]
 - [[competitive/README|Competitive Analysis]]
