@@ -6,25 +6,37 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # CSAK — Vision
 
-> Draft. This page replaces the initial framing after the 2026-04-22 working session. Late-evening clarification on report shape (org + time window) is incorporated.
+> Draft. Rewritten 2026-04-22. Corrected 2026-04-23 morning to remove drift toward "periodic-report-only" framing — CSAK is primarily on-demand and real-time during active analyst work; report *structure* is org+time-window-scoped, but invocation is not restricted to a schedule.
 
 ## What CSAK is
 
-A **Cybersecurity Swiss Army Knife** — a unified system that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent periodic reports per organization.
+A **Cybersecurity Swiss Army Knife** — a unified system that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports organized per organization and time window.
 
 CSAK does four things, in order:
 
 1. **Target intake.** Accept a subject of investigation — an organization, a domain, an IP range, a host — optionally paired with pre-collected data (logs, scan output, documents).
 2. **Collect.** Run the right tools against the target. The user picks which tools in early slices; the system picks in later slices.
 3. **Triage.** Normalize findings across tools, score importance, deduplicate across tool runs and over time.
-4. **Report.** Emit periodic deliverables per organization: internal reviews for analysts and fix-it tickets for the teams being monitored. Reports are scoped to (org, time window) — e.g. "acmecorp April 2026 update."
+4. **Report.** Emit deliverables organized per organization and per time window: internal reviews for analysts and fix-it tickets for the teams being monitored. Reports can be generated on demand for any window the analyst specifies — "acmecorp April 2026 update," "acmecorp this week," "acmecorp right now."
 
 The "Swiss Army Knife" framing matters: CSAK is *one* tool that covers many jobs, not a suite of point tools. It's a multi-tool, not a knife that accepts other people's cuts.
+
+## Invocation model
+
+CSAK is primarily **on-demand and real-time**. The analyst invokes it during active work — pulling fresh data, running a report, looking at current state — and expects output in seconds to minutes, not hours.
+
+Three distinct modes worth naming explicitly:
+
+- **On-demand / real-time** (in scope from slice 1). Analyst runs CSAK when they need output *now*. Latency matters. This is the default usage pattern.
+- **Streaming / continuous detection** (not CSAK's job, any slice). Watching a data source and emitting alerts on events as they flow in. That's SIEM territory; CSAK reads SIEM output but doesn't replace a SIEM.
+- **Scheduled / automated report generation** (slice 4+, not yet designed). "Every Monday regenerate the weekly reports for all active orgs." Useful eventually, but not urgent and not part of the current slice plan.
+
+The distinction between report *structure* and invocation *cadence* matters: a report is scoped to (org, time window) because that's the useful way to organize findings, not because CSAK only runs on a schedule.
 
 ## Why it should exist
 
@@ -69,24 +81,23 @@ See [[product/users-and-jobs|Users & Jobs]] for the persona detail.
 - Not a GRC tool. Compliance mapping might be a feature, but it's not the core.
 - Not an LLM wrapper. LLMs are evaluated case-by-case and used where they beat deterministic alternatives; they are not the product.
 - Not a Splunk replacement. CSAK may read Splunk's output, but replacing a full SIEM isn't on any slice.
-- Not a real-time alerting system. CSAK runs in periodic-report mode, not stream-processing mode.
+- Not a real-time *alerting* system. CSAK doesn't watch data streams and fire alerts on events — that's SIEM territory. CSAK is invoked by the analyst (on-demand, usually real-time during active work), not triggered by data arrival. (Automated/scheduled report generation is a different thing and is planned for a later slice.)
 
 ## How we're building it — slice-based
 
 We're shipping CSAK in slices, each of which is independently useful:
 
-- **Slice 1 — Ingest & Report.** User brings data (scanner output, logs, OSINT dumps) and/or org context. CSAK processes, triages, generates org+period reports. No tool orchestration. No recursion. See [[specs/slice-1|Slice 1 Spec]].
+- **Slice 1 — Ingest & Report.** User brings data (scanner output, logs, OSINT dumps) and/or org context. CSAK processes, triages, generates reports on demand for any (org, period) the analyst specifies. No tool orchestration. No recursion. See [[specs/slice-1|Slice 1 Spec]].
 - **Slice 2 — Tool Orchestration.** CSAK picks and runs tools against targets itself. Adds the "collect" stage from the four-step model above.
 - **Slice 3 — Recursion & Catalog Expansion.** Tool output can trigger further tool runs (exposed IPs → deeper recon). Tool catalog grows.
-
-Later slices (4+) are deliberately undefined. We'll know more after slice 1 meets reality.
+- **Slice 4+.** Deliberately undefined, but scheduled/automated report generation is a likely candidate. We'll know more after slices 1–3 meet reality.
 
 ## What's settled vs. open
 
-**Settled after the 2026-04-22 session:**
+**Settled after the 2026-04-22 session (corrected 2026-04-23):**
 
 - Three-layer data model: Org → Target → Finding, with a separate Report entity.
-- Reports are scoped to (org, time window) and frozen at generation.
+- Reports are structured by (org, time window). Invocation is on-demand and typically real-time; scheduled report generation is slice 4+, not yet designed.
 - Slice-based rollout, with slice 1 being ingest-and-report only.
 - Deterministic core, LLMs evaluated case-by-case.
 - Slice 1 tool set: Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx. See [[specs/slice-1|Slice 1 Spec]].
