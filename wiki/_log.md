@@ -159,3 +159,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | specs/slice-1.md | remove probability_real feature - simplify priority to three axes (severity x confidence x target_weight), drop analyst-FP-doubt handling, rely on false-positive status for FP commitment
 
 ## [2026-04-23] write | product/glossary.md | glossary - remove probability_real entry, update priority formula to three axes
+
+## [2026-04-23] write | product/users-and-jobs.md | users-and-jobs - rewrite Job 4 to reflect removal of probability_real feature
