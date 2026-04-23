@@ -147,9 +147,8 @@ Finding  (a single observation; deduplicated per (org, tool, dedup-key))
 ├── title              one-line description
 ├── severity           critical | high | medium | low | info | null
 ├── confidence         high | medium | low
-├── probability_real   float 0.0–1.0, default 1.0; analyst override for "probably FP but not committed"
-├── priority           float; derived at ingest time. priority = severity_weight × confidence_weight
-│                                                              × target_weight × probability_real
+├── priority           float; derived at ingest time.
+│                      priority = severity_weight × confidence_weight × target_weight
 ├── raw                the tool's original representation, preserved
 ├── normalized         CSAK's internal representation
 ├── first_seen         when this finding first appeared in any Scan for this org
@@ -173,8 +172,8 @@ There is **no Report entity** in the data model. Reports are stateless exports �
 - **Scan is a distinct layer** between Artifact and Finding. Artifact is bytes on disk; Scan is the analyst's mental unit of "the April Nessus scan" or "yesterday's Nuclei sweep." The distinction lets one Artifact participate in multiple Scans (re-ingesting the same bytes creates a new Scan event) and one Scan to span multiple Artifacts (Zeek is typically 3+ log files per capture window, one Scan).
 - **Finding is deduplicated per `(org_id, source_tool, tool-specific key)`**, and re-occurrence is recorded in `FindingScanOccurrence` rather than creating a new Finding row. This keeps `findings.status` and `findings.last_seen` as single sources of truth for "is this still active" while preserving the full scan history for "when did we first see this" and "which scans have caught it."
 - **Artifact remains distinct** from Scan because it is the immutable byte-level record. Scans are analyst-facing abstractions that can be deleted or relabeled; Artifacts are evidence.
-- **Severity, confidence, and `probability_real` are independent axes** because they answer different questions from different sources. Severity and confidence come from the tool (or CSAK's defaults for it); `probability_real` comes from the analyst when they want to downweight a finding without committing to `false-positive` status. CVSS conflates these dimensions and that's a longstanding pain point.
-- **`priority` is stored, not recomputed.** It's computed once at ingest time and written to the Finding row. This is what "deterministic scoring at ingest time" means concretely: no code path mutates priority after the Finding is written, except the explicit analyst actions that mutate `probability_real`, `target_weight`, or `status`, which do trigger a recompute of that Finding's priority.
+- **Severity and confidence are independent axes** because they answer different questions. Severity is "how bad would this be if real." Confidence is "how likely is this real." CVSS conflates them and that's a longstanding pain point.
+- **`priority` is stored, not recomputed.** It's computed once at ingest time and written to the Finding row. This is what "deterministic scoring at ingest time" means concretely: no code path mutates priority after the Finding is written, except the explicit analyst actions that mutate `status` or a Target's `target_weight`, which do trigger a recompute.
 - **`first_seen` / `last_seen`** lets the report query say "findings active during any window the analyst asks for" without needing a separate time-series store.
 - **Soft delete everywhere except Artifacts.** Orgs, Targets, Findings get a `deleted_at` nullable timestamp. Artifacts are never deleted through CSAK; if someone really needs disk space back they can `rm` the file directly. Rationale: analysts re-engaging with a past client want their old data back rather than a fresh Org, and the byte-level record of what CSAK was given should be preserved even when downstream Findings are softly removed.
 - **No Report entity.** Reports are pipeline outputs, not state. CSAK never holds a record of past reports, and never re-renders a past report — each invocation is a fresh query against current state, written to a timestamped file. The directory of timestamped files is the history.
@@ -229,13 +228,17 @@ Each Finding gets:
 
 - **Severity**: taken from the source tool when provided, mapped onto CSAK's 5-point scale (critical/high/medium/low/info) via a per-tool translation table. For tools that don't emit severity (Zeek events, osquery results), CSAK applies a ruleset keyed on the finding shape. Findings the rules can't classify are `null`, which surfaces in reports as "needs analyst review."
 - **Confidence**: tool-reported when available; otherwise a CSAK default that reflects how much a given tool tends to hallucinate. Nessus's "Medium confidence" is treated differently from osquery's objective query results. The defaults are explicit in a versioned table.
-- **`probability_real`**: float 0.0–1.0, default 1.0. The analyst sets this when they think a finding is probably a false positive but aren't ready to commit to `status = false-positive`. Tools never set `probability_real`; it is analyst-only.
 - **`target_weight`**: lives on the Target row, default 1.0, analyst-settable. Persists across scans and runs.
-- **Priority**: derived and stored at ingest time. `priority = severity_weight × confidence_weight × target_weight × probability_real`.
+- **Priority**: derived and stored at ingest time. `priority = severity_weight × confidence_weight × target_weight`.
+
+Handling false positives:
+
+- When the analyst is certain a Finding is a false positive, they set `status = false-positive`. The Finding is preserved (for history and to avoid re-scoring on re-ingest) but excluded from active reports by default.
+- When the analyst has doubt but isn't certain, they either leave the Finding active or suppress it. Slice 1 does not offer a fractional "probably FP" downweight; the analyst commits or doesn't.
 
 Mutations that recompute priority for a specific Finding:
 
-- Analyst sets `status`, `probability_real`, or `tags`.
+- Analyst sets `status` or `tags`. (Status affects visibility, not the priority number directly, but the recompute is cheap and keeps the pipeline simple.)
 - Analyst changes a Target's `target_weight` — priorities for all Findings on that Target recompute.
 
 Mutations that do **not** trigger recompute:
@@ -245,7 +248,7 @@ Mutations that do **not** trigger recompute:
 
 Re-scoring those Findings requires re-ingesting the source artifact. Slice 1 deliberately does not offer a bulk re-score command because there is no reliable way to compare outputs across scoring-table changes without manual review; the re-ingest path forces that review to happen (the analyst sees a new Scan with new Findings and compares to the old ones manually).
 
-**Rationale for all of the above.** Three-and-a-half axes (severity × confidence × target weight × probability_real) rather than single-axis priority or CVSS alone because CVSS conflates severity and confidence into one number that's often wrong, and because target weight and probability_real are axes only the analyst can supply. Deterministic over LLM-assisted because scoring must be consistent and auditable — an LLM layer can attach later if desired, but slice 1's job is to produce a reliable, explainable score. Write-once at ingest so that scores can't silently change between when the analyst looked at a report and when they look at the next one.
+**Rationale for all of the above.** Three axes (severity × confidence × target weight) rather than single-axis priority or CVSS alone because CVSS conflates severity and confidence into one number that's often wrong, and because target weight is the axis only the analyst can supply — a remote code execution on staging matters less than an info leak on the client's public-facing API. Deterministic over LLM-assisted because scoring must be consistent and auditable — an LLM layer can attach later if desired, but slice 1's job is to produce a reliable, explainable score. Write-once at ingest so that scores can't silently change between when the analyst looked at a report and when they look at the next one.
 
 ## Dedup
 
@@ -263,7 +266,7 @@ When dedup fires on a re-ingest:
 1. The existing Finding's `last_seen` advances.
 2. A new row is written to `FindingScanOccurrence` with the new `scan_id`.
 3. No new Finding row is created.
-4. The existing Finding's priority is **not** recomputed. (Re-occurrence doesn't change severity, confidence, target weight, or probability_real.)
+4. The existing Finding's priority is **not** recomputed. (Re-occurrence doesn't change severity, confidence, or target weight.)
 
 Re-ingesting the same Artifact (matched by hash) is a no-op at the Artifact layer — the Finding extraction never runs. However, the same Artifact can participate in a new Scan (explicit analyst re-ingest), and that Scan does get a row even if no new Findings result from it.
 
@@ -378,7 +381,7 @@ csak report generate --org acmecorp --period 2026-04 --kind internal-review --fo
 csak report generate --org acmecorp --period today --kind internal-review --format json
 csak report generate --org acmecorp --period 2026-04 --kind fit-bundle --format markdown,docx,json
 csak findings list --org acmecorp --status active --severity high
-csak findings update <finding-id> --probability-real 0.3
+csak findings update <finding-id> --status false-positive
 csak target list --org acmecorp
 csak target update <target-id> --weight 1.5
 csak scan list --org acmecorp
@@ -412,6 +415,7 @@ For clarity — these are real pain points, they just aren't slice 1's problem:
 - Scheduled / automated report generation (slice 4+).
 - Period summaries that compare one report against another (slice 4+ if at all).
 - Re-scoring existing Findings under updated tables.
+- Fractional "probably FP" downweighting. Slice 1 treats false-positive judgment as a commit (status = false-positive) or not. Partial doubt is not expressed as a score modifier.
 - Watching data sources and firing on events as they arrive (indefinitely out of scope — SIEM).
 - LLM use of any kind inside CSAK (a later slice can layer LLM features over slice 1's structured outputs).
 - Team collaboration features.
@@ -426,7 +430,7 @@ Slice 1 is "done" when:
 - Zeek ingest handles both single files and folders of logs.
 - A report generated on demand from a mixed-tool run (e.g. Nessus + Zeek for one org's April window) is coherent, not a concatenation of tool outputs.
 - Latency is acceptable: a typical report generates in seconds to a few minutes on an analyst's laptop, not tens of minutes.
-- Finding priorities are consistent and explainable. Priority is stored at ingest and visible on `csak findings list`. The analyst can trace a priority back to its severity, confidence, target_weight, and probability_real components.
+- Finding priorities are consistent and explainable. Priority is stored at ingest and visible on `csak findings list`. The analyst can trace a priority back to its severity, confidence, and target_weight components.
 - Dedup across runs against the same org works. Re-ingesting last week's Nessus scan doesn't double-count, and the finding's `last_seen` advances.
 - Scan lineage is queryable. `csak scan list` shows every scan; each finding can list every scan it has appeared in.
 - Reports correctly label `fallback-ingested` scan timestamps so readers aren't misled about when a tool actually ran.
