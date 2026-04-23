@@ -65,3 +65,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/leverage-analysis.md | new leverage analysis page - per-tool feasibility across fork/subprocess/output-parsing strategies with license and scope fit
 
 ## [2026-04-23] write | competitive/README.md | add leverage-analysis page to index
+
+## [2026-04-23] write | competitive/build-vs-adapt.md | new decision analysis - with permissive licenses assumed, should we adapt code or build fresh? Verdict per tool per component
