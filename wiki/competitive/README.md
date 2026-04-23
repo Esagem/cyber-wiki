@@ -78,7 +78,7 @@ Freeform. Quotes with sources.
 |------|--------|---------|
 | [[competitive/defectdojo\|DefectDojo]] | active | Closest competitor to slice 1. Mature, widely adopted, heavy deployment. CSAK wins on zero-deployment CLI, real-time invocation, narrative fix-it reports, and open-source LLM use. |
 | [[competitive/reconftw\|reconFTW]] | active | Competitor for slices 2–3, not 1. Covers tool orchestration + recursion + OSINT. License status is ambiguous (MIT vs GPL-3.0 contradiction in the repo itself) — resolve before any code-level leverage. |
-| [[competitive/leverage-analysis\|Leverage Analysis]] | draft | Per-tool, per-strategy feasibility under both licenses. Bottom line: ingest both tools' output formats in slice 1; don't fork either; defer fork-vs-integrate for slice 2 to ADR-009. |
+| [[competitive/leverage-analysis\|Leverage Analysis]] | draft | Per-tool, per-strategy feasibility under both licenses. Bottom line: ingest both tools' output formats in slice 1; don't fork either; defer the slice 2 fork-vs-integrate question until slice 2 design begins. |
 | [[competitive/build-vs-adapt\|Build vs Adapt]] | draft | Assuming permissive licenses, should we adapt code or write fresh? Verdict: build the code ourselves, adapt data/content/config with attribution, take design inspiration freely. |
 
 ## Target list — not yet written
