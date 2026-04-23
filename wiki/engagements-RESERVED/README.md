@@ -6,7 +6,7 @@ status: seed
 confidence: high
 owner: shared
 created: 2026-04-21
-updated: 2026-04-21
+updated: 2026-04-23
 ---
 
 # engagements-RESERVED — placeholder folder
@@ -18,8 +18,8 @@ It exists as a visible reminder that **someday we might dogfood CSAK on real eng
 ## What would have to happen to activate this folder
 
 1. CSAK reaches a usable v0.
-2. We explicitly decide — in an ADR — that we'll dogfood it on a real piece of work.
-3. That ADR defines:
+2. We explicitly decide, in a working session, that we'll dogfood it on a real piece of work.
+3. That session's notes define:
    - How engagements are named and separated.
    - What secrets/PII handling rules apply.
    - Whether real client-identifying data ever appears here, or if we use pseudonyms.
@@ -32,7 +32,9 @@ Until all four happen, **no real engagement data goes in this folder**. The LLM 
 
 Leaving the name reserved prevents someone (human or LLM) from later creating `engagements/` with a different structure, discovering it conflicts with the product's own idea of an engagement, and having to migrate. A deliberate empty folder today is cheaper than a rename later.
 
+There is one active question worth flagging: the presence of the `Org` entity in slice 1's data model may make this folder less necessary than originally planned. If CSAK's own database holds the engagement-shaped data, `engagements-RESERVED/` is redundant — the wiki doesn't need to mirror what the product already stores. Revisit when slice 1 is close to build-ready.
+
 ## Related
 
 - [[CYBER|CYBER.md]]
-- [[decisions/README|ADR Index]] — the ADR that would activate this folder will live there.
+- [[specs/slice-1|Slice 1 Spec]]
