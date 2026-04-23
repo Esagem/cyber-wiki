@@ -67,3 +67,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/README.md | add leverage-analysis page to index
 
 ## [2026-04-23] write | competitive/build-vs-adapt.md | new decision analysis - with permissive licenses assumed, should we adapt code or build fresh? Verdict per tool per component
+
+## [2026-04-23] write | competitive/README.md | add build-vs-adapt page and update key takeaways with the honest recommendation
