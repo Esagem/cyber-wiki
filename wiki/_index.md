@@ -5,16 +5,16 @@ tags: [index, master, navigation]
 status: active
 confidence: high
 created: 2026-04-21
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # CSAK Design Wiki — Master Index
 
 ## What this is
 
-The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent periodic reports per organization.
+The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. See [[CYBER|CYBER.md]] for the operating schema.
+**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. First competitive pass 2026-04-23 (DefectDojo + reconFTW). See [[CYBER|CYBER.md]] for the operating schema.
 
 ---
 
@@ -57,8 +57,10 @@ _No research pages yet. Drop sources into [[research/sources|research/sources/]]
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[competitive/README\|Competitive Analysis Index]] | active | high | meta, format |
+| [[competitive/defectdojo\|DefectDojo]] | active | medium | vuln-management, open-source |
+| [[competitive/reconftw\|reconFTW]] | active | medium | recon-orchestration, open-source |
 
-_Targets to write: DefectDojo, Faraday, PlexTrac, reconFTW, AttackForge, Splunk, Wazuh, Tenable. Plus one LLM-powered upstart._
+_Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart (XBOW or NodeZero)._
 
 ## Decisions (ADRs)
 
@@ -66,7 +68,7 @@ _Targets to write: DefectDojo, Faraday, PlexTrac, reconFTW, AttackForge, Splunk,
 |------|--------|------------|------|
 | [[decisions/README\|ADR Format & Index]] | active | high | meta, process |
 
-_No ADRs yet. ADR-001 (slice 1 scope) and ADR-004 (storage) are the two most imminent — both pending Eli's review of slice 1 spec._
+_No ADRs yet. Most imminent: ADR-001 (slice 1 scope), ADR-004 (storage backend). Competitive research surfaced a likely ADR-009 (reconFTW: replace, augment, or integrate) for slice 2._
 
 ## Sessions
 
@@ -94,7 +96,9 @@ _Empty until an ADR activates it. Note: the existence of an `Org` entity in slic
 
 ## Recent activity
 
-- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity. Vision, scope, slices, users-and-jobs, slice-1 spec, competitive scaffold, and open-questions all updated. See [[sessions/2026-04-22-slice-1-kickoff|session notes]].
+- **2026-04-23 (competitive pass)** — Wrote [[competitive/defectdojo|DefectDojo]] and [[competitive/reconftw|reconFTW]] analyses. Surfaced several new open questions (data-model fourth layer, CSV escape-hatch ingest, `false-positive` as distinct status, reconFTW output as slice-1 input, slice-2 replace-vs-augment question). Open questions and indices updated. Verdict: slice 1 differentiation from DefectDojo is real but must be specific; slice 2 has a clear free competitor that needs an explicit positioning decision before work starts.
+- **2026-04-23 (morning correction)** — Clarified that CSAK is primarily on-demand/real-time. Reports have time-window *structure* but invocation is not periodic. Scheduled report generation moved to slice 4+.
+- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity. Vision, scope, slices, users-and-jobs, slice-1 spec, competitive scaffold, and open-questions all updated.
 - **2026-04-22 (afternoon)** — First working session. CSAK reframed from "downstream triager" to "orchestrator and triager." Slice plan adopted. Five starter tools chosen: Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx.
 - **2026-04-21** — Initial scaffold.
 
