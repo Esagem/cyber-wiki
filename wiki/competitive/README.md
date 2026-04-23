@@ -74,10 +74,11 @@ Freeform. Quotes with sources.
 
 ## Index
 
-| Tool | Status | Verdict |
+| Page | Status | Verdict |
 |------|--------|---------|
 | [[competitive/defectdojo\|DefectDojo]] | active | Closest competitor to slice 1. Mature, widely adopted, heavy deployment. CSAK wins on zero-deployment CLI, real-time invocation, narrative fix-it reports, and open-source LLM use. |
-| [[competitive/reconftw\|reconFTW]] | active | Competitor for slices 2–3, not 1. Covers tool orchestration + recursion + OSINT. Slice 1 could even accept reconFTW output as an input format. |
+| [[competitive/reconftw\|reconFTW]] | active | Competitor for slices 2–3, not 1. Covers tool orchestration + recursion + OSINT. License status is ambiguous (MIT vs GPL-3.0 contradiction in the repo itself) — resolve before any code-level leverage. |
+| [[competitive/leverage-analysis\|Leverage Analysis]] | draft | Per-tool, per-strategy feasibility. Bottom line: ingest both tools' output formats in slice 1; don't fork either; defer fork-vs-integrate for slice 2 to ADR-009. |
 
 ## Target list — not yet written
 
@@ -103,11 +104,13 @@ Freeform. Quotes with sources.
 
 ## Key takeaways so far
 
-From the first two analyses:
+From the first two analyses and the leverage study:
 
 1. **Slice 1 has a real competitor.** DefectDojo is mature, free, and widely adopted. CSAK's differentiation must be concrete (CLI, on-demand, narrative reports, open LLM use) — not "we built a better one."
 2. **Slice 2 has a mature free competitor.** reconFTW covers most of what slice 2 proposes. Before slice 2 begins, we need an explicit answer: replace, augment, or integrate.
-3. **Cross-slice opportunity.** CSAK could accept reconFTW output as a slice-1 input format, making CSAK immediately useful to reconFTW's existing user base without forcing them to switch.
+3. **Cross-slice opportunity.** CSAK can accept both DefectDojo JSON exports and reconFTW `report/report.json` as slice 1 ingest formats. Both are license-safe under any interpretation and substantially expand CSAK's reach.
+4. **Don't fork either project.** Architecturally unsuitable as foundations even if the licenses were fully clear.
+5. **reconFTW's license is ambiguous in the repo.** LICENSE file says MIT, README says GPL-3.0. Needs to be resolved before any strategy that includes reconFTW code.
 
 ## Related
 
