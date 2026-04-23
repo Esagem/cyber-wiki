@@ -91,14 +91,14 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 | Slice 1: ingest Zeek network telemetry | ❌ | DefectDojo is vuln-focused, not network-telemetry-focused. |
 | Slice 1: ingest osquery host telemetry | ❌ | Same — host telemetry is out of scope for DefectDojo. |
 | Slice 1: dedup across tools and runs | ✅ mature | Dedup is one of DefectDojo's strongest features. |
-| Slice 1: multi-axis triage (severity × confidence × target_weight × probability_real) | ⚠️ partial | DefectDojo has severity normalization and risk ratings but not confidence, target_weight, or probability_real as independent axes. |
+| Slice 1: multi-axis triage (severity × confidence × target_weight) | ⚠️ partial | DefectDojo has severity normalization and risk ratings but not confidence or target_weight as independent axes. |
 | Slice 1: narrative client-facing fix-it tickets | ❌ | DefectDojo reports are tool-output-grouped, not narrative. |
 | Slice 1: Scan-level lineage (FindingScanOccurrence) | ⚠️ partial | DefectDojo's Engagement/Test layer provides similar grouping but with different semantics. |
 | Slice 1: stateless reports with clean JSON export for future LLM | ❌ | DefectDojo persists reports; LLM features are behind the Pro paywall. |
 | Slice 2: tool orchestration | ❌ | Out of DefectDojo's scope entirely. |
 | Slice 3: recursion with budgets | ❌ | Out of DefectDojo's scope entirely. |
 
-**Key gap:** DefectDojo covers roughly half of slice 1's ingest surface but nothing of the differentiating layer (four-axis triage, narrative reports, clean JSON export designed for future LLM use, zero-deployment CLI). Its architectural bulk makes it an unsuitable foundation to build the differentiators on top of.
+**Key gap:** DefectDojo covers roughly half of slice 1's ingest surface but nothing of the differentiating layer (three-axis triage, narrative reports, clean JSON export designed for future LLM use, zero-deployment CLI). Its architectural bulk makes it an unsuitable foundation to build the differentiators on top of.
 
 ---
 
@@ -178,7 +178,7 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 Even with both tools fully leveraged, CSAK still has to build:
 
 - **Zeek and osquery ingest.** Neither DefectDojo nor reconFTW handles network or host telemetry. This is CSAK-native work and a slice 1 commitment.
-- **Four-axis triage (severity × confidence × target_weight × probability_real).** DefectDojo has severity; reconFTW has a thin hotlist. Neither has confidence, target_weight, or probability_real as independent axes.
+- **Three-axis triage (severity × confidence × target_weight).** DefectDojo has severity; reconFTW has a thin hotlist. Neither has confidence or target_weight as independent axes.
 - **Narrative, client-facing fix-it ticket reports.** Both tools produce data-dump reports. The narrative format is CSAK's differentiation and must be built from scratch.
 - **Clean JSON export designed for future LLM consumption.** DefectDojo gates LLM behind Pro; reconFTW's `reconftw_ai` is early and opt-in. Slice 1's first-class JSON export is the architectural seam for the LLM layer; neither competitor offers something equivalent.
 - **The zero-deployment CLI experience.** Neither tool delivers this. DefectDojo requires a server stack; reconFTW requires its dependency installer to succeed. CSAK's single-binary CLI story is not available to inherit.
