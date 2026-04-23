@@ -70,7 +70,7 @@ This is the deliverable-quality pain. One report family for analysts, one for th
 
 > "Nessus produces 200 findings. I care about 12 of them. The other 188 are noise or known-acceptable. Triage them down for me, but show your work."
 
-This is the signal-from-noise pain. Deterministic triage, explainable scoring, suppression that survives across runs. The `probability_real` axis is the explicit lever for "probably FP but not confirmed yet."
+This is the signal-from-noise pain. Deterministic triage with three axes (severity × confidence × target_weight), explainable scoring, and status-based suppression that survives across runs. When the analyst is confident a Finding is noise, they set `status = false-positive` or `suppressed` and it stops showing up in active reports. Slice 1 does not offer a fractional "probably FP" downweight — the analyst commits or leaves it active.
 
 ### Job 5 (slice 2+) — "Run the tools for me"
 
