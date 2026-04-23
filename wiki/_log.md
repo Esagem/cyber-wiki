@@ -135,3 +135,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | research/README.md | fix pa pers typo in research README
 
 ## [2026-04-23] write | synthesis/lint-report.md | second lint pass - catches residual slice-1-ingest stale references in competitive README and reconftw, plus minor inconsistencies
+
+## [2026-04-23] write | synthesis/lint-report.md | second lint pass - three remaining stale references in competitive pages (reconftw design-changes, README slice-1 ingest claim, build-vs-adapt LLM prototype claim)
