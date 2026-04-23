@@ -14,7 +14,7 @@ updated: 2026-04-23
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: pre-design wrapping up.** Slice 1 spec approved 2026-04-23 and is now `active`. The remaining pre-implementation task is an architecture overview page. See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
+**Phase: pre-design complete.** Slice 1 spec is `active`; the architecture overview is written. Remaining items (more competitive pages, Christopher's onboarding, the reconFTW license issue) do not block starting implementation. See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
 
 ---
 
@@ -32,8 +32,9 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
-| [[architecture/overview\|Architecture Overview]] | **planned** | — | diagram, narrative |
-| [[architecture/data-flow\|Data Flow]] | **planned** | — | ingest, triage, report |
+| [[architecture/overview\|Architecture Overview]] | active | high | diagram, narrative, walkthrough |
+
+_`architecture/data-flow.md` was planned but folded into the overview's walkthrough section — the two would have duplicated ~80% of each other. See the overview's end-to-end walkthrough for the data-flow narrative._
 
 ## Specs
 
@@ -62,7 +63,7 @@ _No research pages yet. Drop sources into [[research/sources|research/sources/]]
 | [[competitive/leverage-analysis\|Leverage Analysis]] | draft | medium | licensing, feasibility |
 | [[competitive/build-vs-adapt\|Build vs Adapt]] | draft | medium | decision-input, slice-1 |
 
-_Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart (XBOW or NodeZero)._
+_Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart (XBOW or NodeZero). Not blocking implementation._
 
 ## Sessions
 
@@ -90,7 +91,8 @@ _Empty until we choose to activate it. Note: the existence of an `Org` entity in
 
 ## Recent activity
 
-- **2026-04-23 (slice 1 approved)** — Eli signed off on the finalized [[specs/slice-1|slice 1 spec]]. Status flipped `draft` → `active`; confidence bumped medium → high. This is now the authoritative spec for slice 1 implementation. Remaining pre-implementation work: [[architecture/overview|architecture overview]] page.
+- **2026-04-23 (architecture overview written)** — [[architecture/overview|architecture/overview.md]] written as the five-minute map to the slice 1 spec. Includes a mermaid system diagram, five module boundaries (CLI, ingest, storage, query+context, render), one end-to-end walkthrough (ingest Nessus → generate report), extension points (new parsers, new formats, LLM layer, slice 2 tool execution), and an explicit list of what's deferred to build time. The planned `architecture/data-flow.md` was folded into the overview's walkthrough section rather than written separately — the two would have overlapped ~80%. Pre-design is effectively complete.
+- **2026-04-23 (slice 1 approved)** — Eli signed off on the finalized [[specs/slice-1|slice 1 spec]]. Status flipped `draft` → `active`; confidence bumped medium → high. This is now the authoritative spec for slice 1 implementation.
 - **2026-04-23 (second lint pass)** — Caught three remaining stale references in the competitive cluster (reconftw "Design changes" section, competitive/README item 3, build-vs-adapt's reconftw_ai recommendation). All fixed. Wiki is now internally consistent with the finalized spec.
 - **2026-04-23 (lint pass + fixes)** — First [[synthesis/lint-report|lint report]] after slice 1 finalization. Catalogued stale references, fixed the product pages (vision, scope, slices, users-and-jobs, glossary) to match the finalized spec, updated DefectDojo and leverage-analysis for the deferred foreign-JSON ingest and the resolved fourth-layer question, and cleaned up ADR-009 references.
 - **2026-04-23 (slice 1 finalized)** — All open design questions for slice 1 resolved in [[specs/slice-1|the spec]]. Key decisions: four-layer data model (Org → Target → Scan → Finding + Artifact), no Report entity (reports are stateless pipeline exports, timestamp-prefixed files accumulate on disk), `probability_real` added as the fourth scoring axis (analyst-assigned, separate from confidence), scoring is write-once at ingest (no retriage in slice 1), markdown/docx/JSON all first-class exports (python-docx for docx, no pandoc), no LLM use inside slice 1 (JSON export designed as the interface for a future LLM layer), folder-aware Zeek ingest, no generic-CSV or reconFTW JSON ingest in slice 1 (deferred, parser architecture supports adding them).
