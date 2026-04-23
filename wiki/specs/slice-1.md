@@ -11,7 +11,7 @@ updated: 2026-04-23
 
 # Slice 1 — Ingest & Report
 
-> Draft spec. Reviewed with Eli on 2026-04-22. Corrected 2026-04-23 to separate report *structure* (always org + time window) from report *invocation* (on-demand, usually real-time during active work — not scheduled or periodic). Data model expanded 2026-04-23 to add a Scan layer and a Finding↔Scan occurrences table, and to formalize Target nesting, Org boundaries, multi-Target findings, and delete semantics. Report entity dropped 2026-04-23: reports are pure exports — query in, files out, no database row.
+> Draft spec. Reviewed with Eli on 2026-04-22. Corrected 2026-04-23 to separate report *structure* (always org + time window) from report *invocation* (on-demand, usually real-time during active work — not scheduled or periodic). Data model expanded 2026-04-23 to add a Scan layer and a Finding↔Scan occurrences table, and to formalize Target nesting, Org boundaries, multi-Target findings, and delete semantics. Report entity dropped 2026-04-23: reports are pure exports — query in, files out, no database row. Docx rendering committed to python-docx 2026-04-23 (rather than pandoc).
 
 ## Goal
 
@@ -267,16 +267,22 @@ Both are scoped to **(org, time window)**.
 - Plain language. No internal chatter. No speculation. Designed to be forwarded as-is.
 - Packaged both as a directory of files and as a single `.zip` for easy sharing.
 
+### Report context — the shared input to all renderers
+
+Every `csak report generate` invocation produces a **structured report context** — a Python object holding the findings, scans, targets, org info, period bounds, methodology metadata, and grouping hints for that report. All renderers consume the same context.
+
+This is the mechanism that keeps markdown and docx output aligned: they render from the same source, section order and content are the same across formats, and adding a new renderer later (HTML, PDF, CSV) means writing against the same context object rather than re-querying the database or re-templating the markdown.
+
 ### Export formats
 
 **First-class:** markdown and docx. Either or both on every `csak report generate` invocation.
 
-- **Markdown** is the default. Readable, diffable, forwardable, and the source of truth for authoring — docx rendering is derived from it.
-- **Docx** is for clients that live in Word or expect a Word-native attachment. Implementation likely uses pandoc to convert markdown to docx during slice 1 implementation; `python-docx` is the alternative if pandoc proves inadequate, confirmed during build.
+- **Markdown** is the primary authoring format. Readable, diffable, forwardable, low-friction to edit.
+- **Docx** is for clients that live in Word or expect a Word-native attachment. Slice 1 uses **python-docx** to build docx output programmatically from the shared report context. No pandoc dependency, toolchain stays Python-only.
 
-**Optional debug export:** JSON. Produced with `--debug-json` on the invocation. Serializes the query result (findings, scans, targets, triage metadata) so the analyst can inspect or script against the raw data the report was rendered from. Not a default; not required for a working slice 1.
+**Optional debug export:** JSON. Produced with `--debug-json` on the invocation. Serializes the report context so the analyst can inspect or script against the raw data the report was rendered from. Not a default; not required for a working slice 1.
 
-**Deferred:** HTML, PDF, CSV, and any other format. The rendering layer is designed as a set of format-specific renderers keyed on format name. Adding a new format means dropping in a new renderer that consumes the same structured report context the markdown renderer does. Markdown is the canonical implementation; others follow its shape.
+**Deferred:** HTML, PDF, CSV, and any other format. The rendering layer is a set of format-specific renderers keyed on format name, each consuming the shared report context. Adding a format means dropping in a new renderer — no changes to the query path or to existing renderers.
 
 **Format selection:**
 
@@ -287,6 +293,13 @@ csak report generate --org acmecorp --period 2026-04 --kind internal-review
 ```
 
 `--format` defaults to `markdown` alone when omitted.
+
+### Renderer implementation notes
+
+- **Markdown renderer** uses Jinja2 templates over the report context. Templates live under `templates/markdown/<kind>.md.j2` with shared partials for finding cards, methodology blocks, and ticket bodies.
+- **Docx renderer** uses python-docx over the report context directly. The renderer walks the context and emits docx elements (paragraphs, headings, tables, lists, page breaks) programmatically. A base `.docx` template under `templates/docx/base.docx` defines the style set (Heading 1/2/3, body font, table style, a small color palette); the renderer copies this template and fills it in rather than constructing a document from nothing.
+- **Polish is a second pass.** The first docx output in slice 1 will prioritize correctness over typography — sensible structure, readable defaults, no broken tables. "Client-ready" polish (matched fonts, tight spacing, cover pages, header/footer with org name and date) is a deliberate second pass during slice 1 implementation, once the structure is stable. Worth not over-promising on the first docx output.
+- **Both renderers produce the same content, in the same order, for the same report context.** That's the invariant the architecture protects. If a future feature needs format-specific content (e.g. docx getting a cover page that markdown doesn't), it lives as a renderer-specific section rendered from a flag in the context rather than diverging the content path.
 
 ### Output layout
 
@@ -317,9 +330,9 @@ Conventions:
 
 ### Template language
 
-**Jinja2** for the markdown templates. Python-native, widely known, flexible enough to handle conditional sections, loops over findings, and inherited layouts when we need sub-templates. Logic-less alternatives (Mustache / Handlebars) force logic back into Python which adds friction without buying anything; pure string substitution is too weak once templates grow beyond toy size.
+**Jinja2** for the markdown renderer. Python-native, widely known, flexible enough to handle conditional sections, loops over findings, and inherited layouts when we need sub-templates. Logic-less alternatives (Mustache / Handlebars) force logic back into Python which adds friction without buying anything; pure string substitution is too weak once templates grow beyond toy size.
 
-Docx rendering consumes the rendered markdown via pandoc (likely) rather than re-templating from scratch. The structural report context is the same for both formats; only the final rendering step differs.
+The docx renderer is code, not templates — see §Renderer implementation notes above.
 
 ### LLM's role in reports
 
@@ -388,7 +401,7 @@ Slice 1 is "done" when:
 - Scan lineage is queryable. `csak scan list` shows every scan; each finding can list every scan it has appeared in.
 - Reports correctly label `fallback-ingested` scan timestamps so readers aren't misled about when a tool actually ran.
 - Two reports generated for the same org over different but overlapping windows (e.g. "all of Q1" and "March alone") both correctly contain the overlapping findings.
-- Markdown and docx export both produce readable, forwardable output.
+- Markdown and docx export both produce readable output with matching content and section order.
 - Multiple invocations for the same (org, period, kind) accumulate as timestamped files without overwriting.
 - At least one analyst (Eli) has used it on a real piece of work and not hated it.
 
