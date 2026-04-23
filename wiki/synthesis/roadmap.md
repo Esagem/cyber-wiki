@@ -2,65 +2,72 @@
 title: "Roadmap"
 category: synthesis
 tags: [roadmap, sequencing, priorities]
-status: seed
+status: draft
 confidence: low
 owner: shared
 created: 2026-04-21
-updated: 2026-04-21
+updated: 2026-04-23
 ---
 
 # Roadmap
 
 > Rough sequencing of what we're designing next. This is a *design* roadmap, not a build roadmap — it describes when we expect to converge on each set of decisions. Build starts after the exit criteria at the bottom.
 
-## Phase 0 — Framing (we are here)
+## Phase 0 — Framing (done)
 
-**Goal:** shared vocabulary, explicit scope, known unknowns documented.
+- [x] Slice plan adopted ([[product/slices|slices]]).
+- [x] Initial scope committed ([[product/scope|scope]]).
+- [x] Five starter tools for slice 1 chosen.
+- [x] First working session logged ([[sessions/2026-04-22-slice-1-kickoff|2026-04-22]]).
 
-- [ ] Vision page usable as an elevator pitch ([[product/vision|Vision]]).
-- [ ] Scope page with proposed in/out lists ([[product/scope|Scope]]).
-- [ ] Glossary covers every term we use in more than one page ([[product/glossary|Glossary]]).
-- [ ] Open questions page populated ([[synthesis/open-questions|Open Questions]]).
-- [ ] First working session logged in `sessions/`.
+## Phase 1 — Slice 1 design (we are here)
 
-## Phase 1 — Foundation ADRs
+**Goal:** slice 1 spec is detailed, justified, and reviewed — detailed enough that someone could start coding from it.
 
-**Goal:** the 3-4 decisions that unlock everything else.
+- [ ] Every open question in [[synthesis/open-questions|open-questions]] affecting slice 1 is either answered or explicitly deferred.
+- [ ] [[specs/slice-1|slice 1 spec]] moves `draft` → `active` after Eli's review.
+- [ ] [[architecture/overview|architecture/overview]] written — diagram and narrative covering ingest → triage → report end to end.
+- [ ] [[architecture/data-flow|architecture/data-flow]] written — concrete flow from Artifact ingest through Finding triage to Report render.
+- [ ] Subsystem specs split out where the slice 1 spec is doing too much: [[specs/ingestion-model|ingestion-model]], [[specs/triage-model|triage-model]], [[specs/report-formats|report-formats]].
 
-- [ ] ADR-001 — v0 scope boundary.
-- [ ] ADR-002 — primary user persona.
-- [ ] ADR-003 — architecture shape.
-- [ ] ADR-004 — storage backend.
-
-## Phase 2 — Subsystem specs
-
-**Goal:** specs detailed enough that someone could start coding from them.
-
-- [ ] `specs/ingestion-model.md` — concrete plugin protocol.
-- [ ] `specs/triage-model.md` — scoring rules, data model.
-- [ ] `specs/report-formats.md` — internal review + fix-it ticket templates.
-- [ ] `architecture/overview.md` — diagram + narrative covering all three subsystems end-to-end.
-
-## Phase 3 — Competitive grounding
+## Phase 2 — Competitive grounding (in progress)
 
 **Goal:** we know what already exists so we don't reinvent.
 
-- [ ] Pages for the obvious competitors/adjacents in `competitive/`: DefectDojo, Faraday, PlexTrac, Tines, Nuclei-derived tooling, any LLM-powered upstarts.
-- [ ] Synthesis page: what's missing from the market that CSAK would fill.
+- [x] [[competitive/defectdojo|DefectDojo]].
+- [x] [[competitive/reconftw|reconFTW]].
+- [x] [[competitive/leverage-analysis|leverage analysis]] and [[competitive/build-vs-adapt|build-vs-adapt]] — what we can borrow, what we build fresh.
+- [ ] Faraday, PlexTrac, AttackForge.
+- [ ] Splunk, Wazuh, Tenable (boundary documentation — what CSAK is explicitly not).
+- [ ] One LLM-powered upstart (XBOW or NodeZero).
+- [ ] Synthesis page: what's missing from the market that CSAK fills.
 
-## Exit criteria — "pre-design → design-done"
+## Phase 3 — Slice 2 design (not yet started)
+
+Triggered when slice 1 is close to build-ready.
+
+Open questions to resolve (currently in [[synthesis/open-questions|open-questions]] slice 2 section):
+
+- reconFTW — replace, augment, or integrate?
+- Tool selection strategy.
+- Execution model (subprocess / container / mixed).
+- Parameter inference.
+- Long-running tool handling.
+
+## Exit criteria — "pre-design → build"
 
 We leave pre-design when:
 
-- All four Phase 1 ADRs are `accepted`.
-- All three Phase 2 specs are `active` and have been reviewed by both of us.
-- Remaining open questions don't block a v0 build.
-- We both feel we could answer "what is CSAK" in one breath, and describe v0 in three sentences.
+- Slice 1 spec is `active` (all its open questions answered or explicitly deferred).
+- Architecture overview and data-flow pages are written.
+- Competitive grounding is deep enough we're not surprised by an obvious prior art during implementation.
+- Eli has reviewed and signed off.
+- We both feel we could answer "what is CSAK" in one breath and describe slice 1 in three sentences.
 
 At that point this wiki shifts role: it becomes the reference alongside a build repo, rather than the primary working surface.
 
 ## Related
 
 - [[product/scope|Scope]]
-- [[decisions/README|ADR Index]]
+- [[specs/slice-1|Slice 1 Spec]]
 - [[synthesis/open-questions|Open Questions]]
