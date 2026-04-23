@@ -13,14 +13,14 @@ updated: 2026-04-23
 
 > Every known unknown about CSAK, with an owner and a status. Updated after each working session and each piece of competitive research.
 
-Questions are grouped by what they affect. An `ADR:` link means a decision record is pending or in flight to resolve the question.
+Questions are grouped by what they affect. When a question gets resolved, move it to the Answered section at the bottom and note which spec section carries the resolution.
 
 ## Columns
 
 - **Q** — the question.
 - **Owner** — who's driving an answer. `shared` means both contributors.
 - **Status** — `open`, `in-progress`, `answered`, `dropped`.
-- **Notes** — short context, or a pointer to the page/ADR that's carrying the discussion.
+- **Notes** — short context, or a pointer to the spec section that's carrying the discussion.
 
 ---
 
@@ -33,15 +33,15 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | How do Findings spanning multiple Targets get represented? | shared | open | Leaning one Finding per (target, dedup-key). |
 | Should Finding deletion be soft only, hard only, or configurable? | shared | open | Leaning soft only with separate Artifact preservation. |
 | Can a Finding appear in multiple Reports for the same Org? | shared | open | Yes — overlapping report periods are intentional. |
-| Should CSAK have a fourth data-model layer (Scan / Run / Test) between Target and Finding? | shared | open | DefectDojo uses Products → Engagements → Tests → Findings (4 layers). CSAK currently uses Org → Target → Finding (3) with Artifact linkage for grouping. See [[competitive/defectdojo\|DefectDojo analysis]]. |
-| Should Finding status include `false-positive` as distinct from `suppressed`? | shared | open | DefectDojo treats them as different states. Surfaced from [[competitive/defectdojo\|DefectDojo analysis]]. Leaning yes. |
+| Should CSAK have a fourth data-model layer (Scan / Run / Test) between Target and Finding? | shared | open | DefectDojo uses 4 layers; CSAK currently uses 3 with Artifact linkage for grouping. Revisit if implementation surfaces pain. See [[competitive/defectdojo\|DefectDojo analysis]]. |
+| Should Finding status include `false-positive` as distinct from `suppressed`? | shared | open | DefectDojo treats them as different states. Leaning yes. |
 
 ## Slice 1 — Ingest
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Add a generic-CSV escape-hatch ingest format in slice 1? | shared | open | DefectDojo has one; it's a real analyst value. Low effort. |
-| Add reconFTW's `report/report.json` as a slice 1 ingest format? | shared | open | Would make CSAK immediately useful to reconFTW's existing user base. See [[competitive/reconftw\|reconFTW analysis]]. |
+| Add a generic-CSV escape-hatch ingest format in slice 1? | shared | open | DefectDojo has one; low effort, high value. |
+| Add reconFTW's `report/report.json` as a slice 1 ingest format? | shared | open | Would make CSAK immediately useful to reconFTW's existing user base. |
 | Does "ingest" in slice 1 include folder-of-logs (Zeek), or only single files? | shared | open | Zeek produces many log files per day. Probably folder-aware. |
 
 ## Slice 1 — Triage
@@ -52,13 +52,12 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | Separate `probability_real` field for "probably FP"? | shared | open | Proposed in slice 1 spec. |
 | 5-point severity scale + `null`, or 6-point with explicit "unknown"? | shared | open | Leaning 5 + `null`. |
 | How do tool-specific severity translation tables get versioned and surfaced in reports? | shared | open | Slice 1 spec says "explicit and versioned"; mechanism TBD. |
-| Remediation templates keyed on CWE / CVE — slice 1 or later? | shared | open | DefectDojo demonstrates this is real analyst value. Probably slice 1 for fix-it tickets. Surfaced from [[competitive/defectdojo\|DefectDojo analysis]]. |
+| Remediation templates keyed on CWE / CVE — slice 1 or later? | shared | open | Probably slice 1 for fix-it tickets. |
 
 ## Slice 1 — Reports
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Template language: Jinja2, Mustache, or pure markdown substitution? | shared | open | Leaning Jinja2. ADR-008 candidate. |
 | Are fix-it tickets always one-finding-per-ticket, or grouped? | shared | open | Default per-finding; grouping later if it earns it. |
 | Do we emit HTML/PDF in slice 1, or only markdown? | shared | open | Leaning markdown only. PDF/HTML can come later via separate rendering. |
 | Period summary section ("what changed since March") — LLM-drafted or template-driven? | shared | open | Worth prototyping LLM here. |
@@ -67,7 +66,6 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Storage: SQLite + flat-file artifacts (current default), Postgres, or pure flat files? | shared | open | ADR-004 candidate. SQLite leaning is documented in [[specs/slice-1\|slice 1 spec]]. |
 | CLI command shape — is the sketched command structure right? | eli | open | Sketch in slice 1 spec; needs Eli's review. |
 | Where do report outputs land on disk? | shared | open | Default proposed: `reports/<org-slug>/<period>/...` |
 
@@ -84,7 +82,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Replace reconFTW, augment it, or integrate with it? | shared | open | ADR-level decision. See [[competitive/reconftw\|reconFTW analysis]]. If we integrate, slice 2 is much smaller; if we replace, much larger. |
+| Replace reconFTW, augment it, or integrate with it? | shared | open | Big scope-shaping question. If we integrate, slice 2 is much smaller; if we replace, much larger. See [[competitive/reconftw\|reconFTW analysis]]. |
 | Tool selection — heuristic, config-driven, LLM-assisted, or all three? | shared | deferred | Slice 2 design. |
 | Execution model — subprocess, container, mixed? | shared | deferred | Slice 2 design. |
 | Parameter inference — how does CSAK know what to feed a tool given a target? | shared | deferred | Slice 2 design. |
@@ -97,7 +95,7 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 |---|-------|--------|-------|
 | Recursion budget shape — time / depth / cost / token / all? | shared | deferred | Slice 3 design. |
 | How does adding a new tool work as a user-facing operation? | shared | deferred | Slice 3 design. |
-| Quick-rescan pattern — skip heavy stages when no new assets? | shared | open | reconFTW does this; smart pattern. Surfaced from [[competitive/reconftw\|reconFTW analysis]]. |
+| Quick-rescan pattern — skip heavy stages when no new assets? | shared | open | reconFTW does this; smart pattern. |
 
 ## Cross-cutting product questions
 
@@ -114,33 +112,32 @@ Questions are grouped by what they affect. An `ADR:` link means a decision recor
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
 | Cadence for collaborative working sessions? | shared | open | First session held 2026-04-22; cadence TBD. |
-| When do we leave pre-design and start implementation? Trigger condition? | shared | open | Proposed: when ADR-001 (slice 1 scope) and ADR-004 (storage) are accepted, plus slice 1 spec is `active` (not `draft`). |
+| When do we leave pre-design and start implementation? Trigger condition? | shared | open | Proposed: when slice 1 spec is `active` (not `draft`) — i.e., every open question above is either answered or explicitly deferred, and Eli has signed off. |
 
 ---
 
 ## Answered / dropped questions
 
-These were answered during the 2026-04-22 session or via competitive research.
-
 | Q | Resolved by | Outcome |
 |---|-------------|---------|
-| Who is the primary user of v0 — pentester, blue-teamer, consultant, security-lead? | 2026-04-22 session | Answer: a McCrary-style analyst doing mixed offensive and defensive work for a handful of client orgs. Documented in [[product/users-and-jobs\|users-and-jobs]]. |
+| Who is the primary user of v0 — pentester, blue-teamer, consultant, security-lead? | 2026-04-22 session | A McCrary-style analyst doing mixed offensive and defensive work for a handful of client orgs. Documented in [[product/users-and-jobs\|users-and-jobs]]. |
 | Breadth (many shallow ingestors) vs. depth (few excellent ones)? | 2026-04-22 session | Depth at slice 1 (5 tools, done excellently). Breadth comes in slice 3. |
 | What's the v0 scope — how much of "ingest → triage → report" do we build before shipping anything? | 2026-04-22 session | All of "ingest → triage → report" in slice 1. Tool execution moves to slice 2; recursion to slice 3. |
 | Plugin protocol — stdout JSON, Python entry point, WASM, HTTP microservice? | 2026-04-22 session | Deferred to slice 2 — irrelevant in slice 1 (no tool execution). |
 | Are we responsible for the scan, or only for consuming scan output? | 2026-04-22 session | Slice 1: only consuming. Slice 2: also responsible. |
-| Is "importance" the same as severity? | 2026-04-22 session | No. Severity, confidence, and target weight are independent. Priority is derived: `severity × confidence × target weight`. Documented in [[specs/slice-1\|slice 1 spec]]. |
+| Is "importance" the same as severity? | 2026-04-22 session | No. Severity, confidence, and target weight are independent. Priority is derived: `severity × confidence × target weight`. |
 | Where do previously-seen findings get remembered? | 2026-04-22 session | In CSAK's own storage, scoped to the Org. Drives both dedup and cross-period continuity. |
 | Where does the LLM live — optional enhancer, core dependency, configurable per-step? | 2026-04-22 session | Optional enhancer, evaluated case-by-case per feature. Core is deterministic. |
 | Local-first or service-first? | 2026-04-22 session | Local-first (CLI on the analyst's machine) for slices 1 and 2. Service mode is undefined and not on any planned slice. |
 | Real-time vs. periodic invocation? | 2026-04-23 correction | On-demand / real-time is the primary mode, in scope from slice 1. Scheduled/automated is slice 4+. Streaming detection is indefinitely out of scope (SIEM territory). |
+| Template language: Jinja2, Mustache, or pure markdown substitution? | 2026-04-23 spec revision | Jinja2. Rationale in [[specs/slice-1\|slice 1 spec §Reports]]. |
+| Storage: SQLite + flat-file artifacts, Postgres, or pure flat files? | 2026-04-23 spec revision | SQLite + flat-file artifacts. Rationale in [[specs/slice-1\|slice 1 spec §Storage]]. |
 
 ---
 
 ## Related
 
-- [[CYBER\|CYBER.md §5.3 — Logging a working session]]
-- [[decisions/README\|ADR Index]]
+- [[CYBER\|CYBER.md §5.2 — Logging a working session]]
 - [[specs/slice-1\|Slice 1 Spec]]
 - [[product/users-and-jobs\|Users & Jobs]]
 - [[competitive/defectdojo\|DefectDojo]]
