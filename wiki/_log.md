@@ -91,3 +91,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | drop Decisions section from master index; ADR scaffolding removed
 
 ## [2026-04-23] write | synthesis/open-questions.md | strip ADR references from open-questions; jinja and sqlite moved to Answered; pre-design trigger restated without ADR gates
+
+## [2026-04-23] write | synthesis/roadmap.md | reshape roadmap around slice-based plan and removed ADR gates
