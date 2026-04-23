@@ -6,7 +6,7 @@ status: draft
 confidence: low
 owner: shared
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # Users & Jobs
@@ -58,7 +58,7 @@ This is the cross-tool synthesis pain. Multiple tools, one org, one report.
 
 > "I scanned this client last month. Half of last month's findings are still here. I don't want to re-write them all from scratch — I want to know what's new, what's still active, what's been fixed."
 
-This is the cross-period continuity pain. Same org, multiple reports across time.
+This is the cross-period continuity pain. Same org, multiple reports across time. Slice 1 addresses it via `first_seen` / `last_seen` tracking and the FindingScanOccurrence junction — the report for this month sees findings that have been continuously observed, and their history is recoverable.
 
 ### Job 3 — "Make me a fix-it ticket I'd be proud to send"
 
@@ -70,13 +70,13 @@ This is the deliverable-quality pain. One report family for analysts, one for th
 
 > "Nessus produces 200 findings. I care about 12 of them. The other 188 are noise or known-acceptable. Triage them down for me, but show your work."
 
-This is the signal-from-noise pain. Deterministic triage, explainable scoring, suppression that survives across runs.
+This is the signal-from-noise pain. Deterministic triage, explainable scoring, suppression that survives across runs. The `probability_real` axis is the explicit lever for "probably FP but not confirmed yet."
 
 ### Job 5 (slice 2+) — "Run the tools for me"
 
 > "I know I want Subfinder + httpx + Nuclei against this domain. Don't make me wire them up by hand every time."
 
-This is the orchestration pain. Slice 1 doesn't address it; slice 2 does.
+This is the orchestration pain. Slice 1 doesn't address it; slice 2 does. reconFTW already solves most of this problem in the offensive-recon domain — slice 2 design has to decide whether CSAK builds its own orchestrator, delegates to reconFTW, or supports both. See [[competitive/reconftw|reconFTW analysis]].
 
 ### Job 6 (slice 3+) — "Keep going on your own when it's obvious what's next"
 
@@ -88,10 +88,10 @@ This is the recursion pain. Slice 3.
 
 People who explicitly should NOT use CSAK in slice 1 or 2:
 
-- **The FAANG SOC analyst.** They have dedicated detection-engineering, real-time alerting, and bespoke tooling. CSAK's periodic-report shape doesn't fit their workflow.
+- **The FAANG SOC analyst.** They have dedicated detection-engineering teams, real-time alerting infrastructure, and bespoke tooling. CSAK is built for on-demand analyst-driven work, not for streaming/alerting SIEM-shaped workflows — different tool, different job.
 - **The compliance auditor.** They want GRC mappings, evidence collection, attestation flows. CSAK doesn't do that.
 - **The IR responder mid-incident.** CSAK is for steady-state work, not for active-incident triage.
-- **The non-technical manager who wants a dashboard.** CSAK produces markdown reports and CLI output. Not a dashboard tool.
+- **The non-technical manager who wants a dashboard.** CSAK produces markdown, docx, and JSON reports plus CLI output. Not a dashboard tool.
 
 ## Open user questions
 
@@ -104,5 +104,7 @@ People who explicitly should NOT use CSAK in slice 1 or 2:
 - [[product/vision|Vision]]
 - [[product/scope|Scope]]
 - [[product/slices|Slice Plan]]
+- [[product/glossary|Glossary]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[synthesis/open-questions|Open Questions]]
+- [[competitive/reconftw|reconFTW]]
