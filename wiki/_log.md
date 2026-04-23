@@ -107,3 +107,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | specs/slice-1.md | commit to python-docx for slice 1 docx rendering; two renderers share one structured context; flag styling as a second-pass concern
 
 ## [2026-04-23] write | specs/slice-1.md | finalize slice 1 - no retriage, no LLM, stateless reports, folder-aware Zeek, JSON for future LLM, all open questions closed
+
+## [2026-04-23] write | synthesis/open-questions.md | slice 1 is fully closed - move all resolved questions to Answered, remove slice-1 sections from active open list
