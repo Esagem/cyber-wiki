@@ -55,7 +55,7 @@ Most of this is **slice 2 and slice 3 territory**, not slice 1:
 - **Dependency management is painful.** 80+ tools across Go, Python, Ruby, native binaries. Installer failures mentioned frequently in the issues. CSAK's slice 2 will have the same problem, and we should expect it.
 - **Resource consumption.** Full-mode scans are intensive. Without distributed scanning, single-machine runs can take hours. CSAK's on-demand real-time posture means we cannot be this slow for slice 2 — we need quicker default modes.
 - **Reporting quality.** The HTML reports are data-dumps, not narrative. `reconftw_ai` attempts a narrative summary using local Ollama models, but the AI pipeline is opt-in and early-stage. CSAK's report layer (slice 1) should be substantially better here.
-- **Triage is thin.** reconFTW categorizes findings by tool but doesn't have the cross-tool severity normalization or the multi-axis (severity × confidence × target-weight) scoring CSAK is proposing. This is a real gap in reconFTW that CSAK can fill.
+- **Triage is thin.** reconFTW categorizes findings by tool but doesn't have the cross-tool severity normalization or the multi-axis (severity × confidence × target_weight × probability_real) scoring CSAK is proposing. This is a real gap in reconFTW that CSAK can fill.
 - **Offensive-only scope.** reconFTW cannot ingest Nessus output, Zeek logs, or osquery results. An analyst doing both offensive and defensive work has to use reconFTW for one half and something else for the other.
 
 ## Pricing / licensing model
@@ -83,32 +83,35 @@ No commercial tier exists. Community-maintained via GitHub issues and Discord.
 
 ## Verdict for CSAK design
 
-reconFTW is **the thing to watch for slice 2 and 3**, not slice 1. Slice 1 doesn't compete with reconFTW directly — reconFTW doesn't ingest Nessus, doesn't do osquery/Zeek telemetry, doesn't have multi-axis triage, doesn't produce narrative fix-it tickets. Slice 1 and reconFTW could even coexist: an analyst uses reconFTW to run a full recon pipeline, then feeds the resulting JSON into CSAK for triage and reporting.
+reconFTW is **the thing to watch for slice 2 and 3**, not slice 1. Slice 1 doesn't compete with reconFTW directly — reconFTW doesn't ingest Nessus, doesn't do osquery/Zeek telemetry, doesn't have multi-axis triage, doesn't produce narrative fix-it tickets. Slice 1 and reconFTW could even coexist eventually: an analyst uses reconFTW to run a full recon pipeline, then feeds the resulting JSON into CSAK for triage and reporting — once CSAK adds reconFTW JSON ingest, which is a slice 2 item.
 
 **For slices 2 and 3, reconFTW is the obvious comparison.** A few implications:
 
-1. **The "CSAK is just reconFTW in Python" risk is real.** If slice 2 ends up being a Python port of reconFTW's pipeline with no other value-add, we should reconsider whether slice 2 is worth building at all vs. making slice 1 able to ingest reconFTW output. That's worth an ADR when slice 2 starts.
+1. **The "CSAK is just reconFTW in Python" risk is real.** If slice 2 ends up being a Python port of reconFTW's pipeline with no other value-add, we should reconsider whether slice 2 is worth building at all vs. making CSAK able to ingest reconFTW output and stopping there. That's worth settling explicitly when slice 2 design opens.
 2. **Differentiation for CSAK slice 2 must be clear.** Likely candidates: (a) typed-language reliability vs. bash fragility, (b) defensive + offensive scope, not just recon, (c) tight integration with slice 1's triage and narrative reporting, (d) on-demand real-time posture vs. reconFTW's "run a full scan and come back hours later."
-3. **reconFTW output → CSAK input is a potentially valuable integration.** reconFTW produces `report/report.json` as a consolidated output; CSAK could natively parse it as a slice-1 input format. This makes CSAK useful to the existing reconFTW user base without requiring them to switch.
+3. **reconFTW output → CSAK input is a potentially valuable integration path** — but not for slice 1.
 
-**Design changes this research suggests:**
+## How this research influenced the spec
 
-- **Add reconFTW's `report/report.json` as a potential slice 1 ingest format.** Either in the initial 5 or as a stretch goal. Low effort, meaningful positioning. This is license-safe — reading output data does not create a derivative work.
-- **Study reconFTW's "Quick Rescan Mode" pattern** for slice 2's tool-re-invocation logic. Skipping heavy stages when nothing's changed is smart.
-- **Adaptive rate limiting is a slice 2 requirement, not a nice-to-have.** Design it in from the start.
-- **Consider whether slice 2 should explicitly be a replacement for reconFTW or an augmentation.** If the former, CSAK slice 2 scope is much larger; if the latter, slice 2 might just be "CSAK can invoke reconFTW and parse its output."
-- **Resolve the license ambiguity** before any strategy that requires including reconFTW code. Until resolved, prefer strategies that don't depend on it (subprocess invocation, output parsing).
+Four questions were surfaced by this analysis. All resolved or scoped:
+
+- **reconFTW `report/report.json` as a CSAK ingest format?** **Deferred out of slice 1.** Slice 1 commits to five tool formats and stays there; the parser architecture is plugin-shaped so foreign-JSON ingest (reconFTW, DefectDojo, and others) can be added in slice 2 without core surgery. The positioning value ("CSAK is immediately useful to reconFTW users") is real but not load-bearing for slice 1.
+- **Quick Rescan Mode pattern for skipping unchanged stages.** Noted as a slice 2 design input, not slice 1 (since slice 1 doesn't run tools).
+- **Adaptive rate limiting as a slice 2 requirement, not a nice-to-have.** Tracked in [[synthesis/open-questions|open-questions]] as a slice 2 item; slice 2 design has to address it when it opens.
+- **Replace, augment, or integrate reconFTW in slice 2?** Tracked in [[synthesis/open-questions|open-questions]] as an unresolved slice 2 scope-shaping question. Not settleable before slice 2 design opens.
+- **License ambiguity.** Still open. Should be resolved via a GitHub issue on the reconFTW repo before any code-level leverage. Until resolved, prefer strategies that don't depend on interpretation (subprocess invocation, output parsing).
 
 ## Notes
 
 The bash-based architecture is a genuine liability for reconFTW but also its charm — the author explicitly chose bash for fast iteration and low dependencies. CSAK making the opposite choice (typed language, structured data model, real tests) is a defensible differentiator. The tradeoff is slower initial development.
 
-The `reconftw_ai` feature (AI report generation) being recent and opt-in suggests the author is aware of the reporting weakness but hasn't cracked it. This is an opening for CSAK's report layer to be meaningfully better.
+The `reconftw_ai` feature (AI report generation) being recent and opt-in suggests the author is aware of the reporting weakness but hasn't cracked it. This is an opening for CSAK's future LLM layer — which attaches over slice 1's clean JSON export — to be meaningfully better.
 
 ## Related
 
 - [[competitive/README|Competitive Analysis Index]]
 - [[competitive/defectdojo|DefectDojo]]
 - [[competitive/leverage-analysis|Leverage Analysis]]
+- [[competitive/build-vs-adapt|Build vs Adapt]]
 - [[product/slices|Slice Plan]]
 - [[specs/slice-1|Slice 1 Spec]]
