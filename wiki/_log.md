@@ -99,3 +99,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/README.md | drop ADR-009 reference from leverage verdict
 
 ## [2026-04-23] write | specs/slice-1.md | resolve 5 data-model questions: hybrid target nesting with weight-override, one org with subsidiary targets, N-findings-one-per-target, soft delete, add Scan layer with occurrences junction
+
+## [2026-04-23] write | synthesis/open-questions.md | move 5 resolved data-model questions to Answered section after spec update
