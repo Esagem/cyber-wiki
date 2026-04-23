@@ -53,3 +53,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/defectdojo.md | first real competitive analysis - DefectDojo overlaps slice 1 heavily, differs in scope and UX
 
 ## [2026-04-23] write | competitive/reconftw.md | reconFTW analysis - covers slice 2 and 3 orchestration and recursion ground; shallower on triage than assumed
+
+## [2026-04-23] write | competitive/README.md | populate index with DefectDojo and reconFTW analyses and their verdicts
