@@ -433,7 +433,7 @@ Slice 1 is "done" when:
 - Markdown, docx, and JSON export all produce readable output with matching content and section order.
 - The JSON export is self-describing (schema version present, source-tool attribution on every finding) and complete enough that an external consumer — including a future LLM layer — can generate a useful reply without re-querying CSAK.
 - Multiple invocations for the same (org, period, kind) accumulate as timestamped files without overwriting.
-- At least one analyst (Eli) has used it on a real piece of work and not hated it.
+- At least one analyst has used it on a real piece of work and not hated it.
 
 ## Related
 
