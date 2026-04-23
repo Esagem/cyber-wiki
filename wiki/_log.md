@@ -141,3 +141,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/reconftw.md | reconftw design-changes section rewritten to match slice 1 finalization - JSON ingest deferred to slice 2, mirror the how-this-influenced-the-spec pattern from defectdojo
 
 ## [2026-04-23] write | competitive/README.md | competitive README - remove slice 1 ingest claim from key takeaways and leverage-analysis index row, reflect deferral to slice 2
+
+## [2026-04-23] write | competitive/build-vs-adapt.md | build-vs-adapt - fix three items - reconftw JSON ingest moved to slice 2, remove slice 1 LLM prototype claim, update CSAK data model description to four-layer
