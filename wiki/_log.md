@@ -79,3 +79,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | decisions/ADR-001-slice-1-scope.md | slim ADR-001 to decision+rationale only; point at spec for implementation detail
 
 ## [2026-04-23] delete | decisions/ADR-001-slice-1-scope.md | User directive: remove ADR scaffolding entirely; rationale moves inline into specs
+
+## [2026-04-23] delete | decisions/README.md | User directive: remove ADR scaffolding entirely; rationale moves inline into specs
