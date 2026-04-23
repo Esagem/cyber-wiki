@@ -14,7 +14,7 @@ updated: 2026-04-23
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. First competitive pass 2026-04-23 (DefectDojo + reconFTW). See [[CYBER|CYBER.md]] for the operating schema.
+**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. First competitive pass 2026-04-23 (DefectDojo + reconFTW, leverage analysis, build-vs-adapt). ADR-001 proposed 2026-04-23. See [[CYBER|CYBER.md]] for the operating schema.
 
 ---
 
@@ -59,6 +59,8 @@ _No research pages yet. Drop sources into [[research/sources|research/sources/]]
 | [[competitive/README\|Competitive Analysis Index]] | active | high | meta, format |
 | [[competitive/defectdojo\|DefectDojo]] | active | medium | vuln-management, open-source |
 | [[competitive/reconftw\|reconFTW]] | active | medium | recon-orchestration, open-source |
+| [[competitive/leverage-analysis\|Leverage Analysis]] | draft | medium | licensing, feasibility |
+| [[competitive/build-vs-adapt\|Build vs Adapt]] | draft | medium | decision-input, slice-1 |
 
 _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart (XBOW or NodeZero)._
 
@@ -67,8 +69,9 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[decisions/README\|ADR Format & Index]] | active | high | meta, process |
+| [[decisions/ADR-001-slice-1-scope\|ADR-001: Slice 1 scope]] | proposed | medium | slice-1, scope |
 
-_No ADRs yet. Most imminent: ADR-001 (slice 1 scope), ADR-004 (storage backend). Competitive research surfaced a likely ADR-009 (reconFTW: replace, augment, or integrate) for slice 2._
+_Most imminent next: ADR-004 (storage backend), ADR-008 (template language). ADR-009 (reconFTW: replace, augment, or integrate) blocks slice 2._
 
 ## Sessions
 
@@ -96,9 +99,10 @@ _Empty until an ADR activates it. Note: the existence of an `Org` entity in slic
 
 ## Recent activity
 
-- **2026-04-23 (competitive pass)** — Wrote [[competitive/defectdojo|DefectDojo]] and [[competitive/reconftw|reconFTW]] analyses. Surfaced several new open questions (data-model fourth layer, CSV escape-hatch ingest, `false-positive` as distinct status, reconFTW output as slice-1 input, slice-2 replace-vs-augment question). Open questions and indices updated. Verdict: slice 1 differentiation from DefectDojo is real but must be specific; slice 2 has a clear free competitor that needs an explicit positioning decision before work starts.
+- **2026-04-23 (ADR-001 proposed)** — First real ADR drafted: slice 1 scope is "Ingest & Report." Commits CSAK to the five starter tools, Org → Target → Finding data model, deterministic triage, on-demand invocation, two report kinds. Excludes tool execution, recursion, scheduling, streaming, LLM in triage/parsing. Awaiting Eli's review before `accepted`.
+- **2026-04-23 (competitive deep dive)** — Wrote [[competitive/defectdojo|DefectDojo]] and [[competitive/reconftw|reconFTW]] analyses, [[competitive/leverage-analysis|leverage analysis]] (license strategies per tool), and [[competitive/build-vs-adapt|build-vs-adapt]] (assuming permissive licenses, still recommend building the code ourselves and adapting data/content/config only). Surfaced new open questions.
 - **2026-04-23 (morning correction)** — Clarified that CSAK is primarily on-demand/real-time. Reports have time-window *structure* but invocation is not periodic. Scheduled report generation moved to slice 4+.
-- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity. Vision, scope, slices, users-and-jobs, slice-1 spec, competitive scaffold, and open-questions all updated.
+- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity.
 - **2026-04-22 (afternoon)** — First working session. CSAK reframed from "downstream triager" to "orchestrator and triager." Slice plan adopted. Five starter tools chosen: Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx.
 - **2026-04-21** — Initial scaffold.
 
