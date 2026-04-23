@@ -42,7 +42,7 @@ If any of those four fails, **write fresh and take inspiration from their design
 - Self-contained? Mostly. Each parser is a Python class in `dojo/tools/<toolname>/parser.py` with a defined interface (`get_findings(file, test)`). They do import from `dojo.models` for the Finding object, but the parsing logic itself is reasonably isolated.
 - Solves a hard problem? **Yes.** Every real scanner format has landmines — Nessus XML has malformed entity references in the wild, Nuclei's JSON structure has changed across versions, and so on. DefectDojo's parsers have absorbed ten years of those edge cases.
 - Quality bar? Variable. Some parsers are tight; others are first-draft-that-worked. All are reasonable Python.
-- Cheaper than rewriting? **Probably not worth a literal copy.** Their parsers return DefectDojo's `Finding` object; ours needs to return CSAK's `Finding` entity with the four-axis scoring shape (severity × confidence × target_weight × probability_real). The parsing *logic* transfers, but the output shape doesn't.
+- Cheaper than rewriting? **Probably not worth a literal copy.** Their parsers return DefectDojo's `Finding` object; ours needs to return CSAK's `Finding` entity with the three-axis scoring shape (severity × confidence × target_weight). The parsing *logic* transfers, but the output shape doesn't.
 - **Recommendation: study, don't copy.** Read each parser to understand the landmines. Write CSAK's own parser fresh. Where DefectDojo's parser has solved a subtle edge case (e.g. Nessus's optional `port` attribute, Nuclei's shifting field names), use that as a test case for CSAK's implementation. This is "inspiration" in the most concrete form — we get the decade of bug reports without inheriting the code.
 
 **Dedup engine.**
@@ -56,7 +56,7 @@ If any of those four fails, **write fresh and take inspiration from their design
 - Self-contained? Yes — these are essentially data, not code. The mapping from "Nessus Critical" to DefectDojo's unified scale is a small table.
 - Solves a hard problem? Modestly. The thinking is more valuable than the specific numbers.
 - Quality bar? Fine for what it is.
-- Cheaper than rewriting? These are small enough that copying the data isn't really "copying code." **It's reference data, and CSAK needs its own anyway** because we're adding the confidence, target_weight, and probability_real axes that DefectDojo doesn't have.
+- Cheaper than rewriting? These are small enough that copying the data isn't really "copying code." **It's reference data, and CSAK needs its own anyway** because we're adding confidence and target_weight as independent axes that DefectDojo doesn't have.
 - **Recommendation: use as a starting point for CSAK's own tables.** Cite DefectDojo as the source in the front matter of the triage-model spec.
 
 **Django web application (views, URLs, admin, UI).**
@@ -121,7 +121,7 @@ If any of those four fails, **write fresh and take inspiration from their design
 
 Specifically:
 
-1. **Write CSAK's code fresh.** Parsers, triage, dedup, reporting — all of it. The architectural win (clean four-layer data model, four-axis scoring, narrative reports, CLI-first, stateless report exports with a clean JSON seam for a future LLM layer) requires a code structure that neither DefectDojo nor reconFTW is shaped for. Forking either means fighting their architecture forever.
+1. **Write CSAK's code fresh.** Parsers, triage, dedup, reporting — all of it. The architectural win (clean four-layer data model, three-axis scoring, narrative reports, CLI-first, stateless report exports with a clean JSON seam for a future LLM layer) requires a code structure that neither DefectDojo nor reconFTW is shaped for. Forking either means fighting their architecture forever.
 
 2. **Adapt data and content with attribution.** DefectDojo's severity mapping tables and CWE remediation templates are content, not code. Use them as starting points for CSAK's equivalents, credit the source, and customize to match our voice and scoring model.
 
@@ -138,7 +138,7 @@ An alternative path — fork DefectDojo, rip out the Django shell, evolve it int
 - **The data model mismatch is fundamental.** DefectDojo is Product → Engagement → Test → Finding with Endpoints alongside. CSAK is Org → Target → Scan → Finding plus Artifact, with stateless (non-entity) reports. Reshaping DefectDojo to match would touch every file.
 - **The architectural thesis is inverted.** DefectDojo is a persistent server with scheduled ingests. CSAK is a CLI with on-demand runs. These aren't adjustments of the same system; they're different systems.
 - **Maintenance burden compounds.** Every DefectDojo release would force a rebase decision. We'd be maintaining two divergent codebases forever, or committing to tracking upstream.
-- **The parts that matter most are the parts we'd rewrite anyway.** Triage (because we're adding confidence, target_weight, and probability_real as independent axes), reports (because narrative fix-it tickets and stateless exports aren't DefectDojo's output shape), CLI (because DefectDojo doesn't have one), the JSON seam for a future LLM layer (because DefectDojo gates LLM behind Pro).
+- **The parts that matter most are the parts we'd rewrite anyway.** Triage (because we're adding confidence and target_weight as independent axes alongside severity), reports (because narrative fix-it tickets and stateless exports aren't DefectDojo's output shape), CLI (because DefectDojo doesn't have one), the JSON seam for a future LLM layer (because DefectDojo gates LLM behind Pro).
 
 The same reasoning applies to reconFTW — with the added problem that it's bash, which we've rejected as an implementation language.
 
