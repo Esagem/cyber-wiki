@@ -145,3 +145,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/build-vs-adapt.md | build-vs-adapt - fix three items - reconftw JSON ingest moved to slice 2, remove slice 1 LLM prototype claim, update CSAK data model description to four-layer
 
 ## [2026-04-23] write | specs/slice-1.md | slice 1 spec approved by Eli - flip status draft to active, confidence medium to high, update preamble
+
+## [2026-04-23] write | _index.md | index - slice 1 approved, spec status bumped to active high-confidence, add approval entry to recent activity
