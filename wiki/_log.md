@@ -111,3 +111,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | synthesis/open-questions.md | slice 1 is fully closed - move all resolved questions to Answered, remove slice-1 sections from active open list
 
 ## [2026-04-23] write | synthesis/lint-report.md | first lint pass on the wiki - catalogs stale content, planned but unwritten pages, status mismatches, dangling references from deleted decisions folder, and outdated vision/slices/scope claims after slice 1 finalization
+
+## [2026-04-23] write | product/vision.md | rewrite vision - four-layer data model, stateless reports, no LLM in slice 1, clear slice/product distinction
