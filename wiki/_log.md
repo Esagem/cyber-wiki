@@ -73,3 +73,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | decisions/ADR-001-slice-1-scope.md | first real ADR - slice 1 scope, proposed. Captures ingest+triage+report boundary, excludes orchestration/recursion/scheduling
 
 ## [2026-04-23] write | decisions/README.md | ADR-001 now exists as proposed; update index table and tweak forecast list
+
+## [2026-04-23] write | _index.md | note ADR-001 proposed in master index recent activity and decisions section
