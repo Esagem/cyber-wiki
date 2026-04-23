@@ -26,7 +26,7 @@ A lot. This is the closest existing analog to CSAK slice 1.
 
 - **Ingest from many scanner formats** — DefectDojo parses 200+ tools out of the box, including Nessus, Nuclei, and generic CSV. CSAK slice 1's 5 starter tools is a small subset of what DefectDojo already handles.
 - **Deduplication across tools and across runs** — DefectDojo has a mature dedup engine. Same idea as what slice 1 is proposing.
-- **Finding lifecycle tracking** — active, accepted-risk, false-positive, duplicate. Essentially identical to CSAK's proposed Finding statuses.
+- **Finding lifecycle tracking** — active, accepted-risk, false-positive, duplicate. Essentially identical to CSAK's Finding statuses.
 - **Severity normalization across tools** — DefectDojo maps each tool's severity scale onto a unified scale (critical/high/medium/low/info). Same shape as CSAK's per-tool translation tables.
 - **Reporting** — DefectDojo generates PDF and AsciiDoc reports per product/engagement/test, with remediation templates keyed on CWE. Broadly the same deliverable shape as CSAK's internal review.
 - **Engagement concept** — DefectDojo has a first-class "Engagement" entity that scopes a set of tests over a period for a product. This is close to what CSAK is using (org, time window) to frame reports, just structured slightly differently.
@@ -39,13 +39,14 @@ A lot. This is the closest existing analog to CSAK slice 1.
 - **Bi-directional Jira/ticketing integration.** DefectDojo syncs findings to and from Jira. CSAK slice 1 emits markdown; anything bidirectional is a slice 4+ concern if ever.
 - **CI/CD pipeline integration as a core feature.** DefectDojo is designed to sit in a DevSecOps pipeline and ingest on every build. CSAK is designed to sit on an analyst's laptop and run when they want output.
 - **Be the multi-tenant system of record.** DefectDojo is a server you deploy once for an org. CSAK is a tool an analyst runs per-engagement or per-org as needed.
+- **Persist reports as database entities.** DefectDojo stores reports and report metadata in its database. CSAK does not — reports are stateless exports to disk.
 
 ## Strengths to learn from
 
-- **Universal parser for custom CSV input.** DefectDojo accepts generic CSV findings when a tool isn't natively supported. Worth copying for CSAK — the escape hatch matters when an analyst has a weird input CSAK doesn't know.
-- **Finding templates keyed on CWE.** Write the remediation advice once, attach it everywhere that CWE appears. CSAK fix-it tickets should almost certainly do this.
-- **Explicit status lifecycle with typed values** (active / false positive / out of scope / risk accepted / mitigated). CSAK's current proposal (`active / suppressed / accepted-risk / fixed`) is similar but probably needs `false-positive` as a distinct status from `suppressed`.
-- **Products → Engagements → Tests → Findings** is a four-layer hierarchy. CSAK's three-layer (Org → Target → Finding) is simpler but loses the explicit "this was the April scan" grouping that a Test entity would provide. Worth reconsidering: does CSAK need a fourth layer, or is the Report entity sufficient?
+- **Universal parser for custom CSV input.** DefectDojo accepts generic CSV findings when a tool isn't natively supported. Worth copying eventually, though slice 1 deliberately defers it to keep the parser scope tight.
+- **Finding templates keyed on CWE.** Write the remediation advice once, attach it everywhere that CWE appears. CSAK's slice 1 fix-it tickets use this pattern, adapted from DefectDojo's template library with attribution.
+- **Explicit status lifecycle with typed values** (active / false positive / out of scope / risk accepted / mitigated). CSAK adopted `false-positive` as a distinct status from `suppressed` after studying DefectDojo's approach.
+- **Products → Engagements → Tests → Findings** is a four-layer hierarchy. CSAK's data model is also four-layer (Org → Target → Scan → Finding) with slightly different semantics: the Scan layer bridges Artifact (bytes) and Finding (observation), while DefectDojo's Test layer bundles findings into an Engagement. Different shapes, same underlying insight that a third grouping layer between asset and finding is load-bearing.
 - **Dashboards and metrics are first-class.** CSAK slice 1 doesn't have this and shouldn't add it, but worth knowing that a sophisticated user of DefectDojo gets real-time visualizations out of the box.
 
 ## Weaknesses / gaps
@@ -54,7 +55,7 @@ A lot. This is the closest existing analog to CSAK slice 1.
 - **Best for orgs with "hundreds of vulnerabilities ingested from various sources."** DevSec Blog notes explicitly that DefectDojo is overkill for smaller orgs — too much process, too many features, too much clicking. This is a real opening for CSAK.
 - **The UI dominates the product.** Both a strength and a weakness — the UI is the interaction model. Users who live in terminals, SSH sessions, or scripts find it awkward. CSAK's analyst persona is terminal-native.
 - **Reports are tool-output-shaped, not narrative-shaped.** DefectDojo reports group findings by scanner and by severity, which is correct for vuln management but clinical for client-facing deliverables. CSAK's fix-it ticket bundles are attempting to be narrative — plain language impact, reproduction, remediation — which DefectDojo doesn't natively do well.
-- **LLM is behind the Pro paywall.** DefectDojo Pro mentions "AI-assisted data enrichment." The open-source edition does not have LLM features. CSAK being able to use LLMs for plain-language impact drafting in the open edition is a real differentiator.
+- **LLM is behind the Pro paywall.** DefectDojo Pro mentions "AI-assisted data enrichment." The open-source edition does not have LLM features. CSAK's slice 1 ships with a clean JSON export specifically designed as the interface for a future LLM layer; an open-edition LLM capability is a real differentiator.
 
 ## Pricing / licensing model
 
@@ -70,19 +71,21 @@ DefectDojo is a **real competitor for slice 1's core value proposition** — mul
 1. **Zero-deployment CLI.** DefectDojo needs infrastructure. CSAK runs on a laptop.
 2. **On-demand, real-time invocation pattern.** DefectDojo is designed for a persistent server with scheduled ingests; CSAK is designed for "I need this now, while I'm working."
 3. **Narrative, client-facing fix-it tickets.** DefectDojo's reports are tool-output-grouped; CSAK's fix-it ticket bundles are meant to be forwarded as-is to a client's dev team.
-4. **LLM use in open source.** DefectDojo gates AI features behind Pro; CSAK uses LLMs (carefully, case-by-case) in the free version.
+4. **Stateless reports with a clean JSON export for future LLM use.** DefectDojo persists reports and gates LLM features; CSAK emits pure exports and ships a JSON format designed for a later LLM layer to consume.
 
 **What might sink CSAK slice 1's positioning if we don't address it:**
 
 1. **"Why not just use DefectDojo?"** is a legitimate question a sophisticated analyst will ask. The answer has to be specific and defensible, not hand-wavy. The "zero-deployment CLI" answer is strong; the "better reports" answer needs real evidence.
 2. **DefectDojo's dedup and lifecycle management is a decade old and battle-tested.** CSAK's equivalent in slice 1 will be new code. We should expect rough edges that DefectDojo has already smoothed out.
 
-**Design changes this research suggests:**
+## How this research influenced the slice 1 spec
 
-- **Add `false-positive` as a distinct status** from `suppressed` in the Finding data model. DefectDojo treats these differently and they are different things.
-- **Add a generic-CSV input path** to slice 1 as an escape hatch for tools outside the starter set. Low-effort, high-value.
-- **Revisit whether CSAK needs a fourth data-model layer** (something like a "Scan" or "Run" or "Test") between Target and Finding. DefectDojo's four-layer model has more explicit grouping for "this was the April Nessus scan, these are its findings." CSAK currently leans on artifact+findings linkage to approximate this. Worth testing during slice 1 implementation.
-- **Templates for remediation advice keyed on CWE or CVE** — should be a slice 1 or early slice 2 concern. DefectDojo shows this is real analyst value.
+Four questions were surfaced by this analysis. All resolved in [[specs/slice-1|slice 1 spec]]:
+
+- **Fourth data-model layer?** Yes — added the Scan entity (between Artifact and Finding) with a FindingScanOccurrence junction. Different shape from DefectDojo's Engagement/Test but same underlying insight.
+- **`false-positive` as a distinct status from `suppressed`?** Yes. Adopted into slice 1.
+- **Generic-CSV escape-hatch ingest?** Deferred out of slice 1. The parser architecture is plugin-shaped so it can be added without core surgery; slice 1 stays scoped to the five committed formats.
+- **CWE-keyed remediation templates for fix-it tickets?** Yes, in slice 1. Content adapted from DefectDojo's templates with attribution (per [[competitive/build-vs-adapt|build-vs-adapt]]).
 
 ## Notes
 
@@ -93,6 +96,8 @@ Both projects being open source means this isn't zero-sum — CSAK could be a co
 ## Related
 
 - [[competitive/README|Competitive Analysis Index]]
+- [[competitive/build-vs-adapt|Build vs Adapt]]
+- [[competitive/leverage-analysis|Leverage Analysis]]
 - [[product/vision|Vision]]
 - [[specs/slice-1|Slice 1 Spec]]
-- [[synthesis/open-questions|Open Questions]] — several new items from this analysis
+- [[synthesis/open-questions|Open Questions]]
