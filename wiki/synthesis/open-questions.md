@@ -26,7 +26,7 @@ Questions are grouped by what they affect. When a question gets resolved, move i
 
 ## Slice 1 — status
 
-Closed. Every design question identified for slice 1 has been resolved in the [[specs/slice-1|slice 1 spec]] and the resolutions are recorded in the Answered section below. The spec remains `draft` pending Eli's final review; then `active`.
+Closed. Every design question identified for slice 1 has been resolved in the [[specs/slice-1|slice 1 spec]] (now `active`) and the resolutions are recorded in the Answered section below.
 
 ## Slice 2 (preview)
 
@@ -80,7 +80,7 @@ Closed. Every design question identified for slice 1 has been resolved in the [[
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
 | Cadence for collaborative working sessions? | shared | open | First session held 2026-04-22; cadence TBD. |
-| When do we leave pre-design and start implementation? Trigger condition? | shared | open | Proposed: slice 1 spec moves `draft` → `active` after Eli's sign-off review. |
+| When do we leave pre-design and start implementation? Trigger condition? | shared | answered | Slice 1 spec is `active` as of 2026-04-23. Architecture overview written. Pre-design is complete; implementation can start whenever. |
 
 ---
 
@@ -97,7 +97,7 @@ All resolutions land in the [[specs/slice-1|slice 1 spec]]. Dates are when the r
 | What's the v0 scope — how much of "ingest → triage → report" do we build before shipping anything? | 2026-04-22 | All of "ingest → triage → report" in slice 1. Tool execution moves to slice 2; recursion to slice 3. |
 | Plugin protocol — stdout JSON, Python entry point, WASM, HTTP microservice? | 2026-04-22 | Deferred to slice 2. Irrelevant in slice 1. |
 | Are we responsible for the scan, or only for consuming scan output? | 2026-04-22 | Slice 1: only consuming. Slice 2: also responsible. |
-| Is "importance" the same as severity? | 2026-04-22 | No. Severity, confidence, target weight, and probability_real are independent. Priority is derived. |
+| Is "importance" the same as severity? | 2026-04-22 | No. Severity, confidence, and target_weight are independent axes; priority is derived from them. |
 | Where do previously-seen findings get remembered? | 2026-04-22 | In CSAK's own storage, scoped to the Org. |
 | Where does the LLM live — optional enhancer, core dependency, configurable per-step? | 2026-04-23 | **Not in slice 1 at all.** Slice 1 is deterministic end-to-end. A later slice can layer LLM features over slice 1's structured outputs (specifically the JSON export), which is why slice 1 commits to a clean, stable JSON export shape. |
 | Local-first or service-first? | 2026-04-22 | Local-first (CLI on the analyst's machine) for slices 1 and 2. |
@@ -114,7 +114,7 @@ All resolutions land in the [[specs/slice-1|slice 1 spec]]. Dates are when the r
 | Export formats? | 2026-04-23 | Markdown, docx, and JSON. JSON is first-class (for future LLM and automation consumers), not a debug option. Other formats deferred. [[specs/slice-1\|slice 1 spec §Export formats]]. |
 | Docx rendering — pandoc or python-docx? | 2026-04-23 | python-docx. Toolchain stays Python-only. [[specs/slice-1\|slice 1 spec §Renderer implementation notes]]. |
 | File overwriting behavior for repeat report generation? | 2026-04-23 | No overwriting. Timestamp-prefixed filenames; invocations accumulate. [[specs/slice-1\|slice 1 spec §Output layout]]. |
-| `probability_real` as a separate analyst-assigned axis? | 2026-04-23 | Yes. Float 0.0–1.0, default 1.0. Fourth factor in priority. [[specs/slice-1\|slice 1 spec §Scoring]]. |
+| `probability_real` as a separate analyst-assigned axis? | 2026-04-23 | **Removed.** Initially added as a fourth scoring axis, then removed on Eli's direction. Slice 1 handles false-positive doubt via `status = false-positive` only — the analyst commits to the call or doesn't; slice 1 doesn't offer a fractional downweight. Priority is three axes: severity × confidence × target_weight. |
 | Auto-retriage when scoring rules change? | 2026-04-23 | No retriage in slice 1 at all. Scores are write-once at ingest. To get fresh scores after editing tables, analyst re-ingests the source artifact; comparison is manual. [[specs/slice-1\|slice 1 spec §Scoring]]. |
 | 5-point severity scale + null, or 6-point with explicit unknown? | 2026-04-23 | 5-point + null. |
 | How do scoring tables get versioned and surfaced in reports? | 2026-04-23 | Per-tool YAML files under `config/triage/severity/`. The specific versioning mechanism (manifest rollup vs. per-tool version on Finding) is an implementation detail settled during build; scoring is write-once at ingest so version-drift doesn't affect stored scores. |
