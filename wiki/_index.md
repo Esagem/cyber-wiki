@@ -14,7 +14,7 @@ updated: 2026-04-23
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: pre-design, actively converging.** Slice 1 spec drafted 2026-04-22. First competitive pass 2026-04-23 (DefectDojo + reconFTW, leverage analysis, build-vs-adapt). See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
+**Phase: pre-design, slice 1 design finalized 2026-04-23.** Spec stays `draft` pending Eli's sign-off review; flips to `active` after. See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
 
 ---
 
@@ -26,7 +26,7 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 | [[product/scope\|Scope]] | draft | medium | in-scope, out-of-scope, slices |
 | [[product/slices\|Slice Plan]] | draft | medium | slices, roadmap |
 | [[product/users-and-jobs\|Users & Jobs]] | draft | low | personas, jobs-to-be-done |
-| [[product/glossary\|Glossary]] | seed | low | vocabulary, definitions |
+| [[product/glossary\|Glossary]] | draft | medium | vocabulary, definitions |
 
 ## Architecture
 
@@ -39,7 +39,7 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
-| [[specs/slice-1\|Slice 1 — Ingest & Report]] | draft | medium | slice-1, ingest, triage, report |
+| [[specs/slice-1\|Slice 1 — Ingest & Report]] | draft (finalized pending review) | medium | slice-1, ingest, triage, report |
 | [[specs/ingestion-model\|Ingestion Model]] | **planned** | — | ingestors, adapters, sources |
 | [[specs/triage-model\|Triage Model]] | **planned** | — | severity, confidence, importance |
 | [[specs/report-formats\|Report Formats]] | **planned** | — | internal-reviews, fix-it-tickets |
@@ -75,8 +75,8 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[synthesis/open-questions\|Open Questions]] | active | medium | questions, unknowns |
-| [[synthesis/roadmap\|Roadmap]] | seed | low | sequencing, priorities |
-| [[synthesis/lint-report\|Lint Report]] | **planned** | — | maintenance |
+| [[synthesis/roadmap\|Roadmap]] | draft | medium | sequencing, priorities |
+| [[synthesis/lint-report\|Lint Report]] | active | high | maintenance |
 
 ## Reserved
 
@@ -90,10 +90,12 @@ _Empty until we choose to activate it. Note: the existence of an `Org` entity in
 
 ## Recent activity
 
+- **2026-04-23 (lint pass + fixes)** — First [[synthesis/lint-report|lint report]] after slice 1 finalization. Catalogued stale references, fixed the product pages (vision, scope, slices, users-and-jobs, glossary) to match the finalized spec, updated DefectDojo and leverage-analysis for the deferred foreign-JSON ingest and the resolved fourth-layer question, and cleaned up ADR-009 references.
+- **2026-04-23 (slice 1 finalized)** — All open design questions for slice 1 resolved in [[specs/slice-1|the spec]]. Key decisions: four-layer data model (Org → Target → Scan → Finding + Artifact), no Report entity (reports are stateless pipeline exports, timestamp-prefixed files accumulate on disk), `probability_real` added as the fourth scoring axis (analyst-assigned, separate from confidence), scoring is write-once at ingest (no retriage in slice 1), markdown/docx/JSON all first-class exports (python-docx for docx, no pandoc), no LLM use inside slice 1 (JSON export designed as the interface for a future LLM layer), folder-aware Zeek ingest, no generic-CSV or reconFTW JSON ingest in slice 1 (deferred, parser architecture supports adding them).
 - **2026-04-23 (ADR scaffolding removed)** — Deleted `decisions/` folder. Rationale for every significant choice now lives inline in the section of the design document that makes the choice. Schema in [[CYBER|CYBER.md]] updated; specs and scope page updated with inline rationale.
 - **2026-04-23 (competitive deep dive)** — Wrote [[competitive/defectdojo|DefectDojo]] and [[competitive/reconftw|reconFTW]] analyses, [[competitive/leverage-analysis|leverage analysis]] (license strategies per tool), and [[competitive/build-vs-adapt|build-vs-adapt]] (assuming permissive licenses, still recommend building the code ourselves and adapting data/content/config only).
 - **2026-04-23 (morning correction)** — Clarified that CSAK is primarily on-demand/real-time. Reports have time-window *structure* but invocation is not periodic. Scheduled report generation moved to slice 4+.
-- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to three-layer (Org → Target → Finding) with a separate Report entity.
+- **2026-04-22 (evening rewrites)** — Late-evening clarification: reports are org+time-period scoped. Data model expanded from target-centric to a hierarchical model (subsequently refined to four-layer + Artifact on 2026-04-23).
 - **2026-04-22 (afternoon)** — First working session. CSAK reframed from "downstream triager" to "orchestrator and triager." Slice plan adopted. Five starter tools chosen: Nuclei, Nessus Essentials, Zeek, osquery, Subfinder+httpx.
 - **2026-04-21** — Initial scaffold.
 
