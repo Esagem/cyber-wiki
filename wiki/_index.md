@@ -14,7 +14,7 @@ updated: 2026-04-23
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: pre-design, slice 1 design finalized 2026-04-23.** Spec stays `draft` pending Eli's sign-off review; flips to `active` after. See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
+**Phase: pre-design wrapping up.** Slice 1 spec approved 2026-04-23 and is now `active`. The remaining pre-implementation task is an architecture overview page. See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
 
 ---
 
@@ -39,7 +39,7 @@ The collaborative design space for building the **Cybersecurity Swiss Army Knife
 
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
-| [[specs/slice-1\|Slice 1 — Ingest & Report]] | draft (finalized pending review) | medium | slice-1, ingest, triage, report |
+| [[specs/slice-1\|Slice 1 — Ingest & Report]] | **active** | high | slice-1, ingest, triage, report |
 | [[specs/ingestion-model\|Ingestion Model]] | **planned** | — | ingestors, adapters, sources |
 | [[specs/triage-model\|Triage Model]] | **planned** | — | severity, confidence, importance |
 | [[specs/report-formats\|Report Formats]] | **planned** | — | internal-reviews, fix-it-tickets |
@@ -90,6 +90,8 @@ _Empty until we choose to activate it. Note: the existence of an `Org` entity in
 
 ## Recent activity
 
+- **2026-04-23 (slice 1 approved)** — Eli signed off on the finalized [[specs/slice-1|slice 1 spec]]. Status flipped `draft` → `active`; confidence bumped medium → high. This is now the authoritative spec for slice 1 implementation. Remaining pre-implementation work: [[architecture/overview|architecture overview]] page.
+- **2026-04-23 (second lint pass)** — Caught three remaining stale references in the competitive cluster (reconftw "Design changes" section, competitive/README item 3, build-vs-adapt's reconftw_ai recommendation). All fixed. Wiki is now internally consistent with the finalized spec.
 - **2026-04-23 (lint pass + fixes)** — First [[synthesis/lint-report|lint report]] after slice 1 finalization. Catalogued stale references, fixed the product pages (vision, scope, slices, users-and-jobs, glossary) to match the finalized spec, updated DefectDojo and leverage-analysis for the deferred foreign-JSON ingest and the resolved fourth-layer question, and cleaned up ADR-009 references.
 - **2026-04-23 (slice 1 finalized)** — All open design questions for slice 1 resolved in [[specs/slice-1|the spec]]. Key decisions: four-layer data model (Org → Target → Scan → Finding + Artifact), no Report entity (reports are stateless pipeline exports, timestamp-prefixed files accumulate on disk), `probability_real` added as the fourth scoring axis (analyst-assigned, separate from confidence), scoring is write-once at ingest (no retriage in slice 1), markdown/docx/JSON all first-class exports (python-docx for docx, no pandoc), no LLM use inside slice 1 (JSON export designed as the interface for a future LLM layer), folder-aware Zeek ingest, no generic-CSV or reconFTW JSON ingest in slice 1 (deferred, parser architecture supports adding them).
 - **2026-04-23 (ADR scaffolding removed)** — Deleted `decisions/` folder. Rationale for every significant choice now lives inline in the section of the design document that makes the choice. Schema in [[CYBER|CYBER.md]] updated; specs and scope page updated with inline rationale.
