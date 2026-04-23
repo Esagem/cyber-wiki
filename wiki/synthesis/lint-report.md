@@ -15,7 +15,124 @@ updated: 2026-04-23
 
 ---
 
-## 2026-04-23 — first pass after slice 1 finalization
+## 2026-04-23 (second pass) — after first fix cycle
+
+Triggered by: explicit "lint the wiki one more time" request after the first pass's 10 fixes landed.
+
+### Summary
+
+The first pass caught most of the drift. This pass catches what the first pass missed or didn't touch: two more pages still claim slice 1 ingests reconFTW/DefectDojo JSON (the leverage-analysis page was fixed, but the competitive index and the reconFTW page both still repeat the old claim), one internal inconsistency in `CYBER.md` about where `ONBOARDING.md` lives, and one low-severity cosmetic note about the index's status labeling for the slice 1 spec.
+
+Severity scale unchanged from first pass: **critical** (misleads readers about finalized decisions), **high** (contradicts finalized decisions or points at deleted content), **medium** (stale but not contradictory), **low** (cosmetic).
+
+### High
+
+**H2-1. `competitive/README.md` still says slice 1 ingests both reconFTW and DefectDojo JSON.**
+- Index row for `leverage-analysis`: "Bottom line: ingest both tools' output formats in slice 1..."
+- "Key takeaways so far" point 3: "Cross-slice opportunity. CSAK can accept both DefectDojo JSON exports and reconFTW `report/report.json` as slice 1 ingest formats."
+- Reality per [[specs/slice-1|slice 1 spec]] and the already-fixed [[competitive/leverage-analysis|leverage-analysis]]: both deferred out of slice 1. Slice 2 or later.
+- The competitive index is the first page a reader hits when browsing the competitive folder; keeping this claim out of date is higher-impact than hiding it in a tool-specific page.
+- Fix: update the index row and point 3 to reflect the deferred status.
+
+**H2-2. `competitive/reconftw.md` "Design changes this research suggests" section still recommends slice 1 ingest of `report/report.json`.**
+- First bullet: "**Add reconFTW's `report/report.json` as a potential slice 1 ingest format.** Either in the initial 5 or as a stretch goal."
+- Reality: deferred out of slice 1 (same reasoning as DefectDojo JSON — slice 1 commits to the five chosen formats, plugin architecture makes it easy to add later).
+- This is the mirror image of the fix already applied to `competitive/defectdojo.md` (where "Design changes this research suggests" was rewritten as "How this research influenced the spec"). reconFTW needs the same treatment.
+- Fix: rewrite the section to reflect that the suggestion was considered and explicitly deferred, not accepted. Keep the other bullets (Quick Rescan, adaptive rate limiting, replacement-vs-augmentation question) since they're slice 2+ and still open.
+
+### Medium
+
+**M2-1. `CYBER.md` has contradictory information about where `ONBOARDING.md` lives.**
+- §3 directory layout shows `ONBOARDING.md` *inside* the `wiki/` tree, next to `CYBER.md` and `_index.md`.
+- §9 "Important" note says: "Files at the repo root (e.g. `ONBOARDING.md` at the top level) are not reachable through the MCP tools."
+- These two sections describe two different file locations. Only one can be correct.
+- I don't know which is actually correct without filesystem access Eli has and I don't; this is a flag for Eli to resolve by checking where the file actually is and updating whichever section is wrong.
+- Fix: Eli confirms the real location, then one of the two sections gets updated.
+
+**M2-2. `_index.md` shows the slice 1 spec status as `draft (finalized pending review)` — a non-standard status string.**
+- The CYBER.md status lifecycle (§4) defines these values: `seed | draft | active | mature | planned | retired | superseded`. "draft (finalized pending review)" is narrative, not a formal status.
+- On its own this is fine — it's clearer than bare `draft` would be — but it sets a precedent for ad-hoc status strings that's worth being deliberate about.
+- Options: (a) leave it alone (it's informative and only appears once), (b) revert to bare `draft` and rely on the index's "Phase" heading and the spec's own header to communicate the finalization state, (c) add a documented convention in CYBER.md for parenthetical qualifiers on status.
+- No fix applied. Noted for Eli to decide during the pending sign-off review.
+
+**M2-3. `competitive/README.md` "Key takeaways so far" paragraph on the reconFTW license ambiguity refers to it as an open item without pointing at any next action.**
+- The leverage-analysis page and the reconFTW page both correctly flag the ambiguity and propose "open a GitHub issue." The 2026-04-22 session notes (updated 2026-04-23) list it under "Real outstanding work now." But the competitive index treats it as a static note.
+- Low priority — the action item exists in other pages. But the competitive index being the first read makes this worth tightening.
+- Fix: optional. Could tighten the point 6 wording to mention the action item. Not structural.
+
+### Low
+
+**L2-1. `_log.md` has grown to ~50+ entries without a rollup or summary.**
+- Append-only log is working as designed, but pre-design phase has produced enough entries that scanning for "what's happened lately" requires reading the full log.
+- A future convention might be a monthly summary header. Not a fix-this-lint-pass item; noted for the future.
+- No fix.
+
+**L2-2. `engagements-RESERVED/README.md` is `status: seed` with `confidence: high`.**
+- The combination is unusual — `high` confidence usually implies substantive content. This page is a placeholder with high confidence *in the decision to leave it as a placeholder*, which is legitimate, but the status/confidence combo is worth noting.
+- No fix — the current labeling is defensible.
+
+**L2-3. Link target `[[competitive|competitive/]]` in `research/README.md`.**
+- The link target is a folder, not a page, and uses a pipe-syntax wikilink. Obsidian may or may not render this correctly depending on settings. Most other cross-folder references go to `<folder>/README.md` directly.
+- Fix: change to `[[competitive/README|competitive/]]` for consistency.
+
+### Items verified and still current
+
+Double-checked the fixes from the first pass — all still apply correctly:
+- `product/vision.md` — four-layer model, no LLM, stateless reports. ✓
+- `product/scope.md` — points at spec, no LLM in slice 1, all three formats named. ✓
+- `product/slices.md` — markdown + docx + JSON, LLM is future slice. ✓
+- `product/users-and-jobs.md` — FAANG bullet fixed, reconFTW pointer added. ✓
+- `product/glossary.md` — Scan/FindingScanOccurrence/probability_real added, Engagement and Playbook marked future. ✓
+- `competitive/defectdojo.md` — "How this research influenced the spec" section with four resolved questions. ✓
+- `competitive/leverage-analysis.md` — ADR-009 removed, foreign-JSON deferred, four-axis triage. ✓
+- `_index.md` — Recent Activity includes slice 1 finalization and first lint pass. ✓
+- `synthesis/roadmap.md` — phase 1 items checked off, status bumped to draft. ✓
+- `sessions/2026-04-22-slice-1-kickoff.md` — 2026-04-23 update block appended. ✓
+- `research/README.md` — "papers" typo fixed. ✓
+
+### Items noted in first pass that are not yet done
+
+Still open (correctly — these were not in the fix list):
+
+- Eli's sign-off review of slice 1 spec, flipping `draft` → `active`.
+- `architecture/overview.md` — still `planned`. High priority before build starts.
+- `architecture/data-flow.md` — still `planned`. Medium priority.
+- `specs/ingestion-model.md`, `specs/triage-model.md`, `specs/report-formats.md` — still `planned`. Low priority; slice 1 spec covers them inline.
+- More competitive pages (Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart).
+- Canva pitch deck slides 4 and 8 (external to the wiki).
+- GitHub issue on reconFTW license ambiguity.
+
+### What I checked this pass
+
+- Every page in the wiki (20 pages) was opened and scanned, with particular attention to the ones not directly rewritten in the first pass.
+- All references to "slice 1 ingest" outside of the spec itself and the already-fixed leverage-analysis page, looking for stale "include reconFTW or DefectDojo JSON" claims.
+- `CYBER.md` schema statements cross-checked against the actual wiki state (tool count, folder layout, status lifecycle).
+- Every page's `status` and `confidence` front matter against content maturity.
+- Every "Related" section for broken or inconsistent links.
+
+### Proposed action plan — this pass
+
+Two real fixes plus one optional tighten:
+
+1. **Rewrite the reconFTW "Design changes this research suggests" section** (H2-2). Same treatment as DefectDojo got.
+2. **Fix the competitive/README.md claims about slice 1 foreign-JSON ingest** (H2-1). Update the index row and point 3 of the "Key takeaways."
+3. *(Optional)* Clean up the cross-folder wikilink in `research/README.md` (L2-3).
+
+For Eli to resolve (not something I can fix):
+
+- Confirm where `ONBOARDING.md` actually lives and update either CYBER.md §3 or §9 (M2-1).
+- Decide on the status-label convention for the slice 1 spec (M2-2).
+
+## Related
+
+- [[_index|Master Index]]
+- [[CYBER|CYBER.md §5.4 — Lint]]
+- [[specs/slice-1|Slice 1 Spec]]
+- [[synthesis/open-questions|Open Questions]]
+
+---
+
+## 2026-04-23 (first pass) — after slice 1 finalization
 
 Triggered by: "lint the wiki" request after slice 1 spec was finalized and the ADR scaffolding was deleted.
 
