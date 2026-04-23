@@ -75,3 +75,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | decisions/README.md | ADR-001 now exists as proposed; update index table and tweak forecast list
 
 ## [2026-04-23] write | _index.md | note ADR-001 proposed in master index recent activity and decisions section
+
+## [2026-04-23] write | decisions/ADR-001-slice-1-scope.md | slim ADR-001 to decision+rationale only; point at spec for implementation detail
