@@ -27,7 +27,7 @@ updated: 2026-04-23
 
 **Scan** — one semantic tool execution that produced findings. "The April Nessus scan" or "yesterday's Nuclei sweep." A Scan can span multiple Artifacts (a single Zeek scan includes conn.log, dns.log, and so on), and one Artifact can participate in multiple Scans (re-ingesting the same bytes creates a new Scan event).
 
-**Finding** — a single observation, deduplicated per `(org, source_tool, tool-specific dedup key)`. Attached to a Target. Has severity, confidence, target_weight, and probability_real. Has a status: `active | suppressed | accepted-risk | false-positive | fixed`.
+**Finding** — a single observation, deduplicated per `(org, source_tool, tool-specific dedup key)`. Attached to a Target. Has severity, confidence, and target_weight. Has a status: `active | suppressed | accepted-risk | false-positive | fixed`.
 
 **FindingScanOccurrence** — the junction recording every Scan a given Finding has appeared in. The Finding is deduplicated; its history across Scans is preserved here.
 
@@ -39,11 +39,11 @@ updated: 2026-04-23
 
 **`target_weight`** — float on the Target row, default 1.0. Analyst-assigned. Lets the analyst express "public-facing infra matters more than staging."
 
-**`probability_real`** — float 0.0–1.0 on the Finding, default 1.0. Analyst-assigned. Lets the analyst express "probably a false positive but not ready to commit to `status = false-positive`." Distinct from `confidence` because they come from different sources and change for different reasons.
-
-**Priority** — derived at ingest time: `priority = severity_weight × confidence_weight × target_weight × probability_real`. Stored on the Finding row. Re-computed only when an analyst mutates one of the axes (or changes a Target's weight). Editing scoring-table files does not retroactively re-score existing Findings in slice 1.
+**Priority** — derived at ingest time: `priority = severity_weight × confidence_weight × target_weight`. Stored on the Finding row. Re-computed only when an analyst mutates status or a Target's `target_weight` changes. Editing scoring-table files does not retroactively re-score existing Findings in slice 1.
 
 **Dedup key** — the tool-specific key CSAK uses to decide whether two findings are the same. Nuclei: `template-id + matched-at`. Nessus: `plugin_id + host + port`. Zeek: event-type dependent. osquery: query name + row hash. Subfinder: subdomain. httpx: URL.
+
+**Status** — the analyst's disposition of a Finding: `active | suppressed | accepted-risk | false-positive | fixed`. Analysts set `false-positive` when they're certain the Finding isn't real; partial doubt is not expressed via a score modifier in slice 1.
 
 ## Deliverables
 
