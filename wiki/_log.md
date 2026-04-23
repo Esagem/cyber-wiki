@@ -115,3 +115,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/vision.md | rewrite vision - four-layer data model, stateless reports, no LLM in slice 1, clear slice/product distinction
 
 ## [2026-04-23] write | product/scope.md | scope rewritten to match finalized slice 1 - four-layer model, no LLM, stateless reports, points at spec for authoritative list
+
+## [2026-04-23] write | product/slices.md | tighten slice plan to match finalized slice 1 - reports per org+period, mention docx/JSON, note LLM is future slice
