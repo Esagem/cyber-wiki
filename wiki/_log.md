@@ -123,3 +123,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/defectdojo.md | update DefectDojo design-changes section - all four suggestions were resolved in slice 1 spec (fourth layer yes, false-positive yes, CSV deferred, CWE templates yes, three-layer reference removed)
 
 ## [2026-04-23] write | product/users-and-jobs.md | users-and-jobs updates - fix periodic-report-shape anti-persona bullet, add reconFTW note on slice 2 orchestration
+
+## [2026-04-23] write | product/glossary.md | glossary rewritten for slice 1 vocabulary - add Scan and FindingScanOccurrence, formalize Artifact, remove ADR-needing language, mark Engagement/Playbook as future
