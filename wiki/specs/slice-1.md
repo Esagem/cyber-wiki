@@ -59,6 +59,8 @@ Each tool produces output in a specific format. Slice 1 must parse all five.
 | **osquery** | Host telemetry | JSON (query results) | Clean JSON. Covers host state (processes, users, files, configs). |
 | **Subfinder + httpx** (ProjectDiscovery) | External attack surface | JSON (both tools output JSON) | Attack-surface discovery: domain → subdomains → live hosts. OSINT slice. |
 
+**Rationale.** Five was chosen over "fewer" because we wanted each of the three surfaces CSAK cares about (web vulns, host telemetry, network telemetry) represented, plus the attack-surface slice for offensive engagements and Nessus as the industry-baseline escape hatch. Five over "more" because more tools means more parsers, more triage tables, more edge cases — and the whole point of slice 1 is to validate the model end to end, not to chase coverage.
+
 **Deliberately excluded from slice 1:**
 
 - Exploit/attack frameworks (Metasploit, Burp, ZAP) — they produce session artifacts, not findings.
@@ -131,6 +133,7 @@ Report  (a time-bounded snapshot deliverable)
 
 - **Org as top-level container**, not Target. The user's reports are organized by org and by date — "acmecorp April update," "acmecorp May update," "acmecorp right now." That's the unit of deliverable, so it's the unit of organization. Targets exist beneath orgs because one org has many assets to investigate.
 - **Target is the middle layer** because tools produce findings against assets (a domain, an IP, a host), not against organizations. The org is the human-meaningful container; the target is the technical container.
+- **Three layers, not four.** DefectDojo uses a four-layer model (Product → Engagement → Test → Finding) where "Test" groups findings from a specific scan run. CSAK uses the Artifact entity for that grouping instead. The Artifact is the immutable raw input; which findings came from which scan is recoverable via `finding.source_artifact_id`. We picked this because the Engagement/Test distinction mostly matters when a persistent server is scheduling ingests on a cadence — and CSAK is not that. If implementation surfaces real pain from the missing layer, we revisit.
 - **Artifact table exists** because the same raw output might produce findings multiple times (re-triaging a past Nessus file against updated rules, for example). The artifact is the immutable input; findings are derived.
 - **Report is a separate entity** because a report is a *snapshot*. Findings are mutable (status changes, new occurrences seen); a report is the frozen view of an org's state during a window. This is what makes "regenerate the April report" different from "re-run triage." It's also what lets an analyst generate "today's state of acmecorp" right now without committing to a monthly cadence.
 - **Severity and confidence are independent axes** because they answer different questions. CVSS conflates them and that's a longstanding pain point.
@@ -157,6 +160,7 @@ A "period" can be anything the analyst wants — a single day, a week, a month, 
 - **Org boundaries.** Is "the parent company plus its subsidiaries" one Org or many? Probably one Org with parent/child Targets, but `Org` itself doesn't nest in the slice 1 data model. Revisit if pain emerges.
 - **What happens when a report period overlaps with another report's period for the same org?** Allowed — an analyst might generate "all of Q1" and "March specifically" and expect both to contain the overlapping findings. Reports are independent snapshots.
 - **Soft vs hard delete** for Targets and Orgs. Probably soft only, with Artifacts preserved separately under all conditions.
+- **Fourth data-model layer.** Deferred. If the Artifact linkage proves too weak for grouping "all findings from the April Nessus scan" in practice, add a Scan/Run layer between Target and Finding.
 
 ## Triage
 
@@ -169,6 +173,8 @@ Slice 1 uses **deterministic scoring**. Each finding gets:
 - **Priority**: derived. `priority = severity_weight × confidence_weight × target_weight`. Target weight defaults to 1.0; the analyst can bump it (e.g. public-facing infra = 1.5).
 
 No LLM involvement in slice 1 triage. The scoring tables and rules are explicit, versioned, and surfaceable in the report ("scored High because: Nessus reported Critical (mapped to High by table v3), confidence High, target weight 1.5").
+
+**Rationale.** Three axes (severity × confidence × target weight) rather than single-axis priority or CVSS alone because CVSS conflates severity and confidence into one number that's often wrong, and because target weight is the one axis only the analyst can supply — a remote code execution on a staging box matters less than an info leak on the client's public-facing API. Deterministic over LLM-assisted because triage must be reproducible — re-running `csak triage` on unchanged findings has to produce identical scores, which an LLM cannot guarantee.
 
 ### Dedup
 
@@ -188,6 +194,7 @@ When dedup fires on a re-ingest, the existing finding's `last_seen` advances; a 
 - Does triage re-run automatically if scoring rules change, or only on explicit re-triage command? Leaning: explicit only. Auto-re-triage breaks reproducibility.
 - "Probably a false positive" without fully suppressing. Proposed: a separate `probability_real` field, distinct from confidence, that the analyst can override.
 - How do we handle findings that span multiple Targets (e.g. same vuln on three subdomains)? Probably one Finding per (target, dedup-key) — duplication across Targets is correct because the analyst may suppress on one and not the other.
+- `false-positive` as a distinct status from `suppressed`. DefectDojo treats them separately; we probably should too.
 
 ## Reports
 
@@ -226,13 +233,7 @@ Example: `reports/acmecorp/2026-04/internal-review.md` or `reports/acmecorp/toda
 
 ### Template language
 
-Not decided. Options:
-
-- **Jinja2** — most flexible, most popular, Python-native.
-- **Mustache / Handlebars** — logic-less, cleaner separation.
-- **Pure markdown with front matter and string substitution** — no templating engine, simplest.
-
-Leaning Jinja2 unless we find a reason not to. Marked as ADR-008 in the forecast list.
+**Jinja2.** Python-native, widely known, flexible enough to handle conditional sections, loops over findings, and inherited layouts when we need sub-templates. The alternatives (Mustache / Handlebars — logic-less but forces logic into Python, adding friction; pure string substitution — too weak once templates grow beyond toy size) don't pay off for this product. Jinja2 is overkill only until the first template needs a loop, which will be immediately.
 
 ### LLM's role in reports
 
@@ -263,23 +264,17 @@ csak findings list --org acmecorp --status active --severity high
 csak target list --org acmecorp
 ```
 
-CLI-first because:
-
-- Fits an analyst's existing workflow (terminal-heavy, invoked on-demand during active work).
-- Fastest to build.
-- Doesn't constrain the eventual UI (a web/TUI can wrap a CLI; it's harder the other way).
-
-A web UI is explicitly slice-3-or-later.
+**Rationale.** CLI over web UI over TUI over daemon. A CLI fits an analyst's existing workflow (terminal-heavy, invoked on-demand during active work), is fastest to build, and doesn't constrain what we do later — a web or TUI can wrap a CLI; it's much harder the other way. Web UI is slice-3-or-later. No daemon because slice 1 is explicitly not continuous.
 
 ## Storage
 
-Slice 1 uses **SQLite + a flat-file artifact store**. Decision pending an ADR (ADR-004) but this is the default.
+**SQLite + flat-file artifact store.**
 
 - SQLite for Org, Target, Finding, Report tables.
 - Artifacts stored on disk under `artifacts/<hash-prefix>/<hash>` — content-addressed.
 - Reports rendered to `reports/<org-slug>/<period>/...` per the naming convention above.
 
-Reasons over Postgres in slice 1: zero operational overhead, embeds in the product, handles anything short of millions of findings without complaint. Reasons to consider Postgres later: concurrent multi-user access, richer query language. Neither is a slice 1 problem.
+**Rationale.** SQLite over Postgres because slice 1 is single-user, single-machine, and Postgres adds a service dependency we don't need. SQLite embeds in the product binary, handles anything short of millions of findings without complaint, and the on-disk file is a natural unit of backup / transport. If slice 2+ ever needs concurrent multi-user writes, Postgres becomes the right answer — but we'd rather solve that problem once we actually have it. Flat-file artifact store because raw tool output is big, varied, and best left as the original bytes — sticking it in SQLite blobs buys nothing and loses `grep`.
 
 ## What slice 1 explicitly does not solve
 
@@ -313,5 +308,4 @@ Slice 1 is "done" when:
 - [[product/scope|Scope]]
 - [[product/users-and-jobs|Users & Jobs]]
 - [[synthesis/open-questions|Open Questions]]
-- [[decisions/README|ADR Index]]
 - [[sessions/2026-04-22-slice-1-kickoff|Session: Slice 1 Kickoff]]
