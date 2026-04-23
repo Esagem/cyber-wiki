@@ -155,3 +155,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | index - architecture overview written, data-flow folded in, pre-design exit now imminent
 
 ## [2026-04-23] write | synthesis/roadmap.md | roadmap - architecture overview written, data-flow folded in, pre-design exit criteria met
+
+## [2026-04-23] write | specs/slice-1.md | remove probability_real feature - simplify priority to three axes (severity x confidence x target_weight), drop analyst-FP-doubt handling, rely on false-positive status for FP commitment
