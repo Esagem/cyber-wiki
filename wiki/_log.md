@@ -133,3 +133,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | append 2026-04-23 update block to session notes - records what actually happened vs the original outstanding-work list
 
 ## [2026-04-23] write | research/README.md | fix pa pers typo in research README
+
+## [2026-04-23] write | synthesis/lint-report.md | second lint pass - catches residual slice-1-ingest stale references in competitive README and reconftw, plus minor inconsistencies
