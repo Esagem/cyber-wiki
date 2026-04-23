@@ -63,3 +63,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/reconftw.md | fix license claim - repo is ambiguous (MIT in LICENSE file, GPLv3 in README) - flag as unresolved before any leverage decision
 
 ## [2026-04-23] write | competitive/leverage-analysis.md | new leverage analysis page - per-tool feasibility across fork/subprocess/output-parsing strategies with license and scope fit
+
+## [2026-04-23] write | competitive/README.md | add leverage-analysis page to index
