@@ -35,7 +35,7 @@ Slice 1 was deliberately chosen over slice 2 because cross-tool synthesis is the
 
 Late in the session Eli clarified that **reports are organization+time-period scoped** ("April update for acmecorp"). This reshaped the data model.
 
-The model is now three layers with a separate Report entity:
+The model at end-of-session was three layers with a separate Report entity:
 
 - **Org** — the top-level container. Reports are per-org per-period.
 - **Target** — assets owned by an Org (domains, IPs, hosts). Tools produce findings against Targets.
@@ -43,10 +43,7 @@ The model is now three layers with a separate Report entity:
 - **Artifact** — immutable raw input file.
 - **Report** — frozen snapshot of (org, time window, kind). Generated, not derived on read.
 
-This replaces the simpler "target-centric" framing earlier in the session. Tradeoffs:
-
-- Gains: continuity across reporting periods, dedup at the org level, multi-org confidentiality at the data layer.
-- Costs: more entities, more edges. Open questions around target nesting and org boundaries.
+This replaced the simpler "target-centric" framing earlier in the session. (Note: this shape was further refined on 2026-04-23 — see Update block below.)
 
 ### 4. Five starter tools for slice 1
 
@@ -64,16 +61,7 @@ Explicitly deferred: Metasploit/Burp/ZAP (wrong layer), Wazuh/ELK (too big), tri
 
 ### 5. LLM posture
 
-Deterministic core. LLMs evaluated case-by-case per feature. For slice 1, likely useful for:
-
-- Drafting fix-it ticket "impact in plain language" sections.
-- Grouping findings into ticket bundles.
-- Period summaries ("what changed since the March update").
-- Maybe explaining finding confidence caveats.
-
-Explicitly NOT for: triage scoring (deterministic and explainable), ingest parsing (tool outputs are structured), tool selection (not slice 1 anyway).
-
-Token efficiency was called out as a design constraint.
+Deterministic core. LLMs evaluated case-by-case per feature. (Note: further refined 2026-04-23 — see Update block below.)
 
 ### 6. CLI-first interface
 
@@ -81,7 +69,7 @@ Slice 1 ships with CLI only. Web UI is slice-3-or-later. Reasoning: fits existin
 
 ### 7. Storage — SQLite + flat-file artifacts
 
-Default leaning, pending ADR-004. SQLite for structured data, content-addressed flat files for artifacts. Reports rendered to `reports/<org-slug>/<period>/...` on disk.
+Default leaning, pending further review. SQLite for structured data, content-addressed flat files for artifacts. Reports rendered to `reports/<org-slug>/<period>/...` on disk.
 
 ## What was written this session
 
@@ -102,12 +90,14 @@ In rough priority order:
 2. **Sanity-check the [[product/users-and-jobs|persona sketch]].** Claude wrote it from inference; correct anything wrong.
 3. **Skim the [[synthesis/open-questions|open questions]].** Look for anything Claude moved to "answered" that you don't actually consider settled.
 4. **Note any tool you'd swap** in the slice 1 starter set.
-5. **Decide whether [[competitive/README|competitive analysis]] should be the next session's focus**, or whether we should go straight to drafting ADR-001 and ADR-004.
+5. **Decide whether [[competitive/README|competitive analysis]] should be the next session's focus**, or whether we should go straight to drafting ADRs.
 
 ## Outstanding for Claude (next session)
 
-- Draft **ADR-001 (slice 1 scope boundary)** — only after Eli's review settles slice 1 spec to `active`.
-- Draft **ADR-004 (storage backend)** — needed before any implementation.
+*(Note: items below were the plan at session end. What actually happened is in the Update block below.)*
+
+- Draft **ADR-001 (slice 1 scope boundary)** after Eli's review settles slice 1 spec to `active`.
+- Draft **ADR-004 (storage backend)**.
 - Begin competitive analysis with DefectDojo, reconFTW, and one LLM-powered upstart.
 - Build out at least one of `architecture/overview.md` or `architecture/data-flow.md` to make the spec concrete.
 
@@ -126,6 +116,30 @@ Eli flagged that the previous night's writeup (and the first pitch deck draft) o
 
 **Files corrected:** `product/vision.md`, `product/scope.md`, `specs/slice-1.md`. Pitch deck will be updated separately in Canva (slides 4 and 8).
 
+---
+
+## Update — 2026-04-23
+
+The plans from the original "Outstanding for Claude" list either happened differently or became irrelevant. This block records what actually landed between the original session and end-of-day 2026-04-23, so a future reader doesn't take that list at face value.
+
+**ADR scaffolding dropped entirely.** ADR-001 and ADR-004 were drafted, then the whole `decisions/` folder was deleted. Principle adopted: rationale for every significant choice collapses inline into the section of the design document that makes the choice. No separate decision records. The `CYBER.md` schema was updated to match. ADR-001 and ADR-004 as entities no longer exist.
+
+**Competitive analysis partially done.** DefectDojo and reconFTW analyses written, plus `leverage-analysis.md` (license strategies per tool) and `build-vs-adapt.md` (build code fresh, adapt content and configuration with attribution). The LLM-powered upstart (XBOW or NodeZero) has not been written yet.
+
+**Architecture pages still `planned`.** Neither `architecture/overview.md` nor `architecture/data-flow.md` has been written. Both remain on the roadmap as the next substantive pre-implementation work.
+
+**Slice 1 design finalized.** Every open question for slice 1 was closed in a follow-up working session. The data model moved from three layers with a Report entity (as written at end of 2026-04-22) to four layers plus Artifact, with no Report entity (Org → Target → Scan → Finding + Artifact, plus a FindingScanOccurrence junction). Reports became stateless pipeline exports — no database row, timestamped output files accumulate on disk. LLM use was removed entirely from slice 1; instead, slice 1 commits to a clean JSON export format designed as the interface for a future LLM layer. Docx rendering committed to python-docx rather than pandoc. Scoring is write-once at ingest with no retriage command. `probability_real` added as a fourth analyst-assigned scoring axis. Zeek ingest is folder-aware. See [[specs/slice-1|slice 1 spec]] for the complete finalized design.
+
+**First lint pass done.** The [[synthesis/lint-report|lint report]] catalogued every stale reference and every contradiction between pages at the time of slice 1 finalization. Fixes were applied to vision, scope, slices, users-and-jobs, glossary, DefectDojo, and leverage-analysis pages; the `_index.md` recent-activity section was updated; the roadmap was updated to check off completed phase-1 items.
+
+**Real outstanding work now:**
+
+- Eli's sign-off review of the finalized slice 1 spec, flipping `draft` → `active`.
+- [[architecture/overview|architecture overview]] page — the remaining high-priority pre-implementation piece.
+- More competitive pages (Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, one LLM-powered upstart).
+- Pitch deck slides 4 and 8 language fix in Canva (still pending from the morning correction).
+- Open a GitHub issue on reconFTW about the LICENSE/README license ambiguity (MIT vs GPL-3.0).
+
 ## Related
 
 - [[product/vision|Vision]]
@@ -134,4 +148,5 @@ Eli flagged that the previous night's writeup (and the first pitch deck draft) o
 - [[specs/slice-1|Slice 1 Spec]]
 - [[product/scope|Scope]]
 - [[synthesis/open-questions|Open Questions]]
+- [[synthesis/lint-report|Lint Report]]
 - [[competitive/README|Competitive Analysis]]
