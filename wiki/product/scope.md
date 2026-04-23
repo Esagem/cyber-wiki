@@ -36,7 +36,7 @@ Report *structure* being (org, time window) is independent of invocation *cadenc
 - **Cross-run dedup** within an org: re-ingesting last week's scan doesn't double-count.
 - **Two report families** scoped to (org, time window): internal review and fix-it ticket bundle. Report windows are whatever the analyst specifies — from "today" to "all of 2026."
 - **CLI** as the only invocation surface.
-- **SQLite + flat-file artifact store** (pending ADR-004).
+- **SQLite + flat-file artifact store.**
 - **Single-user, single-machine** operation. No auth.
 
 ### Explicitly out of scope (slice 1)
@@ -63,6 +63,7 @@ Open questions for slice 2 to settle before it starts:
 - Execution model (subprocess / container / mixed).
 - How CSAK infers tool parameters from a target.
 - Long-running tool handling.
+- Relationship to reconFTW (replace / augment / integrate). See [[competitive/reconftw|reconFTW]].
 
 ## Slice 3 — Recursion & Catalog (preview)
 
@@ -98,17 +99,16 @@ These don't block any specific slice but will shape the eventual product:
 
 1. **Is CSAK kept internal to Surge Studios, open-sourced, or sold?** Eli's posture: don't let this drive design — make the best tool possible and distribution sorts itself out.
 2. **Is the customer individual analysts, teams, or consultancies?** Slice 1 is built for individual-analyst use. Team features are not on any slice.
-3. **Greenfield vs. integrate-with-existing.** If a team already runs DefectDojo or Faraday, is CSAK a replacement, a complement, or neither? Needs competitive analysis (see [[competitive/README|competitive/]]).
+3. **Greenfield vs. integrate-with-existing.** If a team already runs DefectDojo or Faraday, is CSAK a replacement, a complement, or neither? Current stance in [[competitive/build-vs-adapt|build-vs-adapt]]: complement at the ingest layer, independent everywhere else.
 4. **What's the v0 story for non-vulnerability findings** (config drift, policy violations, anomalies)? Slice 1's ingest set handles some of these (osquery for config, Zeek for anomaly-adjacent), but the triage model is still vuln-centric. Worth revisiting after slice 1 hits reality.
 
-## How scope changes get decided
+## How scope changes get recorded
 
-Scope decisions escalate to ADRs. When we pick a direction on any of the above, it becomes `ADR-NNN-scope-<topic>.md` in [[decisions/README|decisions/]]. The first scope ADR (ADR-001) will likely freeze slice 1's scope after Eli's review settles.
+Scope changes happen in the affected spec, with the rationale stated briefly in the section that makes the change. Each significant change gets a line in [[sessions/|sessions/]] noting what moved and why. No separate decision-record documents — the spec is the record.
 
 ## Related
 
 - [[product/vision|Vision]]
 - [[product/slices|Slice Plan]]
 - [[specs/slice-1|Slice 1 Spec]]
-- [[decisions/README|ADR Index]]
 - [[synthesis/roadmap|Design-phase Roadmap]]
