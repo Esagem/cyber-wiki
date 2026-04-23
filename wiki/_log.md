@@ -69,3 +69,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/build-vs-adapt.md | new decision analysis - with permissive licenses assumed, should we adapt code or build fresh? Verdict per tool per component
 
 ## [2026-04-23] write | competitive/README.md | add build-vs-adapt page and update key takeaways with the honest recommendation
+
+## [2026-04-23] write | decisions/ADR-001-slice-1-scope.md | first real ADR - slice 1 scope, proposed. Captures ingest+triage+report boundary, excludes orchestration/recursion/scheduling
