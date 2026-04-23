@@ -6,7 +6,7 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # 2026-04-22 — Slice 1 Kickoff
@@ -110,6 +110,21 @@ In rough priority order:
 - Draft **ADR-004 (storage backend)** — needed before any implementation.
 - Begin competitive analysis with DefectDojo, reconFTW, and one LLM-powered upstart.
 - Build out at least one of `architecture/overview.md` or `architecture/data-flow.md` to make the spec concrete.
+
+---
+
+## Correction — 2026-04-23 morning
+
+Eli flagged that the previous night's writeup (and the first pitch deck draft) overstated CSAK as a "periodic report mode" system. That was Claude's drift from "reports have a time-window *structure*" to "the system only runs *periodically*" — a real conceptual error.
+
+**Clarified:**
+
+- **CSAK is primarily on-demand and real-time.** The analyst invokes it during active work and expects output in seconds to minutes. That is the default usage pattern, in scope from slice 1.
+- **Reports are structured by (org, time window)** because that's the useful way to organize findings — but a "time window" can be "today" or "this week" or "April 2026," whatever the analyst asks for. Structure is not cadence.
+- **Scheduled / automated report generation** (cron-style "every Monday regenerate all reports") is now explicitly slice 4+. Useful, not urgent, not part of any current slice.
+- **Streaming / continuous detection** (watching a data source and firing on events) remains indefinitely out of scope. That is SIEM territory.
+
+**Files corrected:** `product/vision.md`, `product/scope.md`, `specs/slice-1.md`. Pitch deck will be updated separately in Canva (slides 4 and 8).
 
 ## Related
 
