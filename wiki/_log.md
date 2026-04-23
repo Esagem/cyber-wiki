@@ -167,3 +167,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | competitive/leverage-analysis.md | leverage-analysis - update triage axis references to three (remove probability_real)
 
 ## [2026-04-23] write | product/scope.md | scope - update axis count from four to three (remove probability_real from triage description)
+
+## [2026-04-23] write | synthesis/open-questions.md | open-questions - update probability_real answer to removed, fix importance-vs-severity row, update spec status
