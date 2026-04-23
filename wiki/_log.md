@@ -87,3 +87,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/scope.md | strip ADR references from scope; scope changes now logged as spec revisions with rationale inline
 
 ## [2026-04-23] write | specs/slice-1.md | strip ADR references from slice 1 spec; storage and template rationale now lives inline in the spec
+
+## [2026-04-23] write | _index.md | drop Decisions section from master index; ADR scaffolding removed
