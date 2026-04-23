@@ -3,7 +3,7 @@ title: "Roadmap"
 category: synthesis
 tags: [roadmap, sequencing, priorities]
 status: draft
-confidence: low
+confidence: medium
 owner: shared
 created: 2026-04-21
 updated: 2026-04-23
@@ -20,15 +20,16 @@ updated: 2026-04-23
 - [x] Five starter tools for slice 1 chosen.
 - [x] First working session logged ([[sessions/2026-04-22-slice-1-kickoff|2026-04-22]]).
 
-## Phase 1 — Slice 1 design (we are here)
+## Phase 1 — Slice 1 design (mostly done)
 
 **Goal:** slice 1 spec is detailed, justified, and reviewed — detailed enough that someone could start coding from it.
 
-- [ ] Every open question in [[synthesis/open-questions|open-questions]] affecting slice 1 is either answered or explicitly deferred.
-- [ ] [[specs/slice-1|slice 1 spec]] moves `draft` → `active` after Eli's review.
-- [ ] [[architecture/overview|architecture/overview]] written — diagram and narrative covering ingest → triage → report end to end.
-- [ ] [[architecture/data-flow|architecture/data-flow]] written — concrete flow from Artifact ingest through Finding triage to Report render.
-- [ ] Subsystem specs split out where the slice 1 spec is doing too much: [[specs/ingestion-model|ingestion-model]], [[specs/triage-model|triage-model]], [[specs/report-formats|report-formats]].
+- [x] Every open question in [[synthesis/open-questions|open-questions]] affecting slice 1 is either answered or explicitly deferred. *(Closed 2026-04-23; all slice 1 questions live in the Answered section.)*
+- [x] First wiki lint pass after slice 1 finalization. *(Completed 2026-04-23; see [[synthesis/lint-report|lint report]].)*
+- [ ] [[specs/slice-1|slice 1 spec]] moves `draft` → `active` after Eli's review. *(Spec content is finalized; status stays draft pending sign-off.)*
+- [ ] [[architecture/overview|architecture/overview]] written — diagram and narrative covering ingest → triage → report end to end. **High priority — should land before implementation begins.**
+- [ ] [[architecture/data-flow|architecture/data-flow]] written — concrete flow from Artifact ingest through Finding triage to Report render. Medium priority; may end up as a section of architecture/overview rather than its own page.
+- [ ] Subsystem specs split out if the slice 1 spec is doing too much in practice: [[specs/ingestion-model|ingestion-model]], [[specs/triage-model|triage-model]], [[specs/report-formats|report-formats]]. Low priority — slice 1 spec currently covers these in enough detail.
 
 ## Phase 2 — Competitive grounding (in progress)
 
@@ -53,14 +54,16 @@ Open questions to resolve (currently in [[synthesis/open-questions|open-question
 - Execution model (subprocess / container / mixed).
 - Parameter inference.
 - Long-running tool handling.
+- Whether generic-CSV ingest and reconFTW JSON ingest land here or later.
+- Adaptive rate limiting as a slice 2 requirement.
 
 ## Exit criteria — "pre-design → build"
 
 We leave pre-design when:
 
-- Slice 1 spec is `active` (all its open questions answered or explicitly deferred).
-- Architecture overview and data-flow pages are written.
-- Competitive grounding is deep enough we're not surprised by an obvious prior art during implementation.
+- Slice 1 spec is `active` (sign-off complete).
+- [[architecture/overview|architecture overview]] is written so a newcomer can understand the pipeline shape without reading the full spec.
+- Competitive grounding is deep enough we're not surprised by an obvious prior art during implementation. (Currently: DefectDojo and reconFTW covered; the rest can land in parallel with build if needed.)
 - Eli has reviewed and signed off.
 - We both feel we could answer "what is CSAK" in one breath and describe slice 1 in three sentences.
 
@@ -71,3 +74,4 @@ At that point this wiki shifts role: it becomes the reference alongside a build 
 - [[product/scope|Scope]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[synthesis/open-questions|Open Questions]]
+- [[synthesis/lint-report|Lint Report]]
