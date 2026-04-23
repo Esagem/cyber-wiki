@@ -41,3 +41,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-22] write | sessions/2026-04-22-slice-1-kickoff.md | add late-evening clarification on report shape - org plus time period
 
 ## [2026-04-22] write | _index.md | final index update reflecting all evening writes
+
+## [2026-04-23] write | product/vision.md | correct periodic-mode drift - CSAK is on-demand-first, reports have time-window structure but invocation is real-time
