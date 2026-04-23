@@ -172,7 +172,7 @@ What happens, in order:
 4. **Nessus parser** reads the XML, extracts `scan_started_at` / `scan_completed_at` from the embedded timestamps (`timestamp_source = extracted`), and emits a Scan row plus one proto-Finding per `<ReportItem>`.
 5. For each proto-Finding:
    - **Target promotion logic** looks up the host in Targets for this Org. If it's a known Target, attach. If it's a subdomain string in some parent Target's `identifiers` list, promote to a child Target. If it's brand new, create a Target.
-   - **Scoring** reads Nessus severity (`5 = Critical`, `4 = High`, …), maps via the per-tool table to CSAK's scale. Pulls confidence from the Nessus finding or the tool default. Reads `target_weight` from the Target. Defaults `probability_real` to 1.0. Computes `priority` and writes it to the Finding.
+   - **Scoring** reads Nessus severity (`5 = Critical`, `4 = High`, …), maps via the per-tool table to CSAK's scale. Pulls confidence from the Nessus finding or the tool default. Reads `target_weight` from the Target. Computes `priority = severity_weight × confidence_weight × target_weight` and writes it to the Finding.
    - **Dedup** checks `(org_id, source_tool='nessus', plugin_id + host + port)`. If a matching Finding exists, advance its `last_seen`, add a FindingScanOccurrence row, done. If not, insert a new Finding.
 6. **CLI** prints a summary: "Ingested 1 Scan, 47 new Findings, 12 re-occurrences."
 
@@ -198,15 +198,15 @@ What happens:
 
 ### Step 3: analyst iterates
 
-Analyst reads the internal review, notices Finding #12 is probably a false positive but they're not 100% sure:
+Analyst reads the internal review, determines Finding #12 is a false positive (the plugin fires on a cipher suite the customer has formally accepted):
 
 ```
-csak findings update <id-of-finding-12> --probability-real 0.2
+csak findings update <id-of-finding-12> --status false-positive
 ```
 
 - **CLI** dispatches to the query layer's update path.
-- **Query layer** writes `probability_real = 0.2` to the Finding and recomputes its `priority` from the stored severity/confidence/target_weight components. No other Finding is touched.
-- Next report generation will naturally reflect the lower priority.
+- **Query layer** writes `status = false-positive` to the Finding. Priority recomputes as a side effect of the mutation (cheap; keeps the pipeline simple), though the score itself doesn't change since none of its three components (severity, confidence, target_weight) were touched.
+- Next report generation filters out Findings with `status = false-positive` by default. The Finding is preserved in the database for history and so re-ingesting doesn't create a duplicate.
 
 ### Step 4: re-run the report
 
