@@ -49,3 +49,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | specs/slice-1.md | soften periodic framing - reports are on-demand with time-window structure not scheduled
 
 ## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | append 2026-04-23 correction on invocation mode vs report structure
+
+## [2026-04-23] write | competitive/defectdojo.md | first real competitive analysis - DefectDojo overlaps slice 1 heavily, differs in scope and UX
