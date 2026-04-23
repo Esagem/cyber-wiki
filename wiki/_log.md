@@ -47,3 +47,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/scope.md | clarify invocation modes - on-demand in scope, streaming never, scheduled is slice 4 plus
 
 ## [2026-04-23] write | specs/slice-1.md | soften periodic framing - reports are on-demand with time-window structure not scheduled
+
+## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | append 2026-04-23 correction on invocation mode vs report structure
