@@ -119,3 +119,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/slices.md | tighten slice plan to match finalized slice 1 - reports per org+period, mention docx/JSON, note LLM is future slice
 
 ## [2026-04-23] write | competitive/leverage-analysis.md | update leverage-analysis to match slice 1 finalization - defer foreign-JSON ingest out of slice 1, remove ADR-009 language, update triage axes
+
+## [2026-04-23] write | competitive/defectdojo.md | update DefectDojo design-changes section - all four suggestions were resolved in slice 1 spec (fourth layer yes, false-positive yes, CSV deferred, CWE templates yes, three-layer reference removed)
