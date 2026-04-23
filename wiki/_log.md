@@ -169,3 +169,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | product/scope.md | scope - update axis count from four to three (remove probability_real from triage description)
 
 ## [2026-04-23] write | synthesis/open-questions.md | open-questions - update probability_real answer to removed, fix importance-vs-severity row, update spec status
+
+## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | session notes - append 2026-04-23-late update block recording probability_real removal, slice 1 approval, architecture overview completion
