@@ -129,3 +129,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | update master index recent-activity with slice 1 finalization and lint pass entries
 
 ## [2026-04-23] write | synthesis/roadmap.md | roadmap - check off completed phase 1 items after slice 1 finalization, mark architecture pages as the remaining phase 1 work
+
+## [2026-04-23] write | sessions/2026-04-22-slice-1-kickoff.md | append 2026-04-23 update block to session notes - records what actually happened vs the original outstanding-work list
