@@ -77,3 +77,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | note ADR-001 proposed in master index recent activity and decisions section
 
 ## [2026-04-23] write | decisions/ADR-001-slice-1-scope.md | slim ADR-001 to decision+rationale only; point at spec for implementation detail
+
+## [2026-04-23] delete | decisions/ADR-001-slice-1-scope.md | User directive: remove ADR scaffolding entirely; rationale moves inline into specs
