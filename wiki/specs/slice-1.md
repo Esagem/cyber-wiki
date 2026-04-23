@@ -6,16 +6,20 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # Slice 1 — Ingest & Report
 
-> Draft spec. Reviewed with Eli on 2026-04-22. Significant late-evening clarification: **reports are organization+time-period scoped** (e.g. "acmecorp April 2026 update"). That clarification reshaped the data model and is reflected throughout this document.
+> Draft spec. Reviewed with Eli on 2026-04-22. Corrected 2026-04-23 to separate report *structure* (always org + time window) from report *invocation* (on-demand, usually real-time during active work — not scheduled or periodic).
 
 ## Goal
 
-Take pre-collected security tool output, normalize it into org-scoped findings, triage them, and emit periodic reports good enough to hand to a real analyst.
+Take pre-collected security tool output, normalize it into org-scoped findings, triage them, and emit reports good enough to hand to a real analyst.
+
+Reports are structured by (org, time window). The analyst invokes them on demand — usually in real-time during active work — for whatever window they care about: "today," "this week," "April 2026," "all of Q1." The same report can be regenerated at any time and is frozen at each generation.
+
+**Scheduled or automated report generation is slice 4+, not part of slice 1.** **Streaming or continuous detection is indefinitely out of scope** — that's SIEM territory.
 
 No tool orchestration. No recursion. No LLM-driven anything unless it demonstrably beats a deterministic alternative.
 
@@ -23,6 +27,7 @@ No tool orchestration. No recursion. No LLM-driven anything unless it demonstrab
 
 ### In scope
 
+- **On-demand invocation.** CLI command runs, CSAK produces output, analyst reads it. Latency target: seconds to minutes for a typical report.
 - Ingest from 5 tool formats (see below).
 - Three-layer entity model: **Org → Target → Finding**, plus an immutable **Artifact** layer for raw inputs and a **Report** layer for time-bounded snapshots.
 - Deterministic triage scoring.
@@ -35,7 +40,8 @@ No tool orchestration. No recursion. No LLM-driven anything unless it demonstrab
 - Tool execution (→ slice 2).
 - Automatic tool selection (→ slice 2).
 - Recursion (→ slice 3).
-- Continuous monitoring or scheduled report generation.
+- Scheduled or automated report generation (→ slice 4+).
+- Streaming or continuous detection (indefinitely out of scope — SIEM territory).
 - Bidirectional integration with external systems (Jira, Slack, ticketing).
 - Multi-user or multi-tenant features beyond org separation in the data model.
 - Auth beyond "single user on their own machine."
@@ -113,7 +119,7 @@ Report  (a time-bounded snapshot deliverable)
 ├── org_id             which Org this report covers
 ├── period_start       window start
 ├── period_end         window end
-├── label              human-readable: "April 2026 update"
+├── label              human-readable: "April 2026 update" or "today" or "Q1 review"
 ├── generated_at       when CSAK produced this report
 ├── kind               internal-review | fix-it-bundle
 ├── finding_ids        which findings are included (frozen at generation time)
@@ -123,19 +129,19 @@ Report  (a time-bounded snapshot deliverable)
 
 ### Why this shape
 
-- **Org as top-level container**, not Target. The user's reports are organized by org and by date — "acmecorp April update," "acmecorp May update." That's the unit of deliverable, so it's the unit of organization. Targets exist beneath orgs because one org has many assets to investigate.
+- **Org as top-level container**, not Target. The user's reports are organized by org and by date — "acmecorp April update," "acmecorp May update," "acmecorp right now." That's the unit of deliverable, so it's the unit of organization. Targets exist beneath orgs because one org has many assets to investigate.
 - **Target is the middle layer** because tools produce findings against assets (a domain, an IP, a host), not against organizations. The org is the human-meaningful container; the target is the technical container.
 - **Artifact table exists** because the same raw output might produce findings multiple times (re-triaging a past Nessus file against updated rules, for example). The artifact is the immutable input; findings are derived.
-- **Report is a separate entity** because a report is a *snapshot*. Findings are mutable (status changes, new occurrences seen); a report is the frozen view of an org's state during a window. This is what makes "regenerate the April report" different from "re-run triage."
+- **Report is a separate entity** because a report is a *snapshot*. Findings are mutable (status changes, new occurrences seen); a report is the frozen view of an org's state during a window. This is what makes "regenerate the April report" different from "re-run triage." It's also what lets an analyst generate "today's state of acmecorp" right now without committing to a monthly cadence.
 - **Severity and confidence are independent axes** because they answer different questions. CVSS conflates them and that's a longstanding pain point.
-- **`first_seen` / `last_seen`** lets the report query say "findings active during April" without needing a separate time-series store.
+- **`first_seen` / `last_seen`** lets the report query say "findings active during any window the analyst asks for" without needing a separate time-series store.
 
 ### How a report gets generated
 
 ```
-1. User: "Generate the April update for acmecorp."
+1. User: "Generate today's state of acmecorp."  (or "April update" or "Q1 review")
 2. CSAK queries Findings WHERE org_id = acmecorp
-   AND last_seen >= April 1 AND first_seen <= April 30
+   AND last_seen >= period_start AND first_seen <= period_end
    AND status IN (active, accepted-risk).
 3. CSAK groups findings (by severity, by target, or per-finding for tickets).
 4. CSAK renders the Internal Review markdown.
@@ -143,11 +149,13 @@ Report  (a time-bounded snapshot deliverable)
 6. Both outputs registered as Reports in the database, with finding_ids frozen.
 ```
 
+A "period" can be anything the analyst wants — a single day, a week, a month, a quarter, the entire history of an engagement. The data model doesn't care; the query just adjusts the window.
+
 ### Open data-model questions
 
 - **Target nesting rules.** When does a discovered subdomain become its own child Target? Options: (a) every discovered subdomain → child Target; (b) subdomains live as `identifiers` on one Target; (c) hybrid — promote to child Target only if findings attach to that subdomain specifically. Leaning (c) but this needs a decision before implementation.
 - **Org boundaries.** Is "the parent company plus its subsidiaries" one Org or many? Probably one Org with parent/child Targets, but `Org` itself doesn't nest in the slice 1 data model. Revisit if pain emerges.
-- **What happens when a report period overlaps with another report's period for the same org?** Probably allowed (periodic reports overlap intentionally), but this means a Finding can appear in multiple Reports.
+- **What happens when a report period overlaps with another report's period for the same org?** Allowed — an analyst might generate "all of Q1" and "March specifically" and expect both to contain the overlapping findings. Reports are independent snapshots.
 - **Soft vs hard delete** for Targets and Orgs. Probably soft only, with Artifacts preserved separately under all conditions.
 
 ## Triage
@@ -214,7 +222,7 @@ reports/
     │       └── ...
 ```
 
-Example: `reports/acmecorp/2026-04/internal-review.md`. The period label format is the analyst's choice (`2026-04`, `april-2026`, `2026-04-01-to-2026-04-30`); CSAK stores the canonical start/end dates separately.
+Example: `reports/acmecorp/2026-04/internal-review.md` or `reports/acmecorp/today-20260423/internal-review.md`. The period label format is the analyst's choice; CSAK stores the canonical start/end dates separately.
 
 ### Template language
 
@@ -249,6 +257,7 @@ csak ingest --org acmecorp --tool nessus path/to/scan.nessus
 csak ingest --org acmecorp --tool zeek path/to/zeek-logs/
 csak triage --org acmecorp                       # re-runs triage on existing findings
 csak report generate --org acmecorp --period 2026-04 --kind internal-review
+csak report generate --org acmecorp --period today --kind internal-review
 csak report generate --org acmecorp --period 2026-04 --kind fit-bundle
 csak findings list --org acmecorp --status active --severity high
 csak target list --org acmecorp
@@ -256,7 +265,7 @@ csak target list --org acmecorp
 
 CLI-first because:
 
-- Fits an analyst's existing workflow (terminal-heavy).
+- Fits an analyst's existing workflow (terminal-heavy, invoked on-demand during active work).
 - Fastest to build.
 - Doesn't constrain the eventual UI (a web/TUI can wrap a CLI; it's harder the other way).
 
@@ -279,7 +288,8 @@ For clarity — these are real pain points, they just aren't slice 1's problem:
 - Running tools against targets (slice 2).
 - Figuring out which tools to run (slice 2).
 - Recursive investigation (slice 3).
-- Scheduling, watching for changes over time.
+- Scheduled / automated report generation (slice 4+).
+- Watching data sources and firing on events as they arrive (indefinitely out of scope — SIEM).
 - Team collaboration features.
 - Integrating with external trackers.
 - A web UI.
@@ -289,10 +299,11 @@ For clarity — these are real pain points, they just aren't slice 1's problem:
 Slice 1 is "done" when:
 
 - All 5 tool formats ingest cleanly, including real-world messy examples.
-- A report generated from a mixed-tool run (e.g. Nessus + Zeek for one org's April window) is coherent, not a concatenation of tool outputs.
+- A report generated on demand from a mixed-tool run (e.g. Nessus + Zeek for one org's April window) is coherent, not a concatenation of tool outputs.
+- Latency is acceptable: a typical report generates in seconds to a few minutes on an analyst's laptop, not tens of minutes.
 - Triage scores are reproducible and explainable. Re-running `csak triage` on unchanged findings produces identical scores.
 - Dedup across runs against the same org actually works. Re-ingesting last week's Nessus scan doesn't double-count.
-- Two consecutive monthly reports for the same org clearly show what's new, what's still active, and what's resolved between them.
+- Two reports for the same org over different but overlapping windows (e.g. "all of Q1" and "March alone") both correctly contain the overlapping findings.
 - At least one analyst (Eli) has used it on a real piece of work and not hated it.
 
 ## Related
