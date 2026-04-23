@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-22
-updated: 2026-04-22
+updated: 2026-04-23
 ---
 
 # Competitive Analysis
@@ -72,20 +72,24 @@ One sentence: does this make us rethink anything? Does it validate a choice? Doe
 Freeform. Quotes with sources.
 ```
 
-## Initial target list
+## Index
 
-Pages to write, in rough priority order. None exist yet — these are the ones the slice 1 work surfaced as needing analysis before we lock in design choices.
+| Tool | Status | Verdict |
+|------|--------|---------|
+| [[competitive/defectdojo\|DefectDojo]] | active | Closest competitor to slice 1. Mature, widely adopted, heavy deployment. CSAK wins on zero-deployment CLI, real-time invocation, narrative fix-it reports, and open-source LLM use. |
+| [[competitive/reconftw\|reconFTW]] | active | Competitor for slices 2–3, not 1. Covers tool orchestration + recursion + OSINT. Slice 1 could even accept reconFTW output as an input format. |
+
+## Target list — not yet written
 
 ### Direct overlap with CSAK's slice 1
 
-- **DefectDojo** — open-source vuln management. Closest existing analog to CSAK's slice 1 scope. Inevitable to study.
-- **Faraday** — open-source pentest collaboration platform. Closer to slice 2/3 territory but worth knowing.
+- **Faraday** — open-source pentest collaboration platform. Closer to slice 2/3 territory but worth knowing. reconFTW integrates with Faraday for reporting, which is a data point.
 - **PlexTrac** — commercial pentest reporting. Overlaps with slice 1's report layer specifically.
 
 ### Direct overlap with CSAK's slice 2 (orchestration)
 
-- **reconFTW** — opinionated bash-based recon orchestrator. Open source. Direct competitor to slice 2's "automate the recon toolkit" job.
 - **AttackForge** — commercial pentest management with workflow automation.
+- **Nemesis** (SpecterOps) — post-exploitation data platform, worth knowing if it has any slice-2 overlap.
 
 ### Adjacent — what we're explicitly NOT building
 
@@ -95,13 +99,15 @@ Pages to write, in rough priority order. None exist yet — these are the ones t
 
 ### LLM-powered upstarts
 
-- At least one. Whatever the loudest "AI-powered security analyst" startup is right now. Useful as a check on what *not* to do (specifically, what over-LLM-ing looks like in this space).
+- At least one. Whatever the loudest "AI-powered security analyst" startup is right now. Useful as a check on what *not* to do (specifically, what over-LLM-ing looks like in this space). Horizon3's NodeZero and XBOW are candidates to study.
 
-## Index
+## Key takeaways so far
 
-| Tool | Status | Verdict |
-|------|--------|---------|
-| _empty — populate as pages are written_ | | |
+From the first two analyses:
+
+1. **Slice 1 has a real competitor.** DefectDojo is mature, free, and widely adopted. CSAK's differentiation must be concrete (CLI, on-demand, narrative reports, open LLM use) — not "we built a better one."
+2. **Slice 2 has a mature free competitor.** reconFTW covers most of what slice 2 proposes. Before slice 2 begins, we need an explicit answer: replace, augment, or integrate.
+3. **Cross-slice opportunity.** CSAK could accept reconFTW output as a slice-1 input format, making CSAK immediately useful to reconFTW's existing user base without forcing them to switch.
 
 ## Related
 
