@@ -26,15 +26,7 @@ Questions are grouped by what they affect. When a question gets resolved, move i
 
 ## Slice 1 — Data model
 
-| Q | Owner | Status | Notes |
-|---|-------|--------|-------|
-| When does a discovered subdomain become its own child Target vs. an identifier on an existing Target? | shared | open | Three options laid out in [[specs/slice-1\|slice-1 spec]]. Leaning hybrid. |
-| Are parent-company-and-subsidiaries one Org or multiple Orgs? | shared | open | Probably one Org with parent/child Targets. Revisit if pain emerges. |
-| How do Findings spanning multiple Targets get represented? | shared | open | Leaning one Finding per (target, dedup-key). |
-| Should Finding deletion be soft only, hard only, or configurable? | shared | open | Leaning soft only with separate Artifact preservation. |
-| Can a Finding appear in multiple Reports for the same Org? | shared | open | Yes — overlapping report periods are intentional. |
-| Should CSAK have a fourth data-model layer (Scan / Run / Test) between Target and Finding? | shared | open | DefectDojo uses 4 layers; CSAK currently uses 3 with Artifact linkage for grouping. Revisit if implementation surfaces pain. See [[competitive/defectdojo\|DefectDojo analysis]]. |
-| Should Finding status include `false-positive` as distinct from `suppressed`? | shared | open | DefectDojo treats them as different states. Leaning yes. |
+All five original data-model questions were resolved on 2026-04-23; see the Answered section below. No open data-model questions block slice 1 implementation; remaining unknowns will surface once parsers are running against real data.
 
 ## Slice 1 — Ingest
 
@@ -58,7 +50,7 @@ Questions are grouped by what they affect. When a question gets resolved, move i
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Are fix-it tickets always one-finding-per-ticket, or grouped? | shared | open | Default per-finding; grouping later if it earns it. |
+| Are fix-it tickets always one-finding-per-ticket, or grouped? | shared | open | Default per-finding, except multi-Target findings of the same dedup-key which group by default. Confirmed in spec. |
 | Do we emit HTML/PDF in slice 1, or only markdown? | shared | open | Leaning markdown only. PDF/HTML can come later via separate rendering. |
 | Period summary section ("what changed since March") — LLM-drafted or template-driven? | shared | open | Worth prototyping LLM here. |
 
@@ -132,6 +124,12 @@ Questions are grouped by what they affect. When a question gets resolved, move i
 | Real-time vs. periodic invocation? | 2026-04-23 correction | On-demand / real-time is the primary mode, in scope from slice 1. Scheduled/automated is slice 4+. Streaming detection is indefinitely out of scope (SIEM territory). |
 | Template language: Jinja2, Mustache, or pure markdown substitution? | 2026-04-23 spec revision | Jinja2. Rationale in [[specs/slice-1\|slice 1 spec §Reports]]. |
 | Storage: SQLite + flat-file artifacts, Postgres, or pure flat files? | 2026-04-23 spec revision | SQLite + flat-file artifacts. Rationale in [[specs/slice-1\|slice 1 spec §Storage]]. |
+| Target nesting — subdomain → child Target always, never, or hybrid? | 2026-04-23 spec revision | Hybrid. Promoted to child Target when a Finding attaches or when the analyst assigns a distinct `target_weight`; otherwise lives as a string in parent's `identifiers`. [[specs/slice-1\|slice 1 spec §Target nesting]]. |
+| Parent company + subsidiaries — one Org or many? | 2026-04-23 spec revision | One Org. Subsidiaries are top-level Targets under that Org. [[specs/slice-1\|slice 1 spec §Org boundaries]]. |
+| Findings spanning multiple Targets — one shared Finding or one per Target? | 2026-04-23 spec revision | One per (Target, dedup-key). Supports per-asset suppression; report renderer groups them visually. [[specs/slice-1\|slice 1 spec §Multi-Target findings]]. |
+| Soft vs. hard delete for Targets and Orgs? | 2026-04-23 spec revision | Soft delete everywhere except Artifacts (which are never deleted through CSAK). Frozen Reports continue to render correctly. [[specs/slice-1\|slice 1 spec §Why this shape]]. |
+| Fourth data-model layer (Scan/Run/Test)? | 2026-04-23 spec revision | Yes — added Scan entity between Artifact and Finding, with a FindingScanOccurrence junction table recording every Scan that has seen a Finding. Timestamps are best-effort per tool, with `timestamp_source` labeling fallback cases. [[specs/slice-1\|slice 1 spec §Data model]]. |
+| `false-positive` as a Finding status distinct from `suppressed`? | 2026-04-23 spec revision | Yes. Finding status is now `active | suppressed | accepted-risk | false-positive | fixed`. |
 
 ---
 
