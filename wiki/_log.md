@@ -139,3 +139,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | synthesis/lint-report.md | second lint pass - three remaining stale references in competitive pages (reconftw design-changes, README slice-1 ingest claim, build-vs-adapt LLM prototype claim)
 
 ## [2026-04-23] write | competitive/reconftw.md | reconftw design-changes section rewritten to match slice 1 finalization - JSON ingest deferred to slice 2, mirror the how-this-influenced-the-spec pattern from defectdojo
+
+## [2026-04-23] write | competitive/README.md | competitive README - remove slice 1 ingest claim from key takeaways and leverage-analysis index row, reflect deferral to slice 2
