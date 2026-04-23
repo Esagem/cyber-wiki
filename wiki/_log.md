@@ -149,3 +149,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | index - slice 1 approved, spec status bumped to active high-confidence, add approval entry to recent activity
 
 ## [2026-04-23] write | synthesis/roadmap.md | roadmap - check off slice 1 sign-off item, flag architecture overview as the sole remaining phase 1 blocker to pre-design exit
+
+## [2026-04-23] write | architecture/overview.md | architecture overview - system diagram, module boundaries, end-to-end walkthrough, extension points, what is deferred
