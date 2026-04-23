@@ -95,3 +95,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | synthesis/roadmap.md | reshape roadmap around slice-based plan and removed ADR gates
 
 ## [2026-04-23] write | engagements-RESERVED/README.md | drop ADR references; activation is now a session-level decision that edits CYBER.md
+
+## [2026-04-23] write | competitive/README.md | drop ADR-009 reference from leverage verdict
