@@ -9,6 +9,7 @@ created: 2026-04-23
 updated: 2026-04-23
 sources:
   - "https://github.com/six2dez/reconftw"
+  - "https://github.com/six2dez/reconftw/blob/main/LICENSE"
   - "https://docs.reconftw.com/"
   - "https://starlog.is/articles/cybersecurity/six2dez-reconftw/"
   - "https://www.helpnetsecurity.com/2024/12/30/reconftw-open-source-reconnaissance-automation/"
@@ -59,7 +60,26 @@ Most of this is **slice 2 and slice 3 territory**, not slice 1:
 
 ## Pricing / licensing model
 
-Open source, GPL-3.0 (based on the repo license). No commercial tier. Community-maintained via GitHub issues and Discord.
+**⚠️ License status is ambiguous and unresolved.** This needs to be settled before any code-level leverage decision is made.
+
+- The repository's `LICENSE` file (github.com/six2dez/reconftw/blob/main/LICENSE) contains the **MIT License**, Copyright (c) 2023 six2dez. Fully permissive.
+- The repository's **README.md** and the official documentation pages state: "The material contained in this repository is licensed under GNU GPLv3." Strong copyleft.
+- Third-party license trackers disagree with each other — Socket.dev reports MIT; kandi reports GPL-3.0.
+
+These two licenses have very different implications:
+
+- **MIT:** CSAK can fork reconFTW code, include it, modify it, and distribute CSAK under any license (including proprietary), as long as the MIT copyright notice is preserved.
+- **GPL-3.0:** CSAK cannot include reconFTW code unless CSAK is also released under GPL-3.0 (or a compatible license). Linking is also affected; subprocess invocation and output parsing are generally considered safe under GPL's interpretation.
+
+**This ambiguity should not be guessed at.** Before any decision to fork, embed, or link reconFTW code into CSAK, this needs to be resolved. Options:
+
+1. Open a GitHub issue on the reconFTW repo asking the maintainer to clarify.
+2. Treat the ambiguity conservatively — assume GPL-3.0 for any leverage strategy that involves including reconFTW's code. This keeps CSAK's options open without legal risk.
+3. Avoid the question entirely by using only strategies that don't trigger license propagation (subprocess invocation, output parsing).
+
+**Strategies that don't depend on license resolution:** subprocess invocation (CSAK shells out to `reconftw.sh`), output parsing (CSAK reads `report/report.json`). Neither requires including reconFTW code or headers in CSAK's codebase.
+
+No commercial tier exists. Community-maintained via GitHub issues and Discord.
 
 ## Verdict for CSAK design
 
@@ -73,10 +93,11 @@ reconFTW is **the thing to watch for slice 2 and 3**, not slice 1. Slice 1 doesn
 
 **Design changes this research suggests:**
 
-- **Add reconFTW's `report/report.json` as a potential slice 1 ingest format.** Either in the initial 5 or as a stretch goal. Low effort, meaningful positioning.
+- **Add reconFTW's `report/report.json` as a potential slice 1 ingest format.** Either in the initial 5 or as a stretch goal. Low effort, meaningful positioning. This is license-safe — reading output data does not create a derivative work.
 - **Study reconFTW's "Quick Rescan Mode" pattern** for slice 2's tool-re-invocation logic. Skipping heavy stages when nothing's changed is smart.
 - **Adaptive rate limiting is a slice 2 requirement, not a nice-to-have.** Design it in from the start.
 - **Consider whether slice 2 should explicitly be a replacement for reconFTW or an augmentation.** If the former, CSAK slice 2 scope is much larger; if the latter, slice 2 might just be "CSAK can invoke reconFTW and parse its output."
+- **Resolve the license ambiguity** before any strategy that requires including reconFTW code. Until resolved, prefer strategies that don't depend on it (subprocess invocation, output parsing).
 
 ## Notes
 
@@ -88,5 +109,6 @@ The `reconftw_ai` feature (AI report generation) being recent and opt-in suggest
 
 - [[competitive/README|Competitive Analysis Index]]
 - [[competitive/defectdojo|DefectDojo]]
+- [[competitive/leverage-analysis|Leverage Analysis]]
 - [[product/slices|Slice Plan]]
 - [[specs/slice-1|Slice 1 Spec]]
