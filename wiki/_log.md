@@ -83,3 +83,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] delete | decisions/README.md | User directive: remove ADR scaffolding entirely; rationale moves inline into specs
 
 ## [2026-04-23] write | CYBER.md | remove ADR scaffolding from schema - decisions live inline in specs now
+
+## [2026-04-23] write | product/scope.md | strip ADR references from scope; scope changes now logged as spec revisions with rationale inline
