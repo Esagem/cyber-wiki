@@ -181,3 +181,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | product/glossary.md | glossary - remove probability_real entry, priority formula reverts to three axes
 
 ## [2026-04-24] write | architecture/overview.md | architecture overview - remove probability_real references from walkthrough and extension-points analyst-edit example
+
+## [2026-04-24] write | sessions/2026-04-24-slice-1-implementation-review.md | slice 1 implementation review session - code matches spec, 83/83 tests pass, end-to-end run verified, two small polish items flagged
