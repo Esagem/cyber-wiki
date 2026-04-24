@@ -11,7 +11,7 @@ updated: 2026-04-23
 
 # Slice 1 — Ingest & Report
 
-> Finalized and approved 2026-04-23. All open design questions closed. This is the authoritative spec for slice 1 implementation.
+> Finalized and approved 2026-04-23. Updated 2026-04-23 to remove the `probability_real` feature (was ambiguously approved, confirmed for removal). This is the authoritative spec for slice 1 implementation.
 
 ## Goal
 
@@ -56,6 +56,7 @@ No tool orchestration. No recursion. **No LLM** — slice 1 is entirely determin
 - Web UI.
 - Any database record of past reports — reports are export events, not entities.
 - **Any LLM use inside CSAK.** Slice 1 is deterministic end-to-end. A later slice can layer LLM features over the structured outputs slice 1 produces; that's why slice 1 commits to a clean JSON export shape.
+- **Per-finding analyst probability adjustment.** The analyst expresses "probably a false positive" by setting `status = false-positive` (committing) or leaving the finding `active` (not committing). There is no intermediate float axis in slice 1. If a distinction between "suspect" and "confirmed FP" proves necessary in practice, revisit in a later slice.
 
 ## Supported inputs — the 5 starter tools
 
@@ -172,8 +173,8 @@ There is **no Report entity** in the data model. Reports are stateless exports �
 - **Scan is a distinct layer** between Artifact and Finding. Artifact is bytes on disk; Scan is the analyst's mental unit of "the April Nessus scan" or "yesterday's Nuclei sweep." The distinction lets one Artifact participate in multiple Scans (re-ingesting the same bytes creates a new Scan event) and one Scan to span multiple Artifacts (Zeek is typically 3+ log files per capture window, one Scan).
 - **Finding is deduplicated per `(org_id, source_tool, tool-specific key)`**, and re-occurrence is recorded in `FindingScanOccurrence` rather than creating a new Finding row. This keeps `findings.status` and `findings.last_seen` as single sources of truth for "is this still active" while preserving the full scan history for "when did we first see this" and "which scans have caught it."
 - **Artifact remains distinct** from Scan because it is the immutable byte-level record. Scans are analyst-facing abstractions that can be deleted or relabeled; Artifacts are evidence.
-- **Severity and confidence are independent axes** because they answer different questions. Severity is "how bad would this be if real." Confidence is "how likely is this real." CVSS conflates them and that's a longstanding pain point.
-- **`priority` is stored, not recomputed.** It's computed once at ingest time and written to the Finding row. This is what "deterministic scoring at ingest time" means concretely: no code path mutates priority after the Finding is written, except the explicit analyst actions that mutate `status` or a Target's `target_weight`, which do trigger a recompute.
+- **Severity and confidence are independent axes** because they answer different questions. CVSS conflates them and that's a longstanding pain point. Both come from the tool (or CSAK's defaults for it); analyst judgment enters via `target_weight` and `status`, not via scoring axes on the Finding itself.
+- **`priority` is stored, not recomputed.** It's computed once at ingest time and written to the Finding row. This is what "deterministic scoring at ingest time" means concretely: no code path mutates priority after the Finding is written, except the explicit analyst actions that mutate `status` or `tags`, or a change to a Target's `target_weight`, which do trigger a recompute of that Finding's priority.
 - **`first_seen` / `last_seen`** lets the report query say "findings active during any window the analyst asks for" without needing a separate time-series store.
 - **Soft delete everywhere except Artifacts.** Orgs, Targets, Findings get a `deleted_at` nullable timestamp. Artifacts are never deleted through CSAK; if someone really needs disk space back they can `rm` the file directly. Rationale: analysts re-engaging with a past client want their old data back rather than a fresh Org, and the byte-level record of what CSAK was given should be preserved even when downstream Findings are softly removed.
 - **No Report entity.** Reports are pipeline outputs, not state. CSAK never holds a record of past reports, and never re-renders a past report — each invocation is a fresh query against current state, written to a timestamped file. The directory of timestamped files is the history.
@@ -231,14 +232,9 @@ Each Finding gets:
 - **`target_weight`**: lives on the Target row, default 1.0, analyst-settable. Persists across scans and runs.
 - **Priority**: derived and stored at ingest time. `priority = severity_weight × confidence_weight × target_weight`.
 
-Handling false positives:
-
-- When the analyst is certain a Finding is a false positive, they set `status = false-positive`. The Finding is preserved (for history and to avoid re-scoring on re-ingest) but excluded from active reports by default.
-- When the analyst has doubt but isn't certain, they either leave the Finding active or suppress it. Slice 1 does not offer a fractional "probably FP" downweight; the analyst commits or doesn't.
-
 Mutations that recompute priority for a specific Finding:
 
-- Analyst sets `status` or `tags`. (Status affects visibility, not the priority number directly, but the recompute is cheap and keeps the pipeline simple.)
+- Analyst sets `status` or `tags` on the Finding (tags don't enter the formula, but we recompute defensively since the mutation touches the row).
 - Analyst changes a Target's `target_weight` — priorities for all Findings on that Target recompute.
 
 Mutations that do **not** trigger recompute:
@@ -248,7 +244,18 @@ Mutations that do **not** trigger recompute:
 
 Re-scoring those Findings requires re-ingesting the source artifact. Slice 1 deliberately does not offer a bulk re-score command because there is no reliable way to compare outputs across scoring-table changes without manual review; the re-ingest path forces that review to happen (the analyst sees a new Scan with new Findings and compares to the old ones manually).
 
-**Rationale for all of the above.** Three axes (severity × confidence × target weight) rather than single-axis priority or CVSS alone because CVSS conflates severity and confidence into one number that's often wrong, and because target weight is the axis only the analyst can supply — a remote code execution on staging matters less than an info leak on the client's public-facing API. Deterministic over LLM-assisted because scoring must be consistent and auditable — an LLM layer can attach later if desired, but slice 1's job is to produce a reliable, explainable score. Write-once at ingest so that scores can't silently change between when the analyst looked at a report and when they look at the next one.
+### How the analyst expresses doubt about a finding
+
+When the analyst thinks a finding is probably noise but isn't ready to commit, the options in slice 1 are:
+
+- **Leave it `active`.** Default. The finding participates in reports at its computed priority.
+- **Set `status = suppressed`.** Hides the finding from reports but keeps the row. Reversible.
+- **Set `status = false-positive`.** Commits to "this isn't real." Excluded from reports by default; visible in audits.
+- **Tag it.** Freeform `tags` field lets the analyst annotate ("probably-fp", "review-with-client") without changing status. Tags are surfaced in reports but don't affect scoring.
+
+There is no intermediate float ("probability real = 0.3") in slice 1. If the `active`/`suppressed`/`false-positive` trichotomy plus tags proves too coarse in practice, a later slice can revisit.
+
+**Rationale for all of the above.** Three axes (severity × confidence × target weight) rather than single-axis priority or CVSS alone because CVSS conflates severity and confidence into one number that's often wrong, and because target weight is the one axis only the analyst can supply — a remote code execution on a staging box matters less than an info leak on the client's public-facing API. Deterministic over LLM-assisted because scoring must be consistent and auditable — an LLM layer can attach later if desired, but slice 1's job is to produce a reliable, explainable score. Write-once at ingest so that scores can't silently change between when the analyst looked at a report and when they look at the next one.
 
 ## Dedup
 
@@ -381,7 +388,8 @@ csak report generate --org acmecorp --period 2026-04 --kind internal-review --fo
 csak report generate --org acmecorp --period today --kind internal-review --format json
 csak report generate --org acmecorp --period 2026-04 --kind fit-bundle --format markdown,docx,json
 csak findings list --org acmecorp --status active --severity high
-csak findings update <finding-id> --status false-positive
+csak findings update <finding-id> --status suppressed
+csak findings update <finding-id> --tag probably-fp
 csak target list --org acmecorp
 csak target update <target-id> --weight 1.5
 csak scan list --org acmecorp
@@ -392,6 +400,7 @@ Notable absences from slice 1:
 - **No `csak triage` command.** Scoring happens at ingest; there's nothing to re-run.
 - **No `csak report regenerate` command.** Every generation is fresh and stateless; no identity exists to "regenerate."
 - **No LLM-related commands or flags.**
+- **No `--probability-real` flag.** The analyst expresses doubt via `status` transitions or `tags`, not a float.
 
 **Rationale.** CLI over web UI over TUI over daemon. A CLI fits an analyst's existing workflow (terminal-heavy, invoked on-demand during active work), is fastest to build, and doesn't constrain what we do later — a web or TUI can wrap a CLI; it's much harder the other way. No daemon because slice 1 is explicitly not continuous.
 
@@ -415,7 +424,6 @@ For clarity — these are real pain points, they just aren't slice 1's problem:
 - Scheduled / automated report generation (slice 4+).
 - Period summaries that compare one report against another (slice 4+ if at all).
 - Re-scoring existing Findings under updated tables.
-- Fractional "probably FP" downweighting. Slice 1 treats false-positive judgment as a commit (status = false-positive) or not. Partial doubt is not expressed as a score modifier.
 - Watching data sources and firing on events as they arrive (indefinitely out of scope — SIEM).
 - LLM use of any kind inside CSAK (a later slice can layer LLM features over slice 1's structured outputs).
 - Team collaboration features.
