@@ -198,15 +198,17 @@ What happens:
 
 ### Step 3: analyst iterates
 
-Analyst reads the internal review, determines Finding #12 is a false positive (the plugin fires on a cipher suite the customer has formally accepted):
+Analyst reads the internal review, decides Finding #12 is noise and doesn't want to see it in the next report:
 
 ```
-csak findings update <id-of-finding-12> --status false-positive
+csak findings update <id-of-finding-12> --status suppressed
 ```
 
 - **CLI** dispatches to the query layer's update path.
-- **Query layer** writes `status = false-positive` to the Finding. Priority recomputes as a side effect of the mutation (cheap; keeps the pipeline simple), though the score itself doesn't change since none of its three components (severity, confidence, target_weight) were touched.
-- Next report generation filters out Findings with `status = false-positive` by default. The Finding is preserved in the database for history and so re-ingesting doesn't create a duplicate.
+- **Query layer** writes `status = suppressed` to the Finding. Priority is recomputed defensively (same formula, same inputs, so same output in this case). No other Finding is touched.
+- Next report generation naturally excludes suppressed findings from the default query.
+
+If instead the analyst wants to flag the finding as probably-FP without committing, they can tag it (`--tag probably-fp`) and the tag surfaces in reports without affecting priority.
 
 ### Step 4: re-run the report
 
