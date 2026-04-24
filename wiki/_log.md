@@ -175,3 +175,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-23] write | _index.md | index recent-activity - add probability_real removal entry, update finalized-description to reflect three-axis scoring
 
 ## [2026-04-23] write | competitive/build-vs-adapt.md | build-vs-adapt - remove three probability_real references (tool parsers note, severity tables note, why-not-fork triage rationale)
+
+## [2026-04-24] write | specs/slice-1.md | remove probability_real feature per Eli - priority is now severity x confidence x target_weight, three axes not four
