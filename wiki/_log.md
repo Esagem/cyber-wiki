@@ -199,3 +199,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | competitive/build-vs-adapt.md | build-vs-adapt - update reconFTW orchestration entry per case study, demote report.json ingest from default slice 2 path to optional
 
 ## [2026-04-24] write | specs/slice-2.md | slice 2 spec - first draft, on-demand orchestration of nuclei subfinder httpx, three modes, sync, adaptive rate limiting, no quick rescan, no LLM, no Nessus API yet
+
+## [2026-04-24] write | _index.md | index - slice 2 spec drafted, recent activity entries for case study and slice 2 draft
