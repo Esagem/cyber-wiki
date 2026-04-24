@@ -179,3 +179,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | specs/slice-1.md | remove probability_real feature per Eli - priority is now severity x confidence x target_weight, three axes not four
 
 ## [2026-04-24] write | product/glossary.md | glossary - remove probability_real entry, priority formula reverts to three axes
+
+## [2026-04-24] write | architecture/overview.md | architecture overview - remove probability_real references from walkthrough and extension-points analyst-edit example
