@@ -1,12 +1,12 @@
 ---
 title: "Build vs Adapt — DefectDojo and reconFTW"
 category: competitive
-tags: [build-vs-buy, decision-input, feasibility, slice-1]
-status: draft
-confidence: medium
+tags: [build-vs-buy, decision-input, feasibility, slice-1, slice-2]
+status: active
+confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-23
+updated: 2026-04-24
 sources:
   - "[[competitive/defectdojo]]"
   - "[[competitive/reconftw]]"
@@ -43,62 +43,60 @@ If any of those four fails, **write fresh and take inspiration from their design
 - Solves a hard problem? **Yes.** Every real scanner format has landmines — Nessus XML has malformed entity references in the wild, Nuclei's JSON structure has changed across versions, and so on. DefectDojo's parsers have absorbed ten years of those edge cases.
 - Quality bar? Variable. Some parsers are tight; others are first-draft-that-worked. All are reasonable Python.
 - Cheaper than rewriting? **Probably not worth a literal copy.** Their parsers return DefectDojo's `Finding` object; ours needs to return CSAK's `Finding` entity with the three-axis scoring shape (severity × confidence × target_weight). The parsing *logic* transfers, but the output shape doesn't.
-- **Recommendation: study, don't copy.** Read each parser to understand the landmines. Write CSAK's own parser fresh. Where DefectDojo's parser has solved a subtle edge case (e.g. Nessus's optional `port` attribute, Nuclei's shifting field names), use that as a test case for CSAK's implementation. This is "inspiration" in the most concrete form — we get the decade of bug reports without inheriting the code.
+- **Recommendation: study, don't copy.** Read each parser to understand the landmines. Write CSAK's own parser fresh. Where DefectDojo's parser has solved a subtle edge case (e.g. Nessus's optional `port` attribute, Nuclei's shifting field names), use that as a test case for CSAK's implementation.
 
 **Dedup engine.**
-- Self-contained? **No.** Dedup is distributed across Finding model methods, configuration, and the ORM. You can't extract just the dedup without dragging Django along.
+- Self-contained? **No.** Dedup is distributed across Finding model methods, configuration, and the ORM.
 - Solves a hard problem? Yes — dedup is subtle and the per-tool dedup keys matter.
-- Quality bar? Good, but architecture-coupled.
 - Cheaper than rewriting? **No.** By the time we untangle the ORM, we've rewritten it.
-- **Recommendation: inspiration only.** Read their dedup-key choices per tool — that's transferable knowledge. Implement fresh against CSAK's data model.
+- **Recommendation: inspiration only.** Read their dedup-key choices per tool — that's transferable knowledge. Implement fresh against CSAK's data model. (Slice 1 already shipped this.)
 
 **Severity normalization tables.**
-- Self-contained? Yes — these are essentially data, not code. The mapping from "Nessus Critical" to DefectDojo's unified scale is a small table.
-- Solves a hard problem? Modestly. The thinking is more valuable than the specific numbers.
-- Quality bar? Fine for what it is.
-- Cheaper than rewriting? These are small enough that copying the data isn't really "copying code." **It's reference data, and CSAK needs its own anyway** because we're adding confidence and target_weight as independent axes that DefectDojo doesn't have.
-- **Recommendation: use as a starting point for CSAK's own tables.** Cite DefectDojo as the source in the front matter of the triage-model spec.
+- Self-contained? Yes — these are essentially data, not code.
+- **Recommendation: use as a starting point for CSAK's own tables.** Cite DefectDojo as the source. (Slice 1 already shipped this for the five starter tools.)
 
 **Django web application (views, URLs, admin, UI).**
-- Irrelevant. CSAK is CLI. None of this transfers.
-- **Recommendation: ignore entirely.**
+- Irrelevant. CSAK is CLI. **Ignore entirely.**
 
 **CWE-keyed remediation templates.**
-- Self-contained? These are text content, not code.
-- Solves a hard problem? Writing good remediation advice across hundreds of CWEs is a lot of work.
-- Quality bar? Varies by template.
-- Cheaper than rewriting? Yes — this is content, and the licensing allows redistribution with attribution.
-- **Recommendation: adapt the template content as a starting point for CSAK's fix-it ticket library.** Attribute DefectDojo. Rewrite where our narrative style differs from theirs. Slice 1 ships with coverage for ~10–15 high-frequency CWEs from the starter tools, per the slice 1 spec.
+- Self-contained text content, not code. Writing good remediation advice across hundreds of CWEs is a lot of work.
+- **Recommendation: adapt the template content as a starting point for CSAK's fix-it ticket library, with attribution.** (Slice 1 ships ~10–15 high-frequency CWEs from the starter tools.)
 
 ### reconFTW
 
-**The orchestration pipeline** (`reconftw.sh`'s stage-by-stage logic).
-- Self-contained? No — it's thousands of lines of bash with implicit environment assumptions.
-- Solves a hard problem? Yes — the *design* of the pipeline has absorbed a lot of real-world learning about what order to run tools, which flags actually work, and where things break.
-- Quality bar? **Below CSAK's target.** It's bash. We've explicitly rejected bash as CSAK's implementation language for slice 2+ because we want typing, testing, and structural reliability.
-- Cheaper than rewriting? No — porting bash to Python is not a mechanical translation; it's a redesign. The savings are in knowing the pipeline *shape*, not in reusing the code.
-- **Recommendation: inspiration only, design-level.** Treat reconFTW as a reference architecture: study its module boundaries, its stage ordering, its rate-limiting behavior. Write CSAK's slice 2 orchestration fresh in the chosen typed language.
+**The orchestration pipeline** (`reconftw.sh` and `modules/*.sh`).
+
+The first version of this analysis (2026-04-23) framed reconFTW's orchestration as "valuable design we should learn from architecturally." The case study in [[competitive/reconftw|reconFTW]] (2026-04-24) corrected that framing. The honest reading of the source is:
+
+- reconFTW does **not** have intelligent runtime tool selection. For each category (subdomain enumeration, web detection, vuln scanning) it runs **all enabled tools** in a fixed order and dedups the union.
+- The "selection" is a config-file decision: ~300 boolean knobs in `reconftw.cfg`, with mode flags (`-r`, `-z`, `-a`) that flip pre-curated groups of those booleans.
+- The pipeline ordering is hard-coded (subfinder → puredns → httpx → nuclei).
+- The actual intellectual property is **the recipes** — the specific flag combinations for each tool — not the orchestration logic.
+
+Updated assessment:
+
+- Self-contained? No — bash with implicit environment assumptions.
+- Solves a hard problem? **The recipes do; the orchestration logic is straightforward.** What looks like "complex orchestration" is mostly a long bash pipeline with dedup-on-merge.
+- Quality bar? Below CSAK's target (bash, no types, no tests).
+- Cheaper than rewriting? **The orchestration is cheap to write fresh; the recipes are expensive to reproduce from scratch.** Build the orchestrator, adapt the recipes.
+- **Recommendation: build the orchestration ourselves, adapt the recipes with attribution.** Treat reconFTW's modules as a documentation source for "what flags to pass each tool in each context." Write CSAK's slice 2 orchestrator in Python from scratch — the pipeline shape is straightforward (subprocess runner + stage sequencer + dedup-on-merge, ~500-1000 LOC). Deliberately *do not* copy reconFTW's 300-knob config model; ship a small handful of curated modes with a sensible default instead.
 
 **Tool invocation recipes** (the specific flags reconFTW passes to each tool).
 - Self-contained? Yes — these are individual command strings.
-- Solves a hard problem? **Yes, and underrated.** Knowing that Nuclei needs `-severity critical,high,medium -jsonl` for useful output, or that Subfinder wants `-all -silent`, or that httpx needs specific flags to behave well chained after Subfinder — this is accumulated knowledge.
-- Quality bar? Fine. They're just flag sets.
-- Cheaper than rewriting? **Yes.** Documenting "CSAK invokes Nuclei with these flags" is cheap; figuring out the right flags from scratch is not.
-- **Recommendation: adapt these as documented defaults in CSAK's slice 2 tool catalog.** These are closer to configuration than code, and only become relevant once CSAK runs tools itself.
+- Solves a hard problem? **Yes, and underrated.** Knowing that Nuclei needs `-severity critical,high,medium -jsonl` for useful output, or that Subfinder wants `-all -silent`, or that httpx needs specific flags to behave well chained after Subfinder — this is accumulated knowledge that took six2dez years to settle.
+- Cheaper than rewriting? **Yes, by a lot.** Documenting "CSAK invokes Nuclei with these flags" is cheap; figuring out the right flags from scratch is not.
+- **Recommendation: adapt these as documented defaults in CSAK's slice 2 tool catalog with attribution.** This is the highest-leverage thing CSAK can take from reconFTW. Each tool entry in the slice 2 catalog should carry a `# source: reconFTW v4.0 modules/<file>.sh` comment.
 
 **`report/report.json` schema** (the consolidated output structure).
-- We aren't copying code here — we're reading their output. This is the output-parsing strategy from the leverage analysis, unchanged.
-- **Recommendation: accept as an ingest format in slice 2.** Deferred out of slice 1, which stays scoped to the five committed tool formats. The slice 1 parser architecture is plugin-shaped so adding this later is not core surgery.
+- We aren't copying code here — we're reading their output. License-safe under any interpretation.
+- **Recommendation: optional, not on the slice 2 critical path.** The 2026-04-23 leverage analysis framed reconFTW JSON ingest as a natural slice 2 add. The case study changes that: if CSAK has its own orchestrator that produces native CSAK Findings via the slice 1 ingest pipeline, the analyst doesn't need to bring reconFTW JSON to CSAK — they just use CSAK directly. reconFTW JSON ingest stays viable as an optional adapter for analysts who already run reconFTW and want to point CSAK at their existing output, but it's no longer the load-bearing slice 2 deliverable. Defer indefinitely; revisit if a real analyst needs it.
 
 **`reconftw_ai` report generation** (local Ollama integration).
-- Self-contained? Partially — it's a small module.
-- Solves a hard problem? The problem is "how do you get useful narrative from structured findings without hallucination." reconFTW's approach is early-stage and, per their own documentation, not yet mature.
-- Quality bar? Unproven.
-- Cheaper than rewriting? No — we'd spend most of our time on prompt engineering anyway, and theirs isn't a finished product to build on.
-- **Recommendation: ignore.** Slice 1 of CSAK explicitly contains no LLM use; it ships a clean JSON export designed as the interface for a future LLM layer. When that later slice opens, CSAK will prototype LLM use over its own structured output — not over reconFTW's. Their approach might become useful reference later but isn't load-bearing.
+- The problem is "how do you get useful narrative from structured findings without hallucination." reconFTW's approach is early-stage and not yet mature.
+- **Recommendation: ignore.** Slice 1 of CSAK explicitly contains no LLM use; it ships a clean JSON export designed as the interface for a future LLM layer. When that later slice opens, CSAK will prototype LLM use over its own structured output — not over reconFTW's.
 
 **Distributed scanning via Ax Framework.**
-- Out of CSAK's scope for slice 1 and 2. Worth knowing exists. Not relevant to this decision.
+- Out of CSAK's scope for slice 1 and 2. Worth knowing exists. **Ignore for now.**
 
 ## Summary matrix
 
@@ -109,11 +107,12 @@ If any of those four fails, **write fresh and take inspiration from their design
 | DefectDojo — severity tables | ✅ (data, not code) | | |
 | DefectDojo — CWE remediation templates | ✅ (content, slice 1) | | |
 | DefectDojo — Django web app | | | ✅ |
-| reconFTW — orchestration pipeline | | ✅ | |
-| reconFTW — tool invocation recipes | ✅ (config, slice 2) | | |
-| reconFTW — `report/report.json` ingest | n/a (output parsing, slice 2) | | |
+| reconFTW — orchestration pipeline | | (limited — pipeline shape only) | |
+| reconFTW — **tool invocation recipes** | ✅ (config, slice 2 — **highest-leverage adaptation**) | | |
+| reconFTW — `report/report.json` ingest | optional, low priority | | |
 | reconFTW — `reconftw_ai` | | | ✅ |
 | reconFTW — Ax Framework | | | ✅ |
+| reconFTW — 300-knob config model | | | ✅ (deliberately reject) |
 
 ## The honest recommendation
 
@@ -121,37 +120,42 @@ If any of those four fails, **write fresh and take inspiration from their design
 
 Specifically:
 
-1. **Write CSAK's code fresh.** Parsers, triage, dedup, reporting — all of it. The architectural win (clean four-layer data model, three-axis scoring, narrative reports, CLI-first, stateless report exports with a clean JSON seam for a future LLM layer) requires a code structure that neither DefectDojo nor reconFTW is shaped for. Forking either means fighting their architecture forever.
+1. **Write CSAK's code fresh.** Parsers, triage, dedup, reporting, orchestration — all of it. The architectural win (clean four-layer data model, three-axis scoring, narrative reports, CLI-first, stateless report exports with a clean JSON seam for a future LLM layer) requires a code structure that neither DefectDojo nor reconFTW is shaped for.
 
-2. **Adapt data and content with attribution.** DefectDojo's severity mapping tables and CWE remediation templates are content, not code. Use them as starting points for CSAK's equivalents, credit the source, and customize to match our voice and scoring model.
+2. **Adapt data and content with attribution.** DefectDojo's severity mapping tables and CWE remediation templates are content, not code. Slice 1 already shipped this.
 
-3. **Adapt configuration with attribution.** reconFTW's specific tool invocation flags (Nuclei, Subfinder, httpx) are small, proven, and hard to reproduce from scratch. Document them in CSAK's slice 2 tool catalog as defaults with a `# source: reconFTW v4.0` comment.
+3. **Adapt configuration with attribution.** reconFTW's specific tool invocation flags (Nuclei, Subfinder, httpx) are small, proven, and hard to reproduce from scratch. Document them in CSAK's slice 2 tool catalog as defaults with a `# source: reconFTW v4.0 modules/<file>.sh` comment. **This is now the primary thing CSAK takes from reconFTW.**
 
-4. **Take design-level inspiration without any copying.** Both projects have made ten-ish years of mistakes we can skip. Read their code, read their issue trackers, understand the gotchas — then write CSAK's version knowing the landmines. This is the highest-leverage use of their existence.
+4. **Take design-level inspiration without any copying.** Both projects have made years of mistakes we can skip. Read their code, read their issue trackers, understand the gotchas — then write CSAK's version knowing the landmines.
 
-5. **Don't try to extract code from either.** In both cases, the valuable code is entangled with architectural decisions we've chosen to make differently. Extraction costs more than rewriting, and the result would be a Frankenstein that doesn't fit CSAK's shape.
+5. **Don't try to extract code from either.** In both cases, the valuable code is entangled with architectural decisions we've chosen to make differently. Extraction costs more than rewriting.
+
+6. **Deliberately reject the 300-knob config model.** reconFTW's "intelligence-by-knob" approach overwhelms non-power-users. CSAK ships with a small handful of curated modes plus a single sensible default; adds knobs only when they earn their place.
 
 ## Why not fork and evolve?
 
 An alternative path — fork DefectDojo, rip out the Django shell, evolve it into CSAK — exists and is legally fine. Reasons this is still a bad idea:
 
 - **The data model mismatch is fundamental.** DefectDojo is Product → Engagement → Test → Finding with Endpoints alongside. CSAK is Org → Target → Scan → Finding plus Artifact, with stateless (non-entity) reports. Reshaping DefectDojo to match would touch every file.
-- **The architectural thesis is inverted.** DefectDojo is a persistent server with scheduled ingests. CSAK is a CLI with on-demand runs. These aren't adjustments of the same system; they're different systems.
-- **Maintenance burden compounds.** Every DefectDojo release would force a rebase decision. We'd be maintaining two divergent codebases forever, or committing to tracking upstream.
+- **The architectural thesis is inverted.** DefectDojo is a persistent server with scheduled ingests. CSAK is a CLI with on-demand runs.
+- **Maintenance burden compounds.** Every DefectDojo release would force a rebase decision.
 - **The parts that matter most are the parts we'd rewrite anyway.** Triage (because we're adding confidence and target_weight as independent axes alongside severity), reports (because narrative fix-it tickets and stateless exports aren't DefectDojo's output shape), CLI (because DefectDojo doesn't have one), the JSON seam for a future LLM layer (because DefectDojo gates LLM behind Pro).
 
-The same reasoning applies to reconFTW — with the added problem that it's bash, which we've rejected as an implementation language.
+The same reasoning applies to reconFTW with two added problems: (1) it's bash, which we've rejected as an implementation language, and (2) the orchestration logic itself isn't worth porting — only the recipes are.
 
-## What this means for the slice 1 spec
+## What this means for slice 2 design
 
-This analysis supports (rather than challenges) the current slice 1 approach. Concrete outputs:
+Concrete inputs to the slice 2 spec, when it gets written:
 
-- **DefectDojo's severity mapping tables** will be cited as source material for CSAK's per-tool severity translation tables under `config/triage/severity/<tool>.yaml`, when those are built during slice 1 implementation.
-- **DefectDojo's CWE remediation templates** will be cited as source material for CSAK's slice 1 fix-it ticket template library (~10–15 high-frequency CWEs).
-- **reconFTW's tool invocation flag sets** will be cited when slice 2's tool catalog takes shape — not a slice 1 concern.
-- **A central `research/references.md` page** should catalog which external projects have contributed ideas or data to CSAK, so attribution is in one place instead of scattered across spec sections. Low priority; add when the first piece of adapted content actually lands in the repo.
+- **Tool catalog** under `config/tools/<tool>.yaml` (or similar) carries the invocation recipes adapted from reconFTW with attribution. Slice 2 supports the on-demand active tools that earn their keep: Nuclei, Subfinder, httpx, possibly Nessus via API. Zeek and osquery stay ingest-only.
+- **Orchestration code** is CSAK-native Python. Subprocess runner, stage sequencer, dedup-on-merge. No subprocess invocation of reconFTW. No bash shelled out.
+- **Mode model** is a small set (probably 2-4 modes — something like `quick`, `standard`, `deep`) plus per-tool overrides at the CLI. Not 300 booleans.
+- **Adaptive rate limiting** is a slice 2 requirement, not a nice-to-have, because external active tools hit 429/503 in the real world. Adopted from reconFTW's pattern.
+- **Quick rescan** pattern from reconFTW (skip heavy stages when cheap stages reveal no new assets) is the one piece of reconFTW's actual runtime logic worth adapting.
 
-No existing decisions change. This is a "stay the course" recommendation with permission to borrow specific non-code artifacts along the way.
+## A central references page
+
+A `research/references.md` page should catalog which external projects have contributed ideas or data to CSAK, so attribution is in one place instead of scattered across spec sections. Low priority; add when the first reconFTW recipe lands in the slice 2 tool catalog.
 
 ## Related
 
