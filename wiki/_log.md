@@ -187,3 +187,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | specs/slice-1.md | slice 1 implemented - update spec header, switch timestamps to ms, document ID column on findings list
 
 ## [2026-04-24] write | architecture/overview.md | architecture overview - slice 1 implemented, ms timestamps, ID column, walkthrough reflects shipped behavior
+
+## [2026-04-24] write | synthesis/roadmap.md | roadmap - slice 1 shipped, phase 1 fully closed including implementation, add phase 1b implementation milestone, next focus slice 2
