@@ -191,3 +191,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | synthesis/roadmap.md | roadmap - slice 1 shipped, phase 1 fully closed including implementation, add phase 1b implementation milestone, next focus slice 2
 
 ## [2026-04-24] write | _index.md | index - slice 1 shipped, phase marker updated, add 2026-04-24 implementation session, next focus slice 2
+
+## [2026-04-24] write | sessions/2026-04-24-slice-1-shipped.md | session notes - 2026-04-24 slice 1 shipped and reviewed, captures deviations accepted and next-up slice 2
