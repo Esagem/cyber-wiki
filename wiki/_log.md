@@ -195,3 +195,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | sessions/2026-04-24-slice-1-shipped.md | session notes - 2026-04-24 slice 1 shipped and reviewed, captures deviations accepted and next-up slice 2
 
 ## [2026-04-24] write | competitive/reconftw.md | reconftw - add 2026-04-24 case study reading correcting the tool selection framing, recipes are the value not orchestration logic, also fix stale four-axis triage reference
+
+## [2026-04-24] write | competitive/build-vs-adapt.md | build-vs-adapt - update reconFTW orchestration entry per case study, demote report.json ingest from default slice 2 path to optional
