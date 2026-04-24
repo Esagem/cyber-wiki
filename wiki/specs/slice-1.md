@@ -6,12 +6,12 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-22
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # Slice 1 — Ingest & Report
 
-> Finalized and approved 2026-04-23. Updated 2026-04-23 to remove the `probability_real` feature (was ambiguously approved, confirmed for removal). This is the authoritative spec for slice 1 implementation.
+> **Implemented 2026-04-24.** All 83 tests pass; end-to-end run verified. The implementation matches this spec on every load-bearing decision (data model, scoring formula, dedup keys, ingest pipeline, stateless reports, export formats, mutation behaviors). Two small deviations from the original (2026-04-23) spec text — millisecond timestamp precision and an `ID` column on `csak findings list` — were accepted during implementation review and are now written back into this document. This spec is the authoritative record of what shipped.
 
 ## Goal
 
@@ -348,23 +348,23 @@ csak report generate --org acmecorp --period 2026-04 --kind internal-review
 reports/
 └── <org-slug>/
     └── <period-label>/
-        ├── 2026-04-23T14-30-22_internal-review.md
-        ├── 2026-04-23T14-30-22_internal-review.docx
-        ├── 2026-04-23T14-30-22_internal-review.json
-        ├── 2026-04-23T14-30-22_fit/
+        ├── 2026-04-23T14-30-22-481_internal-review.md
+        ├── 2026-04-23T14-30-22-481_internal-review.docx
+        ├── 2026-04-23T14-30-22-481_internal-review.json
+        ├── 2026-04-23T14-30-22-481_fit/
         │   ├── FIT-001-<short-slug>.md
         │   ├── FIT-001-<short-slug>.docx
         │   ├── FIT-002-<short-slug>.md
         │   ├── FIT-002-<short-slug>.docx
         │   └── ...
-        ├── 2026-04-23T14-30-22_fit.zip
-        ├── 2026-04-23T14-30-22_fit.json
+        ├── 2026-04-23T14-30-22-481_fit.zip
+        ├── 2026-04-23T14-30-22-481_fit.json
         └── <later timestamped invocations accumulate here>
 ```
 
 Conventions:
 
-- **Filename prefix** is ISO-8601 timestamp with colons replaced by dashes for filesystem safety: `2026-04-23T14-30-22_`. Second-level granularity.
+- **Filename prefix** is ISO-8601 timestamp with colons replaced by dashes for filesystem safety, at **millisecond granularity** — e.g. `2026-04-23T14-30-22-481_`. The prefix is generated in UTC. Milliseconds (rather than seconds) prevent same-second collisions when an analyst pipes several `report generate` invocations together or when multiple reports for the same (org, period, kind) are regenerated programmatically.
 - **No overwriting.** Two invocations produce two sets of files in the same period directory. The newest is the one that sorts last alphabetically.
 - **Fix-it bundles** are both a directory of markdown/docx files and a `.zip` of that directory. The zip is the unit an analyst forwards to a client; the directory is for browsing during authoring. The fit bundle's JSON export is a single file at the period-directory level, not inside the bundle directory.
 - **No `latest` symlink.** Alphabetical sort gives you the newest; adding a pointer file is one more thing to keep in sync.
@@ -378,7 +378,7 @@ The docx renderer is code, not templates — see §Renderer implementation notes
 
 ## Interface
 
-Slice 1 ships with **CLI only**. Sketched commands:
+Slice 1 ships with **CLI only**. Commands:
 
 ```
 csak org create acmecorp
@@ -388,12 +388,25 @@ csak report generate --org acmecorp --period 2026-04 --kind internal-review --fo
 csak report generate --org acmecorp --period today --kind internal-review --format json
 csak report generate --org acmecorp --period 2026-04 --kind fit-bundle --format markdown,docx,json
 csak findings list --org acmecorp --status active --severity high
+csak findings show <finding-id>
 csak findings update <finding-id> --status suppressed
 csak findings update <finding-id> --tag probably-fp
 csak target list --org acmecorp
 csak target update <target-id> --weight 1.5
 csak scan list --org acmecorp
 ```
+
+### `findings list` output format
+
+`csak findings list` prints a table with columns in this order:
+
+```
+ID        PRIORITY  SEVERITY  TOOL        TARGET                          TITLE
+```
+
+The first column is the Finding ID (UUID, truncated to 8 characters for display but disambiguated via `csak findings show <id>`, which accepts either the full UUID or any unambiguous prefix). This is explicit: the analyst must be able to go directly from a `list` result to a `findings update` or `findings show` invocation without needing to drop into sqlite3 or any other tool. The ID column is the seam that keeps the mutation workflow self-contained.
+
+`csak target list` follows the same convention — `ID` is the first column and accepts prefix lookups downstream.
 
 Notable absences from slice 1:
 
@@ -438,14 +451,17 @@ Slice 1 is "done" when:
 - Zeek ingest handles both single files and folders of logs.
 - A report generated on demand from a mixed-tool run (e.g. Nessus + Zeek for one org's April window) is coherent, not a concatenation of tool outputs.
 - Latency is acceptable: a typical report generates in seconds to a few minutes on an analyst's laptop, not tens of minutes.
-- Finding priorities are consistent and explainable. Priority is stored at ingest and visible on `csak findings list`. The analyst can trace a priority back to its severity, confidence, and target_weight components.
+- Finding priorities are consistent and explainable. Priority is stored at ingest and visible on `csak findings list`. The analyst can trace a priority back to its severity, confidence, and target_weight components (visible via `csak findings show <id>`).
+- `csak findings list` exposes an `ID` column so the analyst can go directly to `findings update <id>` or `findings show <id>` without any external lookup.
 - Dedup across runs against the same org works. Re-ingesting last week's Nessus scan doesn't double-count, and the finding's `last_seen` advances.
 - Scan lineage is queryable. `csak scan list` shows every scan; each finding can list every scan it has appeared in.
 - Reports correctly label `fallback-ingested` scan timestamps so readers aren't misled about when a tool actually ran.
 - Markdown, docx, and JSON export all produce readable output with matching content and section order.
 - The JSON export is self-describing (schema version present, source-tool attribution on every finding) and complete enough that an external consumer — including a future LLM layer — can generate a useful reply without re-querying CSAK.
-- Multiple invocations for the same (org, period, kind) accumulate as timestamped files without overwriting.
+- Multiple invocations for the same (org, period, kind) accumulate as timestamped files without overwriting. Millisecond-granularity timestamp prefix prevents same-second collisions.
 - At least one analyst has used it on a real piece of work and not hated it.
+
+**Status: all criteria met as of 2026-04-24.** 83 tests pass; end-to-end run on a Nessus fixture produces correct priorities, proper status-based suppression, markdown/docx/JSON outputs with matching content, and fit-bundle directory + zip + period-level JSON.
 
 ## Related
 
@@ -455,3 +471,4 @@ Slice 1 is "done" when:
 - [[product/users-and-jobs|Users & Jobs]]
 - [[synthesis/open-questions|Open Questions]]
 - [[sessions/2026-04-22-slice-1-kickoff|Session: Slice 1 Kickoff]]
+- [[architecture/overview|Architecture Overview]]
