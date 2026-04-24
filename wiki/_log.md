@@ -185,3 +185,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | sessions/2026-04-24-slice-1-implementation-review.md | slice 1 implementation review session - code matches spec, 83/83 tests pass, end-to-end run verified, two small polish items flagged
 
 ## [2026-04-24] write | specs/slice-1.md | slice 1 implemented - update spec header, switch timestamps to ms, document ID column on findings list
+
+## [2026-04-24] write | architecture/overview.md | architecture overview - slice 1 implemented, ms timestamps, ID column, walkthrough reflects shipped behavior
