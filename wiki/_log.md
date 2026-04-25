@@ -237,3 +237,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | competitive/README.md | competitive/README H3-5 lint fix - reconFTW Verdict updated for case-study resolution, Key takeaways 2 3 6 reflect post-slice-2 state, leverage-analysis row bumped to active/medium
 
 ## [2026-04-25] write | synthesis/wiki-acceleration.md | wiki acceleration spec - five new MCP tools designed (wiki_edit, wiki_read sections, wiki_read_many, wiki_status_set, wiki_log_tail) with full contracts, error semantics, and rationale
+
+## [2026-04-25] write | CYBER.md | CYBER.md §9 rewritten to teach LLM the new MCP tools (wiki_edit, wiki_read sections, wiki_read_many, wiki_status_set, wiki_log_tail) and when to use each. Other sections unchanged.
