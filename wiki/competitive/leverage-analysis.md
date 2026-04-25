@@ -2,11 +2,11 @@
 title: "Leverage Analysis — DefectDojo and reconFTW"
 category: competitive
 tags: [leverage, feasibility, licensing, scope-fit]
-status: draft
+status: active
 confidence: medium
 owner: shared
 created: 2026-04-23
-updated: 2026-04-23
+updated: 2026-04-24
 sources:
   - "[[competitive/defectdojo]]"
   - "[[competitive/reconftw]]"
@@ -81,7 +81,7 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 **Technical feasibility:** High. DefectDojo can export findings as JSON, PDF, or AsciiDoc reports. The JSON export is well-structured and CSAK could ingest it as a foreign-format input alongside the native tool formats.
 
-**Recommendation:** **Yes, but deferred out of slice 1.** Slice 1 commits to five tool formats (Nuclei, Nessus, Zeek, osquery, Subfinder + httpx) and deliberately excludes broader ingest coverage until the pipeline is proven end-to-end. DefectDojo's JSON export is a natural early slice 2 add. The slice 1 spec's parser architecture is plugin-shaped so adding this later is not core surgery.
+**Recommendation:** **Yes, but deferred.** Slice 1 stayed scoped to five tool formats. Slice 2 also deferred this — the native orchestrator removed the slice 2 motivation, and DefectDojo JSON ingest hasn't been requested by any real analyst. Re-evaluate if a real analyst actually wants to bring DefectDojo output into CSAK rather than running CSAK directly.
 
 ### DefectDojo scope fit
 
@@ -104,18 +104,18 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 ## reconFTW
 
-**License: AMBIGUOUS.** See the note in [[competitive/reconftw|reconFTW analysis]]. The repo's `LICENSE` file says MIT; the README and docs say GPL-3.0; third-party trackers disagree. This ambiguity must be resolved before any strategy that requires including reconFTW code. Strategies that don't require code inclusion are safe under either interpretation.
+**License: AMBIGUOUS.** See the note in [[competitive/reconftw|reconFTW analysis]]. The repo's `LICENSE` file says MIT; the README and docs say GPL-3.0; third-party trackers disagree. **This ambiguity no longer affects any CSAK decision** — slice 2 builds its own orchestrator and adapts reconFTW recipes via documentation reading rather than code inclusion or invocation. Worth resolving as a courtesy via a GitHub issue, but doesn't block anything.
 
 ### Strategy 1: Fork / embed
 
 **Legal:**
 
 - If MIT: fully permitted, no copyleft.
-- If GPL-3.0: CSAK must also be GPL-3.0 (or compatible). This is a significant constraint — it forecloses proprietary licensing and affects dependency compatibility.
+- If GPL-3.0: CSAK must also be GPL-3.0 (or compatible). This is a significant constraint.
 
-**Technical feasibility:** Low. reconFTW is thousands of lines of bash orchestration. Porting to Python/Go is essentially a rewrite — you'd keep the *logic* but none of the *code*. And rewriting based on reading GPL'd code is a gray area that conservative legal interpretations treat as derivative work.
+**Technical feasibility:** Low. reconFTW is thousands of lines of bash orchestration. Porting to Python/Go is essentially a rewrite — you'd keep the *logic* but none of the *code*.
 
-**Recommendation:** **Don't fork.** Even if MIT turns out to be the correct license, the bash code isn't what we'd want in CSAK — the *design* is interesting, the implementation is an architecture we've explicitly rejected (bash vs typed language).
+**Recommendation:** **Don't fork.** Slice 2 implements its own typed Python orchestrator from scratch. The recipes (specific tool flag combinations) are adapted with attribution as documentation rather than code; that's the leverage with the highest ratio of value to risk. See [[competitive/build-vs-adapt|build-vs-adapt]].
 
 ### Strategy 2: Library import
 
@@ -123,40 +123,39 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 ### Strategy 3: Subprocess invocation
 
-**Legal:** Permitted under both MIT and GPL-3.0. GPL's viral clause applies to combining code, not to running separate programs. Shelling out to `reconftw.sh` is the canonical "allowed" pattern.
+**Legal:** Permitted under both MIT and GPL-3.0. GPL's viral clause applies to combining code, not to running separate programs.
 
-**Technical feasibility:** High. reconFTW has a well-defined CLI (`./reconftw.sh -d target.com -r`), exits with status codes, and produces output in a known directory structure. CSAK can invoke it and wait for completion.
+**Technical feasibility:** High. reconFTW has a well-defined CLI (`./reconftw.sh -d target.com -r`), exits with status codes, and produces output in a known directory structure. CSAK could invoke it and wait for completion.
 
-**Constraints:**
+**Recommendation:** **Considered and rejected for slice 2.** Earlier framing proposed "optional mode, not a default — CSAK could shell out to reconFTW if installed." The slice 2 spec rejected this:
+- The [[competitive/reconftw|reconFTW case study]] showed that the real value is the recipes (specific tool flag combinations), not the orchestration logic — and recipes can be adapted as documentation without runtime dependency.
+- Subprocess invocation forces analysts to install reconFTW's heavy dependency stack (~80 external tools) for value they could get from CSAK directly.
+- reconFTW scans take hours; blocking the CSAK CLI on reconFTW completion violates CSAK's on-demand real-time posture.
 
-- reconFTW requires its installer to have run (`./install.sh`) — ~80 external tools must be present. This is a heavy dependency that CSAK users may not have installed.
-- reconFTW scans can take hours. Blocking the CSAK CLI waiting for reconFTW completion violates CSAK's on-demand real-time posture.
-- reconFTW assumes network access and target permission — CSAK invoking it must carry the user's scan authorization forward cleanly.
-
-**Recommendation:** **Optional mode, not a default.** CSAK slice 2 could support "if reconFTW is installed, you can delegate recon to it." Users who already have reconFTW get an easy upgrade path; users who don't aren't forced to install it.
+See [[specs/slice-2|slice 2 spec]] §"No reconFTW" and [[competitive/build-vs-adapt|build-vs-adapt]] for the full reasoning.
 
 ### Strategy 4: Output parsing
 
 **Legal:** Negligible concern under either license. Reading `report/report.json` is not a derivative work.
 
-**Technical feasibility:** High. reconFTW produces `report/report.json` as a consolidated structured output at the end of a scan. CSAK could parse it as a foreign-format input.
+**Technical feasibility:** High. reconFTW produces `report/report.json` as a consolidated structured output at the end of a scan.
 
-**Recommendation:** **Yes, but deferred out of slice 1.** Same reasoning as DefectDojo JSON. Slice 1 sticks to the five committed formats; reconFTW JSON is a natural early slice 2 add, particularly if slice 2 ends up integrating with reconFTW as an orchestration backend.
+**Recommendation:** **Deferred indefinitely.** Slice 1 stayed scoped to the five committed formats. Slice 2 also deferred — the native orchestrator means analysts don't need to bring reconFTW output to CSAK, they can use CSAK directly. May return as an optional adapter only if a real analyst needs it.
 
 ### reconFTW scope fit
 
 | CSAK need | reconFTW covers? | Gap |
 |-----------|-----------------|-----|
 | Slice 1: ingest Nessus | ❌ | reconFTW doesn't touch Nessus. |
-| Slice 1: ingest Nuclei, Subfinder+httpx | ✅ native | Produces output we could parse. |
+| Slice 1: ingest Nuclei, Subfinder+httpx | ✅ native | Produces output we could parse — but slice 2's native orchestrator removes the motivation. |
 | Slice 1: ingest Zeek | ❌ | Out of reconFTW's scope. |
 | Slice 1: ingest osquery | ❌ | Out of reconFTW's scope. |
 | Slice 1: cross-tool dedup | ⚠️ partial | reconFTW dedups within its own pipeline but not across external tool outputs. |
 | Slice 1: multi-axis triage | ❌ | reconFTW has a simpler "hotlist" scoring. |
 | Slice 1: narrative fix-it tickets | ❌ | `reconftw_ai` attempts summaries but is early-stage and opt-in. |
-| Slice 2: tool orchestration | ✅ mature | reconFTW is the reference implementation for this. |
-| Slice 2: adaptive rate limiting | ✅ built-in | `--adaptive-rate` flag. |
-| Slice 2: quick rescan pattern | ✅ built-in | `--quick-rescan` flag. |
+| Slice 2: tool orchestration | ✅ runs all enabled tools in fixed pipeline | Per the [[competitive/reconftw\|case study]], not "intelligent" orchestration — it's a fixed pipeline with ~300 config knobs. |
+| Slice 2: adaptive rate limiting | ✅ built-in | `--adaptive-rate` flag. CSAK adopted the pattern. |
+| Slice 2: quick rescan pattern | ✅ built-in | `--quick-rescan` flag. CSAK considered and rejected for slice 2. |
 | Slice 3: recursion | ✅ native | This is what reconFTW's pipeline is. |
 | Slice 3: distributed execution | ✅ Ax Framework | Out of CSAK's current scope but proven by reconFTW. |
 
@@ -164,30 +163,33 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 ---
 
-## Combined picture — can CSAK leverage both?
+## Combined picture — actual CSAK position
 
-**Yes, and they're complementary.** The shape:
+**Neither tool is a runtime dependency or upstream-source for CSAK.** Both are reference points and (for non-code artifacts) sources of adapted content.
 
-1. **Slice 1 stays tightly scoped.** Five committed tool formats, no foreign-JSON ingest, no subprocess integration. Proves the pipeline end to end.
-2. **Slice 2 is where both tools become directly relevant.** DefectDojo JSON ingest and reconFTW `report/report.json` ingest are natural early slice 2 adds — each one's a new parser consuming the slice 1 pipeline. Subprocess invocation of reconFTW becomes a candidate orchestration backend. Push-integration with a running DefectDojo server becomes a candidate export path.
-3. **Neither tool should ever be a runtime dependency.** CSAK runs on its own; the integrations are opt-in escape hatches.
-4. **The slice 2 orchestration question is open.** Whether slice 2 builds its own orchestrator, delegates to reconFTW, or supports both is not yet decided — it's tracked in [[synthesis/open-questions|open-questions]] as a slice 2 question and settled when slice 2 design opens.
+The shape that landed:
+
+1. **Slice 1 is shipped.** Five committed tool formats, no foreign-JSON ingest. DefectDojo's CWE-keyed remediation templates and severity normalization tables were adapted with attribution. DefectDojo's parsers were studied as references but not copied.
+2. **Slice 2 spec is approved.** CSAK's own typed Python orchestrator over Subfinder + httpx + Nuclei, with target-type-aware routing and three modes. reconFTW's specific tool invocation flag sets are adapted into the slice 2 tool catalog with `# source: reconFTW v4.0 modules/<file>.sh` attribution comments. Slice 2 does not subprocess-invoke reconFTW. Slice 2 does not ingest reconFTW JSON.
+3. **Neither tool is a runtime dependency.** CSAK runs entirely on its own.
+4. **The slice 2 orchestration question is closed.** The reconFTW case study reframed it: not "replace, augment, or integrate" but "what should we adapt and what should we build?" Answer: build the orchestration, adapt the recipes.
 
 ## Scope gaps that neither tool closes
 
-Even with both tools fully leveraged, CSAK still has to build:
+Even with both tools fully leveraged (in the documentation-source sense, since neither is a runtime dependency), CSAK has built or will build:
 
-- **Zeek and osquery ingest.** Neither DefectDojo nor reconFTW handles network or host telemetry. This is CSAK-native work and a slice 1 commitment.
-- **Three-axis triage (severity × confidence × target_weight).** DefectDojo has severity; reconFTW has a thin hotlist. Neither has confidence or target_weight as independent axes.
-- **Narrative, client-facing fix-it ticket reports.** Both tools produce data-dump reports. The narrative format is CSAK's differentiation and must be built from scratch.
-- **Clean JSON export designed for future LLM consumption.** DefectDojo gates LLM behind Pro; reconFTW's `reconftw_ai` is early and opt-in. Slice 1's first-class JSON export is the architectural seam for the LLM layer; neither competitor offers something equivalent.
-- **The zero-deployment CLI experience.** Neither tool delivers this. DefectDojo requires a server stack; reconFTW requires its dependency installer to succeed. CSAK's single-binary CLI story is not available to inherit.
+- **Zeek and osquery ingest.** Neither DefectDojo nor reconFTW handles network or host telemetry. Slice 1 ships this.
+- **Three-axis triage (severity × confidence × target_weight).** DefectDojo has severity; reconFTW has a thin hotlist. Slice 1 ships the three-axis model.
+- **Narrative, client-facing fix-it ticket reports.** Slice 1 ships these.
+- **Clean JSON export designed for future LLM consumption.** Slice 1 ships this.
+- **The zero-deployment CLI experience.** Slice 1 delivered this; slice 2 preserves it (CSAK's only added dependencies are three Go binaries the analyst installs themselves, with `csak doctor` to help).
+- **Target-type-aware tool routing.** Neither tool does this. reconFTW relies on user config; DefectDojo doesn't orchestrate tools at all. Slice 2 is the answer.
 
 ## Recommendations — what to do next
 
-1. **Resolve reconFTW license ambiguity.** Open a GitHub issue on the reconFTW repo (or email six2dez) asking for clarification. Until resolved, treat reconFTW as GPL-3.0 for any strategy beyond subprocess-invocation or output-parsing.
-2. **Do not add foreign-JSON ingest to slice 1.** DefectDojo JSON and reconFTW JSON are slice 2 material — the slice 1 parser architecture is plugin-shaped so adding them later is straightforward.
-3. **Defer the "fork vs integrate reconFTW" question.** It becomes active when slice 2 design opens. Tracked in [[synthesis/open-questions|open-questions]].
+1. ~~Resolve reconFTW license ambiguity.~~ **Demoted to courtesy/non-blocking.** No CSAK decision depends on the resolution since CSAK has no runtime dependency on reconFTW. Worth opening a GitHub issue at some point as a contribution back to the reconFTW community, but not on any CSAK critical path.
+2. **Foreign-JSON ingest stays deferred indefinitely** for both DefectDojo and reconFTW. Re-evaluate if a real analyst requests it.
+3. ~~Defer the "fork vs integrate reconFTW" question.~~ **Resolved 2026-04-24** by the [[specs/slice-2|slice 2 spec]] and the [[competitive/reconftw|reconFTW case study]]. None of fork/integrate/replace; build our own and adapt recipes with attribution.
 4. **Do not fork either project.** Both are architecturally unsuitable foundations for CSAK, even setting aside license concerns. See [[competitive/build-vs-adapt|build-vs-adapt]] for the full argument.
 
 ## Related
@@ -196,5 +198,6 @@ Even with both tools fully leveraged, CSAK still has to build:
 - [[competitive/reconftw|reconFTW]]
 - [[competitive/build-vs-adapt|Build vs Adapt]]
 - [[competitive/README|Competitive Analysis Index]]
-- [[synthesis/open-questions|Open Questions]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
+- [[synthesis/open-questions|Open Questions]]
