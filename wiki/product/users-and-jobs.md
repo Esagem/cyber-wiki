@@ -6,7 +6,7 @@ status: draft
 confidence: low
 owner: shared
 created: 2026-04-22
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Users & Jobs
@@ -78,11 +78,11 @@ This is the signal-from-noise pain. Deterministic triage with three axes (severi
 
 This is the orchestration pain. Slice 1 doesn't address it; slice 2 does. Slice 2 ships CSAK's own orchestrator over Subfinder + httpx + Nuclei with target-type-aware tool routing (a domain triggers the full pipeline, an IP or URL skips earlier stages). reconFTW's invocation recipes are adapted into CSAK's tool catalog with attribution; CSAK doesn't depend on reconFTW at runtime — see [[specs/slice-2|the slice 2 spec]] and the [[competitive/reconftw|reconFTW case study]].
 
-### Job 6 (slice 3+) — "Keep going on your own when it's obvious what's next"
+### Job 6 (slice 3) — "Keep going on your own when it's obvious what's next"
 
-> "Subfinder found 40 subdomains. Of course I want httpx to filter them, then Nuclei against the live ones. Just do it, with a budget."
+> "Subfinder found 40 subdomains. Of course I want httpx to filter them, then Nuclei against the live ones. Just do it, with a sensible depth limit."
 
-This is the recursion pain. Slice 3.
+This is the recursion pain. Slice 3 ships opt-in recursion on `csak collect --recurse`: each tool's output is scanned for typed values that another registered tool accepts as input, and those become inputs for the next depth. Termination is by structural dedup of `(tool, target, mode)` tuples within a single invocation, with `--max-depth N` (default 3) as the analyst's emergency brake. The tool catalog becomes pluggable via Python files dropped in `~/.csak/tools/`. See [[specs/slice-3|the slice 3 spec]].
 
 ## Anti-personas
 
@@ -107,5 +107,6 @@ People who explicitly should NOT use CSAK in slice 1 or 2:
 - [[product/glossary|Glossary]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
 - [[synthesis/open-questions|Open Questions]]
 - [[competitive/reconftw|reconFTW]]
