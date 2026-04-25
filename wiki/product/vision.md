@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # CSAK — Vision
@@ -97,14 +97,14 @@ Whether and when the LLM layer ships is a later-slice decision. Slice 1's commit
 We're shipping CSAK in slices, each of which is independently useful:
 
 - **Slice 1 — Ingest & Report.** User brings data (scanner output, logs, OSINT dumps) and/or org context. CSAK normalizes findings, scores them deterministically at ingest, and generates reports on demand for any (org, period) the analyst specifies. No tool orchestration. No recursion. No LLM. **Shipped 2026-04-24.** See [[specs/slice-1|Slice 1 Spec]].
-- **Slice 2 — Tool Orchestration.** CSAK picks and runs tools against targets itself. Adds the "collect" stage from the four-step model above. **Spec approved 2026-04-24, ready for implementation.** See [[specs/slice-2|Slice 2 Spec]].
-- **Slice 3 — Recursion & Catalog Expansion.** Tool output can trigger further tool runs (exposed IPs → deeper recon). Tool catalog grows.
+- **Slice 2 — Tool Orchestration.** CSAK picks and runs tools against targets itself. Adds the "collect" stage from the four-step model above. **Spec approved 2026-04-24; implementation built and under test as of 2026-04-25.** See [[specs/slice-2|Slice 2 Spec]].
+- **Slice 3 — Recursion & Catalog Expansion.** Opt-in recursion on `csak collect`: each tool's output is scanned for typed values that another tool accepts; those become inputs for the next depth. Termination by structural dedup, with `--max-depth` as the analyst's brake. Tool catalog becomes pluggable via Python files in `~/.csak/tools/`. **Spec drafted 2026-04-25, status `draft`, awaiting sign-off.** See [[specs/slice-3|Slice 3 Spec]].
 - **LLM layer** (future slice, not yet numbered). Wraps LLM features over the structured outputs produced by slices 1–3.
 - **Slice 4+.** Deliberately undefined. Scheduled/automated report generation is a likely candidate.
 
 ## What's settled
 
-Slice 1 is shipped; slice 2 is spec-complete and ready for implementation. Open questions tracked in [[synthesis/open-questions|open-questions]] are scoped to the LLM layer, slice 2.5+ extensions (Nessus API integration is the leading candidate), and cross-cutting product positioning — none block slice 2 implementation.
+Slice 1 is shipped. Slice 2 spec is approved and implementation is built and under test as of 2026-04-25. Slice 3 spec is drafted (`draft`, confidence medium), awaiting Eli's sign-off review. Open questions tracked in [[synthesis/open-questions|open-questions]] are now scoped to the LLM layer, slice 2.5+ extensions (Nessus API integration is the leading candidate), and cross-cutting product positioning — none block slice 3 implementation once the spec is approved. Cross-page deferral tracking lives in [[synthesis/deferred-features|deferred-features]] for post-slice-3 review.
 
 ## Related
 
@@ -114,4 +114,5 @@ Slice 1 is shipped; slice 2 is spec-complete and ready for implementation. Open 
 - [[product/glossary|Glossary]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
 - [[synthesis/open-questions|Open Questions]]
