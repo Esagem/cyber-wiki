@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-22
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Slice Plan
@@ -53,12 +53,17 @@ Full spec: [[specs/slice-2|Slice 2 Spec]].
 
 ## Slice 3 — Recursion & Catalog Expansion
 
-**What's added:**
+**What CSAK does:** opt-in recursion on `csak collect` via `--recurse`. Each tool's output is scanned for typed values (subdomains, live hosts, URLs, etc.) that another registered tool accepts as input; those become inputs for the next depth. The recursion frontier is structurally deduplicated within a single invocation — a `(tool, target, mode)` tuple already run is never queued again — so termination happens by exhaustion. `--max-depth N` (default 3, 0 = infinite, 1 = no recursion) is the analyst's emergency brake; when the depth limit is reached and the frontier is non-empty, CSAK prompts to continue. Slice 3 also makes the tool catalog pluggable: any `*.py` file dropped in `~/.csak/tools/` is loaded into the same toolbox as built-ins, can register its own target types, and participates in routing identically. `csak tools list` / `csak tools show <tool>` introspect the catalog including the live recursion graph.
 
-- **Recursion.** Tool output can trigger further tool runs. Example: subfinder finds 40 subdomains → httpx confirms which are live → nuclei scans the live ones, then any newly discovered URLs trigger another round. Budgets (time, depth, cost) are first-class.
-- **Tool catalog growth.** The 3 slice-2 orchestrated tools expand to a configurable set. Adding a new tool may move from "edit a Python module" toward more declarative if YAML earns its place.
+**What CSAK does NOT do in slice 3:** use any LLM (deterministic only); add wall-clock / cost / token budgets (depth + structural dedup is the termination story); ship async / background `csak collect` (sync-only, live status compensates); add new built-in tools (catalog stays at subfinder + httpx + nuclei, now recursion-aware); sandbox plugins (full Python under analyst's permissions; sandboxing deferred); persist recursion state across invocations (every `csak collect` is fresh); ship a recursion-rules YAML (the graph comes from `accepts`/`produces` declarations); recurse Zeek or osquery (stay ingest-only).
 
-**Deliberately not specced in detail yet.** Most of slice 3's design will only make sense once slice 2 has taught us what real orchestration patterns look like.
+**Why this scope:** recursion is the slice that turns CSAK from "runs the tools you tell it to" into "runs the tools that fit, in the order they fit, until there's nothing left to do." The deterministic type-matching shape generalizes naturally as the catalog grows, and the plugin surface is the user-facing answer to "how do I add a new tool" without reaching for LLMs or a config-file explosion.
+
+**Concrete additions:** new `--recurse` and `--max-depth N` flags on `csak collect`; new `csak tools list` and `csak tools show` commands; extended `Tool` interface with `accepts`, `produces`, and `extract_outputs`; runtime type registry with `classify()` as dispatcher; plugin discovery from `~/.csak/tools/`; `csak doctor` extension for plugin and registry validation; depth-aware live output with frontier counts and prompt-to-continue; data model adds `Scan.parent_scan_id`, `Scan.depth`, `Scan.triggered_by_finding_id`.
+
+**Exit criteria:** see [[specs/slice-3|slice 3 spec §Exit criteria]]. Summary: recursion runs end-to-end against a real target; structural dedup prevents redundant scans verifiably; type registry handles built-ins and at least one example plugin; `csak tools list/show` produce documented output; data model migration runs cleanly; live output is depth-aware; Eli uses `csak collect --recurse` on a real client target without hating it.
+
+Full spec: [[specs/slice-3|Slice 3 Spec]].
 
 ## LLM layer (future, not yet numbered)
 
@@ -88,4 +93,6 @@ Candidates we're not committing to:
 - [[product/vision|Vision]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
 - [[synthesis/roadmap|Roadmap]] (the design-phase roadmap; this slice plan is the build-phase roadmap)
+- [[synthesis/deferred-features|Deferred Features]]
