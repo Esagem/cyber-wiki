@@ -49,7 +49,7 @@ updated: 2026-04-25
 
 **Collect** — the new `csak collect` stage. The third step in the four-step intake → collect → triage → report product model; CSAK runs tools against a target and feeds their output into the slice 1 ingest pipeline. See [[specs/slice-2|slice 2 spec]].
 
-**Target type** — one of `domain | subdomain | ip | cidr | url`, auto-detected from the `--target` argument. Determines **which** tools run (e.g. Subfinder is skipped for IP targets because subdomain enumeration doesn't apply). See [[specs/slice-2|slice 2 spec §Target type detection and tool routing]].
+**Target type** — one of `domain | subdomain | ip | cidr | url`, auto-detected from the `--target` argument. Determines **which** tools run (e.g. Subfinder is skipped for IP targets because subdomain enumeration doesn't apply). See [[specs/slice-2|slice 2 spec §Target type detection and tool routing]]. *Superseded in slice 3 by the runtime type registry — see Target type (slice 3 registry) below. The `cidr` type is renamed to `network_block` in slice 3 to cover ASNs as well as CIDR blocks.*
 
 **Mode** — one of `quick | standard | deep`. Determines **how intensely** each running tool scans (which sources, which template set, how many threads). Mode and target type are orthogonal: target type chooses the tool subset, mode chooses the intensity within each tool. The exception: `quick` mode skips Nuclei entirely, since quick is for "tell me what's there," not for finding vulnerabilities.
 
