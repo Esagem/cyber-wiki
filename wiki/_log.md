@@ -283,3 +283,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | competitive/leverage-analysis.md | lint H4-5 M4-5 - leverage-analysis.md - rename DefectDojo Slice-3-recursion-with-budgets row to Slice-3-recursion (drop wrong with-budgets phrasing); add clarifying parenthetical to reconFTW recursion row noting different shape from CSAK type-driven model; rename Recommendations section to Recommendations-status with deferred-features pointers; add slice 3 spec to Related
 
 ## [2026-04-25] edit | product/glossary.md | lint M4-1 - glossary.md - add slice-3-supersedes pointer to slice 2 Target type entry plus cidr-renamed-to-network_block note
+
+## [2026-04-25] edit | competitive/README.md | lint M4-4 - competitive/README.md - small wording fix in Key takeaway 3 - shift means to does (cleaner retrospective tense matching surrounding bullet)
