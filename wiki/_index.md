@@ -62,7 +62,7 @@ _`architecture/data-flow.md` was planned but folded into the overview's walkthro
 | [[competitive/README\|Competitive Analysis Index]] | active | high | meta, format |
 | [[competitive/defectdojo\|DefectDojo]] | active | medium | vuln-management, open-source |
 | [[competitive/reconftw\|reconFTW]] | active | high | recon-orchestration, open-source, case-study |
-| [[competitive/leverage-analysis\|Leverage Analysis]] | draft | medium | licensing, feasibility |
+| [[competitive/leverage-analysis\|Leverage Analysis]] | active | medium | licensing, feasibility |
 | [[competitive/build-vs-adapt\|Build vs Adapt]] | active | high | decision-input, slice-1, slice-2 |
 
 _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, one LLM-powered upstart. Non-blocking; can run in parallel with slice 2 work._
@@ -72,7 +72,8 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, on
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[sessions/2026-04-22-slice-1-kickoff\|2026-04-22 — Slice 1 Kickoff]] | active | medium | slice-1, product-shape, tools |
-| [[sessions/2026-04-24-slice-1-shipped\|2026-04-24 — Slice 1 Shipped & Reviewed]] | active | high | slice-1, implementation, review |
+| [[sessions/2026-04-24-slice-1-implementation-review\|2026-04-24 — Slice 1 Implementation Review]] | active | high | slice-1, implementation, review, verification |
+| [[sessions/2026-04-24-slice-1-shipped\|2026-04-24 — Slice 1 Shipped]] | active | high | slice-1, implementation, ms-timestamps, id-column |
 
 ## Synthesis
 
@@ -88,16 +89,17 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, on
 |------|--------|------------|------|
 | [[engagements-RESERVED/README\|engagements-RESERVED/]] | seed | — | placeholder, future |
 
-_Empty until we choose to activate it. Note: the existence of an `Org` entity in slice 1 may make this folder less necessary than originally planned. Revisit once the first real client engagement runs through CSAK._
+_Empty until we choose to activate it. Note: the existence of an `Org` entity in slice 1 may make this folder less necessary than originally planned — the question is now actionable rather than deferred. Awaiting Eli's call._
 
 ---
 
 ## Recent activity
 
+- **2026-04-24 (lint pass three executed)** — Third [[synthesis/lint-report|lint pass]] catalogued twelve issues caused by slice 2 spec finalization making forward-looking sections stale. All eight high/medium fixes executed in this pass: open-questions slice 2 section moved to Answered, scope and slices product pages updated to mirror slice 1 pattern, leverage-analysis slice 2 recommendations updated and status bumped to active, competitive/README index Verdict and Key takeaways updated, vision and users-and-jobs reconFTW framing corrected, glossary expanded with slice 2 vocabulary, engagements-RESERVED revisit-trigger updated. Plus one low fix (delete empty `sessions.md` at top level) and missing session row added to the index. Wiki at 25 pages, all internally consistent.
 - **2026-04-24 (tool output reference for slice 2)** — Wrote [[research/slice-2-tool-output-reference|tool output reference page]] documenting verified flag names, output formats, stderr patterns, and rate-limit signal heuristics for Subfinder, httpx, and Nuclei. Compiled from official ProjectDiscovery docs and verified GitHub issues. Key finding: nuclei does not emit a clean "429" signal — it surfaces target rate-limiting as `[WRN] context deadline exceeded` lines, which the catalog's `detect_rate_limit_signal` must heuristically detect. Avoiding a half-day discovery during build by surfacing this up front. Page is the reference Code reads to write the per-tool catalog modules in `csak/collect/tools/<tool>.py`.
 - **2026-04-24 (slice 2 spec approved)** — Eli signed off on the [[specs/slice-2|slice 2 spec]]. Status flipped `draft` → `active`, confidence bumped medium → high. Spec is ready for implementation alongside the existing CSAK repo. Strategic shape: orchestrate Subfinder + httpx + Nuclei (the on-demand active tools that earn their keep from a CLI), with target-type auto-detection driving tool routing, three modes, adaptive rate limiting default-on, sync-only, no quick rescan, no LLM, no Nessus API yet, no reconFTW JSON ingest.
 - **2026-04-24 (reconFTW case study)** — Direct reading of reconFTW's source corrected an earlier framing. reconFTW does not have intelligent runtime tool selection — it runs all enabled tools in a fixed pipeline and dedups the union. The "selection" is config-file knobs (~300 of them). Real value is the recipes (tool-flag combinations), not the orchestration logic. [[competitive/reconftw|reconFTW page]] and [[competitive/build-vs-adapt|build-vs-adapt]] both updated; informs slice 2 design directly (adapt recipes, build orchestration, no runtime dependency on reconFTW).
-- **2026-04-24 (slice 1 shipped)** — Slice 1 implementation delivered and reviewed. 83 tests pass, end-to-end run on a Nessus fixture verified. Two small deviations from the original spec text — millisecond timestamp precision and an `ID` column on `csak findings list` — were accepted and written back into [[specs/slice-1|the spec]] and [[architecture/overview|architecture overview]]. See [[sessions/2026-04-24-slice-1-shipped|session notes]].
+- **2026-04-24 (slice 1 shipped)** — Slice 1 implementation delivered and reviewed. 83 tests pass, end-to-end run on a Nessus fixture verified. Two small deviations from the original spec text — millisecond timestamp precision and an `ID` column on `csak findings list` — were accepted and written back into [[specs/slice-1|the spec]] and [[architecture/overview|architecture overview]]. See [[sessions/2026-04-24-slice-1-implementation-review|implementation review session]] and [[sessions/2026-04-24-slice-1-shipped|shipped session]].
 - **2026-04-23 (probability_real removed)** — Feature pulled from slice 1 per Eli after a clarification exchange. Priority formula is now `severity × confidence × target_weight` (three axes). Spec, glossary, architecture overview, users-and-jobs, open-questions, competitive pages, and session notes all updated to reflect the removal. Analyst doubt is now expressed via `status` (`active` / `suppressed` / `false-positive`) or `tags`.
 - **2026-04-23 (slice 1 approved)** — Eli signed off on the finalized [[specs/slice-1|slice 1 spec]]. Status flipped `draft` → `active`; confidence bumped medium → high.
 - **2026-04-23 (architecture overview written)** — [[architecture/overview|architecture/overview.md]] written as the five-minute map to the slice 1 spec. Mermaid system diagram, five module boundaries, one end-to-end walkthrough, extension points, explicit list of what's deferred. The planned `architecture/data-flow.md` was folded in.
