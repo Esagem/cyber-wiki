@@ -265,3 +265,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | _index.md | edit - _index.md - flip slice 3 row from planned to draft now that spec is written; add recent-activity entry for the slice 3 spec draft and bookkeeping updates
 
 ## [2026-04-25] edit | architecture/overview.md | edit - architecture/overview.md - extend preamble for slice 3 status; add slice 3 module section (recursion runner + type registry + plugin discovery); update extension points entries that mention slice 3; add slice 3 entries to specs-relationship table; add slice 3 spec to Related
+
+## [2026-04-25] write | sessions/2026-04-25-slice-3-design.md | session - sessions/2026-04-25-slice-3-design.md - slice 3 design session - deterministic recursion via output-to-input type matching, structural in-memory frontier dedup, max-depth flag default 3, sync-only, pluggable tools in same toolbox, type registry with toolbox-driven registration, classify as dispatcher
