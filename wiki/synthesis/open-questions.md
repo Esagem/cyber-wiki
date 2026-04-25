@@ -6,7 +6,7 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # Open Questions
@@ -26,28 +26,25 @@ Questions are grouped by what they affect. When a question gets resolved, move i
 
 ## Slice 1 — status
 
-Closed. Every design question identified for slice 1 has been resolved in the [[specs/slice-1|slice 1 spec]] (now `active`) and the resolutions are recorded in the Answered section below.
+Closed. Every design question identified for slice 1 has been resolved in the [[specs/slice-1|slice 1 spec]] (now `active`, shipped) and the resolutions are recorded in the Answered section below.
 
-## Slice 2 (preview)
+## Slice 2 — status
+
+Closed. Every design question identified for slice 2 has been resolved in the [[specs/slice-2|slice 2 spec]] (now `active`, ready for implementation) and the resolutions are recorded in the Answered section below.
+
+## Slice 2.5 — open
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
-| Replace reconFTW, augment it, or integrate with it? | shared | open | Big scope-shaping question. If we integrate, slice 2 is much smaller; if we replace, much larger. See [[competitive/reconftw\|reconFTW analysis]]. |
-| Tool selection — heuristic, config-driven, LLM-assisted, or all three? | shared | deferred | Slice 2 design. |
-| Execution model — subprocess, container, mixed? | shared | deferred | Slice 2 design. |
-| Parameter inference — how does CSAK know what to feed a tool given a target? | shared | deferred | Slice 2 design. |
-| Long-running tools — how are slow scans handled without blocking the report flow? | shared | deferred | Slice 2 design. |
-| Adaptive rate limiting (backoff on 429/503) — slice 2 requirement? | shared | open | reconFTW treats this as first-class; we should too. |
-| Generic-CSV escape-hatch ingest — slice 2 or later? | shared | open | Deferred out of slice 1. The ingest architecture is parser-plugin-shaped so this adds without core surgery. |
-| reconFTW `report/report.json` ingest — slice 2 or later? | shared | open | Same as CSV. |
+| Nessus REST API orchestration — slice 2.5 add or defer further? | shared | open | Re-evaluate once slice 2 is in real use and we know whether analysts actually want CSAK to drive Nessus. The slice 2 spec defers but doesn't drop. |
 
 ## Slice 3 (preview)
 
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
 | Recursion budget shape — time / depth / cost / token / all? | shared | deferred | Slice 3 design. |
-| How does adding a new tool work as a user-facing operation? | shared | deferred | Slice 3 design. |
-| Quick-rescan pattern — skip heavy stages when no new assets? | shared | open | reconFTW does this; smart pattern. |
+| How does adding a new tool work as a user-facing operation? | shared | deferred | Slice 3 design. May be when YAML finally earns its place over Python-module-per-tool. |
+| Async / background collect — when does sync-only stop being enough? | shared | deferred | Slice 3 design. The slice 2 spec calls this out explicitly: "If long-running scans become a real friction in practice, slice 3 adds backgrounding cleanly on top of the sync-mode foundation." |
 
 ## Slice 4+ (preview)
 
@@ -80,7 +77,7 @@ Closed. Every design question identified for slice 1 has been resolved in the [[
 | Q | Owner | Status | Notes |
 |---|-------|--------|-------|
 | Cadence for collaborative working sessions? | shared | open | First session held 2026-04-22; cadence TBD. |
-| When do we leave pre-design and start implementation? Trigger condition? | shared | answered | Slice 1 spec is `active` as of 2026-04-23. Architecture overview written. Pre-design is complete; implementation can start whenever. |
+| When do we leave pre-design and start implementation? Trigger condition? | shared | answered | Slice 1 spec is `active` as of 2026-04-23; slice 1 shipped 2026-04-24; slice 2 spec is `active` as of 2026-04-24. Pre-design is complete. |
 
 ---
 
@@ -113,17 +110,35 @@ All resolutions land in the [[specs/slice-1|slice 1 spec]]. Dates are when the r
 | Report entity — database row or stateless export? | 2026-04-23 | Stateless export. No Report entity. Each `csak report generate` is a pipeline from query to file; the directory of timestamped files is the history. [[specs/slice-1\|slice 1 spec §Reports]]. |
 | Export formats? | 2026-04-23 | Markdown, docx, and JSON. JSON is first-class (for future LLM and automation consumers), not a debug option. Other formats deferred. [[specs/slice-1\|slice 1 spec §Export formats]]. |
 | Docx rendering — pandoc or python-docx? | 2026-04-23 | python-docx. Toolchain stays Python-only. [[specs/slice-1\|slice 1 spec §Renderer implementation notes]]. |
-| File overwriting behavior for repeat report generation? | 2026-04-23 | No overwriting. Timestamp-prefixed filenames; invocations accumulate. [[specs/slice-1\|slice 1 spec §Output layout]]. |
+| File overwriting behavior for repeat report generation? | 2026-04-23 | No overwriting. Timestamp-prefixed filenames; invocations accumulate. Millisecond-precision prefix prevents same-second collisions. [[specs/slice-1\|slice 1 spec §Output layout]]. |
 | `probability_real` as a separate analyst-assigned axis? | 2026-04-23 | **Removed.** Initially added as a fourth scoring axis, then removed on Eli's direction. Slice 1 handles false-positive doubt via `status = false-positive` only — the analyst commits to the call or doesn't; slice 1 doesn't offer a fractional downweight. Priority is three axes: severity × confidence × target_weight. |
 | Auto-retriage when scoring rules change? | 2026-04-23 | No retriage in slice 1 at all. Scores are write-once at ingest. To get fresh scores after editing tables, analyst re-ingests the source artifact; comparison is manual. [[specs/slice-1\|slice 1 spec §Scoring]]. |
 | 5-point severity scale + null, or 6-point with explicit unknown? | 2026-04-23 | 5-point + null. |
-| How do scoring tables get versioned and surfaced in reports? | 2026-04-23 | Per-tool YAML files under `config/triage/severity/`. The specific versioning mechanism (manifest rollup vs. per-tool version on Finding) is an implementation detail settled during build; scoring is write-once at ingest so version-drift doesn't affect stored scores. |
+| How do scoring tables get versioned and surfaced in reports? | 2026-04-23 | Per-tool YAML files under `config/triage/severity/` (slice 2 polish; slice 1 ships them inline in `csak/ingest/scoring.py`). Scoring is write-once at ingest so version-drift doesn't affect stored scores. |
 | Remediation templates keyed on CWE/CVE — slice 1 or later? | 2026-04-23 | Slice 1, adapted from DefectDojo with attribution (per build-vs-adapt analysis). Covers 10–15 high-frequency CWEs from the 5 starter tools. |
 | Fix-it tickets — always per-finding or grouped? | 2026-04-23 | Per-finding by default; multi-Target findings sharing a dedup-key collapse into one ticket. No analyst-initiated grouping in slice 1. |
 | HTML/PDF in slice 1? | 2026-04-23 | No. Markdown + docx + JSON only. Other formats deferred; architecture supports adding them. |
 | Period summary ("what changed since March")? | 2026-04-23 | Not in slice 1. Reports are per-window snapshots, unaware of other reports. Cross-report comparison is slice 4+ if ever — requires persistent state about past reports that slice 1 deliberately does not carry. |
 | LLM use inside CSAK for slice 1? | 2026-04-23 | None. Slice 1 is deterministic end-to-end. LLM features attach in a later slice, consuming slice 1's JSON export. |
 | Folder-of-logs for Zeek ingest? | 2026-04-23 | Yes. Directory or single-file paths both accepted. [[specs/slice-1\|slice 1 spec §Folder-aware Zeek ingest]]. |
+| `ID` column on `csak findings list`? | 2026-04-24 | Yes. 8-character display truncation with prefix-resolvable downstream commands. Closes the loop between `findings list` and `findings update <id>` without dropping into sqlite3. [[specs/slice-1\|slice 1 spec §`findings list` output format]]. |
+| Timestamp precision on report output filenames — second or millisecond? | 2026-04-24 | Millisecond. Prevents same-second collisions when an analyst pipes several `report generate` invocations. [[specs/slice-1\|slice 1 spec §Output layout]]. |
+
+### Slice 2 (closed)
+
+All resolutions land in the [[specs/slice-2|slice 2 spec]]. Dates are when the resolution was recorded in the spec.
+
+| Q | Resolved | Outcome |
+|---|----------|---------|
+| Replace, augment, or integrate reconFTW? | 2026-04-24 | **None of the three.** The [[competitive/reconftw\|reconFTW case study]] revealed that reconFTW's "intelligent orchestration" is actually a fixed pipeline with ~300 config knobs — the real value is the recipes, not the orchestration logic. Slice 2 builds CSAK's own simple typed orchestrator and adapts the recipes from reconFTW with attribution. CSAK has no runtime dependency on reconFTW. See [[competitive/build-vs-adapt\|build-vs-adapt]] for the framework. |
+| Tool selection — heuristic, config-driven, LLM-assisted, or all three? | 2026-04-24 | Heuristic. Target type auto-detection (`domain | subdomain | ip | cidr | url`) drives **which** tools run; mode flag (`quick | standard | deep`) drives **intensity**. Not LLM-assisted (slice 2 stays deterministic, same posture as slice 1). [[specs/slice-2\|slice 2 spec §Target type detection and tool routing]]. |
+| Execution model — subprocess, container, mixed? | 2026-04-24 | Subprocess invocation of Go binaries (subfinder, httpx, nuclei). No containers. Single-machine. [[specs/slice-2\|slice 2 spec §Pipeline shape]]. |
+| Parameter inference — how does CSAK know what to feed a tool given a target? | 2026-04-24 | Tool catalog. Python module per tool (`csak/collect/tools/<tool>.py`) implementing a shared `Tool` interface; carries per-mode invocation recipes as data. [[specs/slice-2\|slice 2 spec §Tool catalog]]. |
+| Long-running tools — how are slow scans handled without blocking the report flow? | 2026-04-24 | Sync-only with per-stage `--timeout` flags (subfinder 60s, httpx 5min, nuclei 30min standard / 2hr deep). Live progress bars and ETAs to stderr. Ctrl-C is graceful. Backgrounding deferred to slice 3 if needed. [[specs/slice-2\|slice 2 spec §Long-running tools]]. |
+| Adaptive rate limiting (backoff on 429/503) — slice 2 requirement? | 2026-04-24 | Yes, default-on. Watches tool stderr for rate-limit signals and halves request rate when detected. Floor 1 req/s, ceiling per-tool starting rate. ~100-200 LOC wrapper. [[specs/slice-2\|slice 2 spec §Adaptive rate limiting]]. |
+| Generic-CSV escape-hatch ingest — slice 2 or later? | 2026-04-24 | Dropped from slice 2. Slice 2 is about orchestrating tools, not adding more parsers. Defer further. |
+| reconFTW `report/report.json` ingest — slice 2 or later? | 2026-04-24 | Dropped indefinitely. The native orchestrator removes the motivation — analysts don't need to bring reconFTW output to CSAK if they can use CSAK directly. May return as an optional adapter only if a real analyst needs it. |
+| Quick-rescan pattern — skip heavy stages when no new assets? | 2026-04-24 | Dropped from slice 2. Per Eli, every `csak collect` invocation runs the full pipeline fresh. The slice 1 dedup layer prevents data pollution from re-running. May revisit in a later slice if it earns its place. [[specs/slice-2\|slice 2 spec §Quick rescan]]. |
 
 ---
 
@@ -131,6 +146,7 @@ All resolutions land in the [[specs/slice-1|slice 1 spec]]. Dates are when the r
 
 - [[CYBER\|CYBER.md §5.2 — Logging a working session]]
 - [[specs/slice-1\|Slice 1 Spec]]
+- [[specs/slice-2\|Slice 2 Spec]]
 - [[product/users-and-jobs\|Users & Jobs]]
 - [[competitive/defectdojo\|DefectDojo]]
 - [[competitive/reconftw\|reconFTW]]
