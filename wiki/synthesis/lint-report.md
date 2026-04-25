@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Lint Report
@@ -14,6 +14,185 @@ updated: 2026-04-24
 > Health snapshots of the wiki. Each dated section records what was found and what was fixed. Most entries here will become **fix tasks** rather than prose commentary.
 
 ---
+
+## 2026-04-25 — fourth pass (post slice 3 spec draft)
+
+Triggered by: "lint" request after slice 3 spec was drafted, slice 3 bookkeeping was applied to six pages, and the slice 3 design session note was written. Wiki now at 28 pages.
+
+### Summary
+
+Two themes drive this pass:
+
+1. **Slice 2 implementation status drift.** Slice 2 was reported as built and under test (per Eli, 2026-04-25) after the third-pass lint fixes had already landed. Several pages still say "slice 2 spec approved, ready for implementation" because they were written before the build was reported. The slice 2 spec page itself was correctly updated in the index to "in implementation"; the surrounding pages weren't.
+2. **Slice 3 not fully propagated.** Slice 3 spec is `draft`. The slice 3 bookkeeping pass touched the obvious places (slice plan, glossary, open-questions, roadmap, architecture overview, deferred-features, index). It missed scope, vision, users-and-jobs Job 6, and the competitive cluster (build-vs-adapt's forward-looking slice-2 section, leverage-analysis scope-fit tables). These pages reference slices 2 and 3 in ways that pre-date current state.
+
+Slice 1 cluster is clean. Slice 2 spec page is clean. Slice 3 spec is clean (it's draft, that's expected). The architecture overview is clean post-2026-04-25 update. The glossary's slice 3 section is clean; its slice 2 section needs a one-line addition pointing at slice 3.
+
+### High
+
+**H4-1. `product/scope.md` — slice 2 status stale, slice 3 preview contradicts the spec.**
+
+Two issues on the same page:
+
+- Slice 2 heading reads "Slice 2 — Tool Orchestration (spec approved, ready for implementation)". Per Eli 2026-04-25, slice 2 is built and under test. The status parenthetical needs updating to match the index ("in implementation").
+- Slice 3 preview reads: "Recursion with budgets — tool output can trigger further runs, with explicit time/depth/cost ceilings." The slice 3 spec rejects time and cost ceilings explicitly — only depth, with structural dedup as the termination mechanism. "With budgets" plural is wrong. The preview also has no spec link.
+
+**Fix:** update slice 2 status parenthetical. Rewrite slice 3 preview to mirror the slice 1 / slice 2 pattern: short summary, link to [[specs/slice-3|slice 3 spec]].
+
+**H4-2. `product/vision.md` — "How we're building it" and "What's settled" sections two slices behind.**
+
+- Slice 2 bullet: "Spec approved 2026-04-24, ready for implementation." Stale.
+- Slice 3 bullet: "Tool output can trigger further tool runs (exposed IPs → deeper recon). Tool catalog grows." No spec link, no status, framing pre-dates the spec.
+- "What's settled" section: "Slice 1 is shipped; slice 2 is spec-complete and ready for implementation. Open questions ... none block slice 2 implementation." Slice 2 implementation isn't blocked anymore (it's done). Slice 3 questions answered after this was written; framing is incomplete.
+
+**Fix:** update slice 2 and slice 3 bullets to current status. Add spec link to slice 3 bullet. Rewrite "What's settled" to reflect slice 2 in implementation, slice 3 spec drafted, and the actually-open items (LLM layer, slice 2.5 Nessus API, cross-cutting product positioning).
+
+**H4-3. `product/users-and-jobs.md` Job 6 (slice 3+) reads as if slice 3 is unspecced.**
+
+> "This is the recursion pain. Slice 3."
+
+With slice 3 now drafted, Job 6 should mirror Job 5's pattern — a sentence pointing at the slice 3 spec and naming the actual mechanism (deterministic recursion via output-to-input type matching, structural dedup, max-depth as the brake). The quote in Job 6 ("Just do it, with a budget") has the right spirit but "with a budget" connotes the time/cost framing that slice 3 deliberately rejected; could be tightened to "with a sensible depth limit" or similar.
+
+**Fix:** rewrite Job 6's last sentence to point at [[specs/slice-3|slice 3 spec]] with a one-line summary of how recursion actually works. Optionally tweak the quote's "with a budget" phrasing.
+
+**H4-4. `competitive/build-vs-adapt.md` — "What this means for slice 2 design" section reads as guidance to a slice-2-designer.**
+
+The section was written when slice 2 was a future thing. Now slice 2 is built and slice 3 is in design. The bullets read forward-looking:
+
+- "Tool catalog under `config/tools/<tool>.yaml` (or similar)..." — slice 2 chose Python module per tool, not YAML.
+- "Slice 2 supports the on-demand active tools that earn their keep: Nuclei, Subfinder, httpx, possibly Nessus via API." — Nessus via API was deferred to slice 2.5+.
+- "Mode model is a small set (probably 2-4 modes — something like `quick`, `standard`, `deep`)..." — slice 2 shipped with exactly those three. Predictive guess that turned out right; could be retrospective.
+- "Quick rescan pattern from reconFTW... is the one piece of reconFTW's actual runtime logic worth adapting." — slice 2 deliberately rejected this.
+
+The section's framing as "Concrete inputs to the slice 2 spec, when it gets written" is now obsolete — the spec exists and these are mostly resolved.
+
+**Fix:** rewrite the section to a retrospective: "What slice 2 actually adopted from this analysis" — with the catalog-as-Python decision, three modes shipped, recipes adapted with attribution, quick-rescan rejected, Nessus API deferred. One paragraph or short bullet list. Pointer to [[specs/slice-2|slice 2 spec]] as the authoritative record.
+
+**H4-5. `competitive/leverage-analysis.md` scope-fit tables — slice 3 row in DefectDojo table outdated.**
+
+The DefectDojo scope-fit table has: "Slice 3: recursion with budgets | ❌ | Out of DefectDojo's scope entirely." The "with budgets" framing predates the slice 3 spec. The verdict (❌, out of scope) is correct; the row label is wrong.
+
+The reconFTW scope-fit table has "Slice 3: recursion | ✅ native | This is what reconFTW's pipeline is." Accurate as scope-fit, but worth tightening: reconFTW's pipeline is a fixed-order chain with config knobs, not the deterministic-type-matching recursion CSAK slice 3 specs. A clarifying parenthetical ("different shape from CSAK's type-driven model") would help.
+
+**Fix:** rename DefectDojo row to "Slice 3: recursion". Add clarifying parenthetical to reconFTW scope-fit row.
+
+### Medium
+
+**M4-1. `product/glossary.md` — "Target type" entry under §Tool execution (slice 2) is now incomplete.**
+
+The slice 2 entry lists the flat target-type list (`domain | subdomain | ip | cidr | url`) without acknowledging that slice 3 supersedes it with a richer registry (`network_block | host | domain | subdomain | url | service | finding_ref` plus plugin types). The slice 3 vocabulary section *does* have a "Target type (slice 3 registry)" entry that handles this correctly — but the slice 2 entry above it is stale. A reader scanning alphabetically hits the slice 2 framing first.
+
+Also: `cidr` in the slice 2 entry is renamed `network_block` in slice 3.
+
+**Fix:** add a one-line "superseded in slice 3 — see Target type (slice 3 registry) below" to the slice 2 entry. Don't rewrite the slice 2 entry; it's accurate for slice 2.
+
+**M4-2. `_log.md` health — verified clean.** Spot-checked via `wiki_log_tail` 2026-04-25; recent 25 operations all present, auto-append firing correctly. L3-3 from the third pass is now resolved as a non-issue.
+
+**No fix.** Annotated for completeness.
+
+**M4-3. `synthesis/lint-report.md` 2026-04-24 third-pass action plan items lack STATUS markers.**
+
+The third-pass section listed eight numbered fixes plus a doctor item. Per the index recent-activity entry dated 2026-04-24 ("all eight high/medium fixes executed") and the corroborating `_log.md` entries dated 2026-04-25 (the lint-fix writes), all the action-plan items landed. The third-pass section itself doesn't have STATUS markers the way the 2026-04-23 first pass does. Reader looking at the third-pass action plan in isolation can't tell what's done.
+
+**Fix:** add STATUS markers to each item in the third-pass action plan, or a summary block at the section end. (Applying this in the same edit that creates the fourth-pass section.)
+
+**M4-4. `competitive/README.md` Key takeaway #3 has a small tense mismatch.**
+
+> "Both DefectDojo and reconFTW JSON ingest were considered for slice 2 and dropped — slice 2's native orchestrator means analysts don't need to bring foreign JSON into CSAK if they can use CSAK directly."
+
+The "means" is present-tense (slice 2 already does this) which is now correct since slice 2 is built, but the surrounding bullet is retrospective. Minor wording.
+
+**Fix:** trivial. Could leave it. Marked here so a future pass doesn't re-flag.
+
+**M4-5. `competitive/leverage-analysis.md` "Recommendations — what to do next" section has nothing live.**
+
+All four numbered recommendations are either resolved (item 3, struck through), demoted (item 1, license ambiguity — "courtesy / not blocking"), or deferred indefinitely with a referral elsewhere (item 2, foreign-JSON ingest — should now point at [[synthesis/deferred-features|deferred-features]] which is the canonical home for re-evaluation triggers). Item 4 (don't fork either) is settled.
+
+The section reads like a to-do list with no live to-dos.
+
+**Fix:** rename section to "Recommendations — status" or "Resolved recommendations" and add a pointer to [[synthesis/deferred-features|deferred-features]] for items 2 and 3. Keep the historical recommendations visible (struck-through and demoted) for the audit trail.
+
+**M4-6. `engagements-RESERVED/README.md` — "Should this folder retire?" still actionable, no movement since 2026-04-24.**
+
+Not a lint defect; flagging as the longest-standing actionable decision in the wiki. The page correctly notes the question is awaiting Eli's call. Per CYBER.md §"the LLM should refuse to write into engagements-RESERVED/ except to update this README," no unilateral fix.
+
+**No fix this pass.** Eli call needed.
+
+### Low
+
+**L4-1. `_index.md` phase-marker preamble repeats slice 3 strategic decisions in the recent-activity entry.**
+
+The phase marker says "Slice 3 design is in progress — strategic decisions taken (deterministic recursion via output→input type matching, structural dedup, --max-depth flag with default 3, sync-only, plugin-pluggable catalog)." The recent-activity entry dated 2026-04-25 (slice 3 design strategic decisions) re-states the same content. The duplication is fine — phase marker is at-a-glance status, recent-activity is chronological record.
+
+**No fix.** Noted for completeness so a future pass doesn't re-flag.
+
+**L4-2. `sessions/2026-04-22-slice-1-kickoff.md` "Real outstanding work now (end of 2026-04-23)" list two days stale.**
+
+List includes "Christopher's onboarding," "pitch deck slides 4 and 8 fix," "GitHub issue on reconFTW license," "start slice 1 implementation in Claude Code" — all written 2026-04-23. Slice 1 has shipped; slice 2 has shipped (under test); slice 3 spec drafted. Per CYBER.md §5.2 and the 2026-04-23 first-pass lint principle, **session notes are historical** and should not be edited.
+
+**No fix.** Annotated for completeness.
+
+**L4-3. `synthesis/roadmap.md` Phase 5 (slice 3 implementation) is correctly empty.**
+
+A quick scan might suggest "this is unfilled, fix it." It's intentionally a stub awaiting slice 3 spec approval.
+
+**No fix.**
+
+**L4-4. `competitive/build-vs-adapt.md` confidence is `high` despite the stale slice-2 forward-looking content (H4-4).**
+
+Once H4-4 is fixed, confidence stays `high` correctly. If H4-4 isn't fixed, confidence-`high` arguably overstates the page's currency.
+
+**Fix:** apply with H4-4. No status flip needed if fix lands.
+
+**L4-5. `competitive/build-vs-adapt.md` "A central references page" trigger has fired.**
+
+The page says: "A `research/references.md` page should consolidate them. Low priority; add when the first reconFTW recipe lands in the slice 2 tool catalog." Slice 2 is built; slice 2 catalog modules carry reconFTW recipe attributions per the spec. The trigger condition has been met.
+
+This item is also tracked in [[synthesis/deferred-features|deferred-features §Polish and minor improvements]] with the same trigger language. Not a contradiction; the deferred-features entry is canonical.
+
+**Fix:** trivial — update the trigger sentence in build-vs-adapt to acknowledge the trigger has fired and point at deferred-features as the canonical home. Or leave as-is; the duplication is mild.
+
+**L4-6. `competitive/leverage-analysis.md` page header still reads "Updated 2026-04-24".** Once any fix on this page lands, `updated:` auto-bumps via `wiki_edit`. No fix needed if M4-5 / H4-5 land.
+
+### Status of planned pages (unchanged)
+
+- `architecture/overview.md` — written, `active`. Updated 2026-04-25 with slice 3 module section.
+- `architecture/data-flow.md` — folded into overview, never created. Index correctly notes this.
+- `specs/ingestion-model.md` — still `planned`. Slice 1 spec covers it. No pressure.
+- `specs/triage-model.md` — same.
+- `specs/report-formats.md` — same.
+
+No change.
+
+### What I checked this pass
+
+- Every page in the wiki (`wiki_list` returned 28 pages; read 27 via `wiki_read_many` batches plus prior in-conversation reads).
+- Every "slice 2" reference outside `specs/slice-2.md` itself for status drift.
+- Every "slice 3" reference for spec linkage (most are correct post-bookkeeping; the misses are flagged above).
+- Competitive cluster scope-fit tables for the slice 3 row.
+- `_log.md` via `wiki_log_tail` for auto-append health.
+- Front-matter status/confidence consistency (no new mismatches).
+
+### What I deliberately didn't change
+
+- The third-pass section's prose. Adding STATUS markers (M4-3) is additive.
+- Session notes (L4-2). Historical record.
+- `engagements-RESERVED/README.md` (M4-6). Eli's call.
+- Anything in the deferred-features page — it's the canonical home for cross-page deferral tracking and was just written; no drift yet.
+
+### Proposed action plan
+
+Nine items, in priority order:
+
+1. **`product/scope.md`** (H4-1) — slice 2 status update + slice 3 preview rewrite.
+2. **`product/vision.md`** (H4-2) — slice 2 + slice 3 status updates, "What's settled" rewrite.
+3. **`product/users-and-jobs.md`** (H4-3) — Job 6 update with spec link.
+4. **`competitive/build-vs-adapt.md`** (H4-4, L4-4, L4-5) — rewrite "What this means for slice 2 design" as a retrospective; update central-references-page trigger.
+5. **`competitive/leverage-analysis.md`** (H4-5, M4-5) — fix slice 3 row in scope-fit tables; update Recommendations section.
+6. **`product/glossary.md`** (M4-1) — add slice-3-supersedes pointer to slice 2 "Target type" entry.
+7. **`competitive/README.md`** (M4-4) — trivial wording fix.
+8. **`synthesis/lint-report.md`** (M4-3) — STATUS markers on third-pass action plan.
+9. (No standalone — the `_log.md` check was M4-2 and resolved as non-issue.)
 
 ## 2026-04-24 — third pass (post slice 2 spec finalization)
 
@@ -192,16 +371,16 @@ No change to these. Decision unchanged: keep all three as `planned` until they e
 
 Six fixes, in order:
 
-1. **`synthesis/open-questions.md`** (H3-1, M3-5) — rewrite slice 2 section, move all answered rows to Answered, update slice 3 quick-rescan row.
-2. **`product/scope.md`** (H3-2) — rewrite slice 2 preview to summary + spec link.
-3. **`product/slices.md`** (H3-3) — rewrite slice 2 section to mirror slice 1 pattern.
-4. **`competitive/leverage-analysis.md`** (H3-4, L3-6) — update reconFTW Strategy 3 recommendation, Combined picture section, Recommendations section. Bump status to `active` / `medium`.
-5. **`competitive/README.md`** (H3-5) — update reconFTW index Verdict and rewrite Key takeaways 2, 3, 6.
-6. **`product/vision.md`** (M3-1), **`product/users-and-jobs.md`** (M3-2), **`product/glossary.md`** (M3-3), **`engagements-RESERVED/README.md`** (M3-4) — small targeted edits each.
-7. **`_index.md`** (L3-2) — add the implementation-review session row.
-8. **`sessions.md`** (L3-1) — delete (empty file).
+1. **`synthesis/open-questions.md`** (H3-1, M3-5) — rewrite slice 2 section, move all answered rows to Answered, update slice 3 quick-rescan row. **STATUS: Applied 2026-04-25.**
+2. **`product/scope.md`** (H3-2) — rewrite slice 2 preview to summary + spec link. **STATUS: Applied 2026-04-25.**
+3. **`product/slices.md`** (H3-3) — rewrite slice 2 section to mirror slice 1 pattern. **STATUS: Applied 2026-04-25.**
+4. **`competitive/leverage-analysis.md`** (H3-4, L3-6) — update reconFTW Strategy 3 recommendation, Combined picture section, Recommendations section. Bump status to `active` / `medium`. **STATUS: Applied 2026-04-25.**
+5. **`competitive/README.md`** (H3-5) — update reconFTW index Verdict and rewrite Key takeaways 2, 3, 6. **STATUS: Applied 2026-04-25.**
+6. **`product/vision.md`** (M3-1), **`product/users-and-jobs.md`** (M3-2), **`product/glossary.md`** (M3-3), **`engagements-RESERVED/README.md`** (M3-4) — small targeted edits each. **STATUS: Applied 2026-04-25.**
+7. **`_index.md`** (L3-2) — add the implementation-review session row. **STATUS: Applied 2026-04-25.**
+8. **`sessions.md`** (L3-1) — delete (empty file). **STATUS: Applied 2026-04-25.**
 
-Plus a check on `_log.md` for L3-3.
+Plus a check on `_log.md` for L3-3. **STATUS: Verified clean 2026-04-25 fourth pass via `wiki_log_tail`. Resolved as non-issue.**
 
 ---
 
