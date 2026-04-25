@@ -207,3 +207,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | architecture/overview.md | architecture overview - add slice 2 collect column to diagram, new collect module section, new walkthrough showing target detection and pipeline, update extension points and module count
 
 ## [2026-04-25] write | specs/slice-2.md | slice 2 spec approved by Eli - status draft to active, confidence medium to high, preamble updated
+
+## [2026-04-25] write | research/slice-2-tool-output-reference.md | research - tool output reference for slice 2 collect, captures verified facts from official docs for subfinder httpx nuclei before code starts
