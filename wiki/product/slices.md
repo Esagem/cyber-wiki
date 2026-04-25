@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-22
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # Slice Plan
@@ -31,32 +31,32 @@ This page is deliberately short. Details for each slice live in `specs/slice-N.m
 
 Each kind exports to **markdown, docx, and JSON**. JSON is a first-class format designed as the clean interface for a future LLM layer.
 
+**Status: shipped 2026-04-24.** 83 tests passing, end-to-end verified.
+
 **Exit criteria for slice 1 → 2:** see [[specs/slice-1|slice 1 spec §Exit criteria]] for the full list. Summary: all 5 formats ingest cleanly, mixed-tool reports are coherent, dedup works across runs, scan lineage is queryable, markdown and docx output match in content and section order, Eli uses it on real work without hating it.
 
 Full spec: [[specs/slice-1|Slice 1 Spec]].
 
 ## Slice 2 — Tool Orchestration
 
-**What's added:** CSAK runs tools itself. Given a target, CSAK knows which tools apply and invokes them with the right parameters, then hands output to the slice-1 pipeline.
+**What CSAK does:** runs Subfinder + httpx + Nuclei against a target. CSAK auto-detects the target type (`domain | subdomain | ip | cidr | url`) and routes to the appropriate subset of tools — a domain triggers the full pipeline; an IP skips Subfinder; a URL goes straight to Nuclei. Each stage produces an Artifact that flows through the slice 1 ingest pipeline, so collect-produced Findings are indistinguishable from analyst-uploaded Findings. Three modes (`quick | standard | deep`) control intensity within each running tool.
 
-**What's NOT added:** recursion. CSAK runs the tools it's told to run (or picks from heuristics), and that's it for one invocation.
+**What CSAK does NOT do in slice 2:** orchestrate Zeek or osquery (deployment-shaped, stay ingest-only); orchestrate Nessus (deferred to slice 2.5+ via REST API); recurse on tool output (slice 3); run async/background scans (slice 3 if needed); skip stages on a quick rescan (later slice if ever); use any LLM (deterministic only); ship a configuration-by-knob explosion (three modes plus per-tool overrides — not 300 booleans).
 
-**Open design questions for slice 2** — to be settled before the slice starts:
+**Why this scope:** orchestrate the active on-demand tools that earn their keep from a CLI. Zeek and osquery are continuous-monitoring tools that don't fit a "run me now" model. The reconFTW case study (see [[competitive/reconftw|reconFTW]]) showed that the real value of orchestrators is the recipes (specific tool flag combinations), not the orchestration logic — slice 2 adapts those recipes with attribution and ships its own simple, typed orchestrator.
 
-- Tool selection: heuristic rules, user config, LLM-assisted, or all three?
-- Execution model: subprocess, container, remote API, or mixed?
-- Parameter inference: how does CSAK know what to feed a tool given a target?
-- Long-running tools: how are slow scans handled without blocking the report flow?
-- Adaptive rate limiting (backoff on 429/503) — slice 2 requirement.
-- Relationship to reconFTW (replace, augment, or integrate). See [[competitive/reconftw|reconFTW analysis]].
-- Whether generic-CSV ingest and reconFTW JSON ingest land in slice 2.
+**Concrete additions:** two new commands (`csak collect`, `csak doctor`); a `csak/collect/` Python module with target-type detection, tool routing, subprocess runner with adaptive rate limiting, and per-tool catalog modules; live structured terminal output (per-stage progress bars, ETAs, rate-limit adjustment events, final summary).
+
+**Exit criteria:** see [[specs/slice-2|slice 2 spec §Exit criteria]]. Summary: full pipeline runs against a real target; target type auto-detection routes correctly; modes behave per spec; adaptive rate limiting kicks in on real 429s; stage timeouts and Ctrl-C are graceful; `csak doctor` correctly identifies and offers to install missing binaries; Eli uses `csak collect` on a real client target without hating it.
+
+Full spec: [[specs/slice-2|Slice 2 Spec]].
 
 ## Slice 3 — Recursion & Catalog Expansion
 
 **What's added:**
 
-- **Recursion.** Tool output can trigger further tool runs. Example: subfinder finds 40 subdomains → httpx confirms which are live → nuclei scans the live ones. Budgets (time, depth, cost) are first-class.
-- **Tool catalog growth.** The 5 starter tools expand to a configurable set. Adding a new tool is a user-facing operation, not a code change.
+- **Recursion.** Tool output can trigger further tool runs. Example: subfinder finds 40 subdomains → httpx confirms which are live → nuclei scans the live ones, then any newly discovered URLs trigger another round. Budgets (time, depth, cost) are first-class.
+- **Tool catalog growth.** The 3 slice-2 orchestrated tools expand to a configurable set. Adding a new tool may move from "edit a Python module" toward more declarative if YAML earns its place.
 
 **Deliberately not specced in detail yet.** Most of slice 3's design will only make sense once slice 2 has taught us what real orchestration patterns look like.
 
@@ -87,4 +87,5 @@ Candidates we're not committing to:
 
 - [[product/vision|Vision]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
 - [[synthesis/roadmap|Roadmap]] (the design-phase roadmap; this slice plan is the build-phase roadmap)
