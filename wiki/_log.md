@@ -217,3 +217,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] delete | sessions.md | L3-1 lint fix: empty file at wiki top level violates schema (sessions live under sessions/). Confirmed empty.
 
 ## [2026-04-25] write | _index.md | index L3-2 lint fix - add missing implementation-review session row, note third lint pass executed
+
+## [2026-04-25] write | engagements-RESERVED/README.md | engagements-RESERVED M3-4 lint fix - revisit trigger updated since slice 1 has shipped and Org entity exists
