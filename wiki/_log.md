@@ -221,3 +221,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | engagements-RESERVED/README.md | engagements-RESERVED M3-4 lint fix - revisit trigger updated since slice 1 has shipped and Org entity exists
 
 ## [2026-04-25] write | product/vision.md | vision M3-1 lint fix - last paragraph framing reflects slice 2 questions also resolved
+
+## [2026-04-25] write | product/users-and-jobs.md | users-and-jobs M3-2 lint fix - Job 5 reflects slice 2 spec resolution of reconFTW question
