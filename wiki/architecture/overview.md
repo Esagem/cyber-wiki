@@ -11,15 +11,17 @@ updated: 2026-04-24
 
 # Architecture Overview
 
-> Companion to [[specs/slice-1|slice 1 spec]]. The spec is the authoritative source for every decision; this page is the map. A new contributor should be able to read this in five minutes and know where each responsibility lives and where to look in the spec for detail. This page also covers what [[architecture/data-flow|architecture/data-flow]] would have covered — the two have been folded together.
+> Companion to [[specs/slice-1|slice 1 spec]] and [[specs/slice-2|slice 2 spec]]. The specs are authoritative for every decision; this page is the map. A new contributor should be able to read this in five minutes and know where each responsibility lives and where to look in the specs for detail. This page also covers what `architecture/data-flow` would have covered — the two have been folded together.
 >
-> **Slice 1 implemented 2026-04-24.** The module layout below matches the repository layout; the walkthrough matches shipped behavior.
+> **Slice 1 implemented 2026-04-24.** The slice 1 module layout below matches the repository layout; the slice 1 walkthrough matches shipped behavior.
+>
+> **Slice 2 in design 2026-04-24.** The collect module section and the slice 2 walkthrough reflect the [[specs/slice-2|slice 2 spec]] (status: draft); the diagram shows where collect attaches.
 
 ## What CSAK is, briefly
 
-CSAK ingests security-tool output, scores findings deterministically, and emits reports. Slice 1 is the pipeline from pre-collected tool output to rendered report. Tool orchestration (slice 2), recursion (slice 3), and LLM features (later slice) attach to the same pipeline without reshaping it.
+CSAK ingests security-tool output, scores findings deterministically, and emits reports. Slice 1 is the pipeline from pre-collected tool output to rendered report. Slice 2 adds tool *execution* — CSAK identifies what kind of target the analyst gave it and runs the appropriate tools, feeding their output into the slice 1 pipeline. Recursion (slice 3) and LLM features (later slice) attach to the same pipeline without reshaping it.
 
-The four-step product model is **intake → collect → triage → report**. Slice 1 ships intake (manual, via CLI), triage, and report. It does not ship collect — that's slice 2.
+The four-step product model is **intake → collect → triage → report**. Slice 1 ships intake-as-file-handoff plus triage and report. Slice 2 ships **collect** for the on-demand active tools that earn their keep from a CLI: Subfinder, httpx, Nuclei.
 
 ## System diagram
 
@@ -28,9 +30,20 @@ flowchart TB
     analyst([Analyst])
 
     subgraph cli["CLI<br/>(click-based, thin)"]
+        cmd_collect[csak collect<br/>SLICE 2]
         cmd_ingest[csak ingest]
         cmd_report[csak report generate]
         cmd_query[csak findings / target / scan<br/>list &amp; update]
+        cmd_doctor[csak doctor<br/>SLICE 2]
+    end
+
+    subgraph collect["Collect<br/>(target-type detection + tool orchestration)<br/>SLICE 2"]
+        detect[Target type detection<br/>domain / subdomain / ip / cidr / url]
+        router[Tool routing<br/>per type + mode]
+        runner[Subprocess runner<br/>+ adaptive rate limiter<br/>+ progress reporter]
+        tool_subfinder[Subfinder catalog]
+        tool_httpx[httpx catalog]
+        tool_nuclei[Nuclei catalog]
     end
 
     subgraph ingest["Ingest<br/>(per-tool parsers + promotion logic)"]
@@ -63,9 +76,18 @@ flowchart TB
         report_files[(reports/&lt;org&gt;/&lt;period&gt;/<br/>ms-timestamped files<br/>accumulate)]
     end
 
+    analyst -->|target| cmd_collect
     analyst -->|tool files| cmd_ingest
     analyst -->|report requests| cmd_report
     analyst -->|mutations| cmd_query
+    analyst -->|deps check| cmd_doctor
+
+    cmd_collect --> detect
+    detect --> router
+    router --> runner
+    runner --> tool_subfinder & tool_httpx & tool_nuclei
+    tool_subfinder & tool_httpx & tool_nuclei -.->|raw bytes| artifacts
+    tool_subfinder & tool_httpx & tool_nuclei -->|stage outputs| cmd_ingest
 
     cmd_ingest --> parser_nuclei & parser_nessus & parser_zeek & parser_osquery & parser_probe
     parser_nuclei & parser_nessus & parser_zeek & parser_osquery & parser_probe --> scoring
@@ -81,43 +103,58 @@ flowchart TB
     md & docx & json --> report_files
     report_files -->|analyst reads| analyst
 
-    classDef deferred stroke-dasharray: 5 5,opacity:0.6
+    classDef slice2 stroke:#3a7bd5,stroke-width:2px
 ```
 
-Two things worth noting about the diagram:
+Three things worth noting about the diagram:
 
-- **Arrows flow one way through the pipeline.** The ingest side writes to storage; the render side reads from it. No feedback loops in slice 1 — no retriage, no report-to-database writes, no cross-report comparison.
+- **Arrows flow one way through the pipeline.** The collect side and ingest side both write to storage; the render side reads from it. No feedback loops in slices 1 or 2 — no retriage, no report-to-database writes, no cross-report comparison. (Slice 3 introduces recursion, which adds a feedback loop from findings back to collect.)
+- **Collect (slice 2) is a new on-ramp to ingest, not a replacement.** Stage outputs from subfinder, httpx, and nuclei become Artifacts that flow through the existing slice 1 ingest pipeline. Findings produced by `csak collect` are indistinguishable from Findings produced by `csak ingest`.
 - **The render column is pluggable by format.** Adding HTML or PDF later means adding one more renderer that consumes the same report context. No changes upstream.
 
 ## Module boundaries
 
-Five modules. Each owns a narrow responsibility; the boundaries match the diagram columns and the shipped repo's `src/csak/` layout.
+Six modules. Each owns a narrow responsibility; the boundaries match the diagram columns and the shipped repo's `src/csak/` layout. Five modules are slice 1; the sixth (collect) is slice 2.
 
-### 1. CLI (thin, click-based)
+### 1. CLI (thin, click-based) — slice 1
 
 **Owns:** argument parsing, command dispatch, user-facing output formatting (error messages, progress indicators, table output for `list` commands). Nothing more.
 
-**Does not own:** business logic, data access, rendering. The CLI's `csak report generate` is a small handler that parses flags, calls the query layer, calls the context builder, calls the relevant renderers, and exits. Every substantive thing happens in the modules below.
+**Does not own:** business logic, data access, rendering, tool execution. The CLI's `csak report generate` is a small handler that parses flags, calls the query layer, calls the context builder, calls the relevant renderers, and exits. Every substantive thing happens in the modules below.
 
-**Lives in:** `csak/cli/` — one file per top-level command (`ingest.py`, `report.py`, `findings.py`, `target.py`, `scan.py`, `org.py`), plus `main.py` as the click group entrypoint.
+**Lives in:** `csak/cli/` — one file per top-level command (`ingest.py`, `report.py`, `findings.py`, `target.py`, `scan.py`, `org.py`, plus `collect.py` and `doctor.py` in slice 2), and `main.py` as the click group entrypoint.
 
-**Why thin:** a fat CLI is the classic way to end up unable to build a TUI or web UI later. Slice 1 is CLI-only; slices 3+ might need a different front end. Keeping the CLI thin keeps that option alive.
+**Why thin:** a fat CLI is the classic way to end up unable to build a TUI or web UI later. Slice 1 is CLI-only; slice 3+ might need a different front end. Keeping the CLI thin keeps that option alive.
 
-**Table output convention:** every `list` command puts an `ID` column first (truncated to 8 characters for display). Downstream commands — `findings update`, `findings show`, `target update` — accept either the full UUID or any unambiguous prefix. This keeps the mutation workflow self-contained: the analyst never has to drop into sqlite3 to look up a row they can already see on screen.
+**Table output convention:** every `list` command puts an `ID` column first (truncated to 8 characters for display). Downstream commands — `findings update`, `findings show`, `target update` — accept either the full UUID or any unambiguous prefix.
 
-### 2. Ingest (per-tool parsers + scoring + dedup)
+### 2. Collect (target detection + tool orchestration) — slice 2
+
+**Owns:** taking a target string, identifying its type (domain / subdomain / ip / cidr / url), routing it to the appropriate subset of orchestrated tools per the active mode, running each tool as a subprocess, capturing its output as an Artifact, applying adaptive rate limiting, surfacing live progress to the analyst, and handing each stage's Artifact to the ingest pipeline.
+
+**Does not own:** parsing tool output (that's ingest's job — the same parser that handles a hand-uploaded Nuclei file handles a collect-produced Nuclei file), storing entities (storage's job), the eventual reporting (render's job).
+
+**Lives in:** `csak/collect/` — `detect.py` for target-type identification, `router.py` for the type/mode → tool-set decision matrix, `runner.py` for the subprocess + rate-limiter + progress wrapper, `tool.py` for the shared `Tool` interface, `tools/<tool>.py` for each per-tool catalog module (`subfinder.py`, `httpx.py`, `nuclei.py`).
+
+**The tool catalog is Python module per tool.** Each module implements the shared `Tool` interface and carries: binary name, minimum version, install command, `applies_to(target_type)` predicate, per-mode invocation recipes, progress-line parser, rate-limit signal detector, and attribution comments for any recipe adapted from reconFTW. Three tools in slice 2 → three modules. Picked Python over YAML because each tool needs real logic (target-type predicates, conditional flag building, tool-specific stderr pattern matching) that YAML can't express without growing an ugly schema. Reversal to YAML is cheap if the catalog grows past ~10 tools and patterns stabilize.
+
+**The `csak doctor` command lives in `csak/cli/doctor.py`** but reads from the catalog modules to know what to check for. Doctor is the only place where CSAK might modify the analyst's system (running `go install` to fetch missing binaries), and it always asks permission first.
+
+See [[specs/slice-2|slice 2 spec §Tool catalog]] and §Target type detection and tool routing for the rules collect must respect.
+
+### 3. Ingest (per-tool parsers + scoring + dedup) — slice 1
 
 **Owns:** taking a file path (or directory, for Zeek) and a tool identifier, producing Scans, Artifacts, and Findings. Assigning severity, confidence, and priority at the moment a Finding is first observed. Running dedup against existing Findings for the same Org.
 
-**Does not own:** the database schema (that's storage), analyst-facing commands (that's CLI), the report rendering (that's render). An ingestor doesn't know what a Report is.
+**Does not own:** the database schema (that's storage), analyst-facing commands (that's CLI), the report rendering (that's render), tool execution (that's collect, slice 2). An ingestor doesn't know what a Report is, and doesn't care whether its input came from a hand-upload or from collect.
 
 **Lives in:** `csak/ingest/` — one module per tool (`nuclei.py`, `nessus.py`, `zeek.py`, `osquery.py`, `probe.py` for Subfinder+httpx), plus `pipeline.py` as the orchestrator, `scoring.py` for the scoring formula and tables, `dedup.py` for the per-tool dedup keys, `targets.py` for the promotion logic, and `parser.py` for the shared parser interface.
 
-**The parser interface** is the single seam: each parser exposes `parse(path) -> ParseResult` where `ParseResult` carries a `ParsedScan` plus a list of `ProtoFinding`. All five slice 1 parsers satisfy this. A sixth parser for reconFTW JSON or generic CSV is slice 2 work and slots into the same interface.
+**The parser interface** is the single seam: each parser exposes `parse(path) -> ParseResult` where `ParseResult` carries a `ParsedScan` plus a list of `ProtoFinding`. All five slice 1 parsers satisfy this. A sixth parser for reconFTW JSON or generic CSV would slot into the same interface — both currently deferred indefinitely (the slice 2 native orchestrator removes most of the reconFTW JSON ingest motivation).
 
 See [[specs/slice-1|slice 1 spec §Scoring]] and §Dedup for the rules each parser must respect.
 
-### 3. Storage (SQLite + flat-file artifacts)
+### 4. Storage (SQLite + flat-file artifacts) — slice 1
 
 **Owns:** persistence. SQLite holds the entity rows (Org, Target, Scan, Finding, FindingScanOccurrence, Artifact metadata). The filesystem under `artifacts/<hash-prefix>/<hash>` holds raw tool-output bytes, content-addressed.
 
@@ -125,44 +162,42 @@ See [[specs/slice-1|slice 1 spec §Scoring]] and §Dedup for the rules each pars
 
 **Lives in:** `csak/storage/` — `schema.py` for the CREATE TABLE statements, `models.py` for the dataclass entity representations, `repository.py` for query and mutation helpers, `db.py` for connection setup, `artifacts.py` for the content-addressed file store.
 
-**Why SQLite:** single-user, single-machine, zero deployment. If slice 2+ ever needs concurrent writers, Postgres becomes the right answer — but we'd rather solve that problem once we actually have it. See [[specs/slice-1|slice 1 spec §Storage]].
+**Why SQLite:** single-user, single-machine, zero deployment. If slice 2+ ever needs concurrent writers, Postgres becomes the right answer — but slice 2 specifically *doesn't* need them; concurrent `csak collect` runs are allowed and harmless under WAL mode. See [[specs/slice-2|slice 2 spec §Concurrent collect runs]].
 
-### 4. Query & Context
+### 5. Query & Context — slice 1
 
 **Owns:** reading from storage for read-side operations. Two sub-responsibilities:
 
 - **Query layer.** Generic "give me active Findings for Org X within time window Y" queries used by both the `list` commands and report generation. Understands `deleted_at`, `first_seen`/`last_seen` bounds, and joins across FindingScanOccurrence.
 - **Report context builder.** Given (org, period, kind), assembles a single structured Python object holding the Findings, the Scans that contributed, the Targets those Findings attach to, methodology metadata, and grouping hints. This object is the input to every renderer.
 
-**Does not own:** rendering. The context builder emits a data structure, not a document. The same context feeds markdown, docx, and JSON identically.
+**Does not own:** rendering. The context builder emits a data structure, not a document.
 
 **Lives in:** `csak/query/` — `finders.py` for the generic queries, `context.py` for the report context builder and its dataclasses.
 
-**Why a dedicated context builder:** it's the invariant that keeps the three render formats aligned. Every renderer reads the same object; same section order, same content, same source. See [[specs/slice-1|slice 1 spec §Report context — the shared input to all renderers]].
+**Why a dedicated context builder:** it's the invariant that keeps the three render formats aligned. Every renderer reads the same object; same section order, same content, same source.
 
-### 5. Render (format-specific, pluggable)
+### 6. Render (format-specific, pluggable) — slice 1
 
 **Owns:** turning a report context into output files. Three renderers in slice 1.
 
 - **Markdown renderer.** Jinja2 templates under `templates/markdown/<kind>.md.j2`. Primary authoring format.
-- **Docx renderer.** python-docx walking the context and emitting document elements programmatically. A base template at `templates/docx/base.docx` defines styles; the renderer fills it in. First-pass docx prioritizes structure; typography polish is a second pass.
-- **JSON renderer.** Serializes the context with a stable, versioned schema. Designed as the interface for the future LLM layer, not as a debug dump.
+- **Docx renderer.** python-docx walking the context and emitting document elements programmatically. A base template at `templates/docx/base.docx` defines styles; the renderer fills it in.
+- **JSON renderer.** Serializes the context with a stable, versioned schema. Designed as the interface for the future LLM layer.
 
 **Does not own:** the query that built the context, or deciding which formats to emit (that's the CLI based on `--format`).
 
 **Lives in:** `csak/render/` — `markdown.py`, `docx_renderer.py`, `json_renderer.py`, plus `csak/templates/` alongside for the Jinja and docx base files.
 
-**Extension point:** a new format (HTML, PDF, CSV) is a new file in `csak/render/` implementing the same renderer interface, plus a registration in the renderer registry. No changes elsewhere.
+**Extension point:** a new format (HTML, PDF, CSV) is a new file in `csak/render/` implementing the same renderer interface. No changes elsewhere.
 
-## End-to-end walkthrough
+## End-to-end walkthroughs
 
-One concrete invocation, traced through every module.
+Two concrete invocations, traced through every module. The first is the slice 1 ingest path (an analyst-uploaded file). The second is the slice 2 collect path (CSAK runs the tools).
 
-### Setup: analyst has a Nessus scan
+### Walkthrough 1 — slice 1: ingest a Nessus scan
 
 Analyst ran Nessus Essentials against `acmecorp.com` last night. The output is at `~/scans/acme-april.nessus`. They've created an Org for this client earlier via `csak org create acmecorp`.
-
-### Step 1: ingest
 
 ```
 csak ingest --org acmecorp --tool nessus ~/scans/acme-april.nessus
@@ -171,104 +206,123 @@ csak ingest --org acmecorp --tool nessus ~/scans/acme-april.nessus
 What happens, in order:
 
 1. **CLI** parses the flags, resolves `acmecorp` to an Org ID via the storage layer, dispatches to the Nessus ingestor.
-2. **Ingestor** opens the file, hashes its contents. Storage layer checks: is there already an Artifact row with this hash for this Org? If yes, skip to step 6 (dedup-only path). If no, proceed.
-3. **Ingestor** writes the raw bytes to `artifacts/ab/ab3c7f…`, creates an Artifact row in SQLite pointing at it.
-4. **Nessus parser** reads the XML, extracts `scan_started_at` / `scan_completed_at` from the embedded `HOST_START` / `HOST_END` host properties (`timestamp_source = extracted`), and emits a Scan row plus one proto-Finding per `<ReportItem>`.
-5. For each proto-Finding:
-   - **Target promotion logic** looks up the host in Targets for this Org. If it's a known Target, attach. If it's a subdomain string in some parent Target's `identifiers` list, promote to a child Target. If it's brand new, create a Target.
-   - **Scoring** reads Nessus severity (`4 = Critical`, `3 = High`, …), maps via the per-tool table to CSAK's scale. Pulls confidence from the Nessus finding or the tool default. Reads `target_weight` from the Target. Computes `priority = severity_weight × confidence_weight × target_weight` and writes it to the Finding.
-   - **Dedup** checks `(org_id, source_tool='nessus', plugin_id + host + port)`. If a matching Finding exists, advance its `last_seen`, add a FindingScanOccurrence row, done. If not, insert a new Finding.
-6. **CLI** prints a summary: `Ingested scan <id>: 4 new, 0 re-occurrences, 2 targets touched`.
+2. **Ingestor** opens the file, hashes its contents. Storage layer checks: is there already an Artifact row with this hash for this Org? If yes, skip ahead. If no, write the raw bytes to `artifacts/ab/ab3c7f…` and create an Artifact row.
+3. **Nessus parser** reads the XML, extracts `scan_started_at` / `scan_completed_at` from the embedded `HOST_START` / `HOST_END` host properties (`timestamp_source = extracted`), and emits a Scan row plus one proto-Finding per `<ReportItem>`.
+4. For each proto-Finding: target promotion logic resolves to a Target, scoring computes priority (`severity_weight × confidence_weight × target_weight`), dedup checks `(org_id, source_tool='nessus', plugin_id + host + port)` and either advances `last_seen` or inserts new.
+5. **CLI** prints a summary: `Ingested scan <id>: 4 new, 0 re-occurrences, 2 targets touched`.
 
 After this, SQLite holds the updated state. The raw `.nessus` file is preserved at `artifacts/ab/ab3c7f…`. No report has been generated yet.
 
-### Step 2: list and triage
+The analyst then runs `csak report generate` to produce markdown/docx/JSON outputs from current state — see [[specs/slice-1|slice 1 spec §Reports]] for the full report flow.
+
+### Walkthrough 2 — slice 2: collect against a domain
+
+Analyst wants to run a fresh recon sweep against `acmecorp.com`. No pre-collected files; CSAK runs the tools.
 
 ```
-csak findings list --org acmecorp
+csak collect --org acmecorp --target acmecorp.com
 ```
 
-Outputs a table with columns `ID / PRIORITY / SEVERITY / TOOL / TARGET / TITLE`, priority-descending. IDs are truncated to 8 characters. The analyst spots that the low-severity HTTP header disclosure is routine for this client.
+What happens, in order:
+
+1. **CLI** parses the flags, dispatches to the collect handler.
+2. **Detect** identifies `acmecorp.com` as `target_type=domain` (apex domain via public suffix list match).
+3. **Router** looks up the type and active mode (`standard` by default) in the routing matrix:
+   - subfinder: applies (domain triggers full pipeline)
+   - httpx: applies
+   - nuclei: applies
+4. **Live output** prints the detection and assignment:
+   ```
+   [csak] Identified target acmecorp.com as type=domain
+   [csak] Assigned tools: subfinder, httpx, nuclei  (mode=standard)
+   ```
+5. **Runner** invokes Subfinder via subprocess with the catalog's standard-mode flags (`-d acmecorp.com -all -silent -oJ`). As Subfinder streams subdomains to stdout, the runner:
+   - Captures bytes to the artifact store at `artifacts/<hash>/subdomains.jsonl`.
+   - Watches stderr for rate-limit signals (none typical for Subfinder).
+   - Updates the live progress line: `[subfinder] streaming…   elapsed=12s   found=87 subdomains`.
+6. When Subfinder finishes, the runner writes the Artifact metadata to SQLite and triggers ingest on the artifact via the slice 1 pipeline. The Subfinder parser produces Findings for each new subdomain (or just records the subdomains in their parent target's `identifiers` list, depending on whether they have associated findings yet — see [[specs/slice-1|slice 1 spec §Target nesting]]).
+7. **Runner** invokes httpx with the subfinder output as `-l` input. Same wrapper pattern: capture bytes, watch for 429/503, update progress line, write Artifact, trigger ingest.
+8. **Runner** invokes Nuclei with the httpx live-host output as `-l` input. Same wrapper pattern. If Nuclei stderr shows `[INF] Rate limit hit`, the runner halves the rate flag and re-injects: `[nuclei] detected rate limit signal — reducing rate to 25 req/s`. Findings parsed via the standard slice 1 Nuclei parser.
+9. **Final summary** printed:
+   ```
+   [csak] Collect complete for acmecorp.com (mode=standard)
+   [csak] Total elapsed: 5m23s
+   [csak] Scans created: 3 (subfinder, httpx, nuclei)
+   [csak] Findings: 12 new, 0 re-occurrences
+   [csak] Run `csak findings list --org acmecorp` to review
+   ```
+
+The data path ends up identical to walkthrough 1 — Findings in SQLite, ready for `findings list` and `report generate`. The only structural difference is that three Scans were produced instead of one, with `Scan.notes` indicating "via csak collect" for the methodology section in reports.
+
+**Variant:** had the analyst passed `--target 10.0.0.0/24`, the live output would show:
+```
+[csak] Identified target 10.0.0.0/24 as type=cidr
+[csak] Assigned tools: httpx, nuclei  (mode=standard)
+[csak] Skipped: subfinder (no subdomain enumeration for IP/CIDR targets)
+```
+and the Subfinder Scan would be recorded with `status=skipped` and `notes="skipped: target type cidr"`.
+
+### Walkthrough 3 — slice 1: analyst iterates
+
+After either walkthrough above, the analyst reads the report and decides Finding #12 is noise:
 
 ```
 csak findings update 30073971 --status suppressed
 ```
 
-Prefix lookup resolves `30073971` to the full UUID. **Query layer** writes `status = suppressed` to the Finding and recomputes its priority defensively (same formula, same inputs, same output in this case — but the mutation path is uniform).
+Prefix lookup resolves `30073971` to the full UUID. Query layer writes `status = suppressed` and recomputes priority defensively. Next report generation excludes the suppressed finding from the default query.
 
-### Step 3: report generate
-
-```
-csak report generate --org acmecorp --period 2026-04 --kind internal-review --format markdown,docx,json
-```
-
-What happens:
-
-1. **CLI** parses flags, dispatches to the report command handler.
-2. **Query layer** runs: "Findings for `acmecorp` where `last_seen >= 2026-04-01` AND `first_seen < 2026-05-01` AND `status IN (active, accepted-risk)` AND `deleted_at IS NULL`." Returns a list of Findings, joined with their Targets and with the Scans they appeared in during the window (via FindingScanOccurrence). The suppressed finding from step 2 is correctly excluded.
-3. **Context builder** assembles a Python `ReportContext` object: findings sorted by priority, grouped by severity, with methodology metadata recording which Scans contributed and whether any had `timestamp_source = fallback-ingested` (none in this case, since Nessus extracts cleanly). Includes Org info and the period bounds.
-4. **Markdown renderer** walks the context, runs it through the `templates/markdown/internal-review.md.j2` Jinja template, writes `reports/acmecorp/2026-04/2026-04-24T08-51-36-115_internal-review.md`. Note the millisecond-precision timestamp prefix (`115`) — multiple invocations within the same second stay distinct.
-5. **Docx renderer** copies `templates/docx/base.docx` to a new file, then programmatically adds headings, paragraphs, and tables matching the markdown output's structure. Writes `…_internal-review.docx`.
-6. **JSON renderer** serializes the context with its schema-versioned shape. Writes `…_internal-review.json`.
-7. **CLI** prints the three paths and exits.
-
-**No writes to SQLite during step 3.** The report is a pure export.
-
-### Step 4: adjust target weight
-
-Analyst decides the web server matters more than average:
-
-```
-csak target update 1e4649fb --weight 1.5
-```
-
-- **CLI** dispatches to the query layer's update path.
-- **Query layer** writes `target_weight = 1.5` on the Target, then walks every Finding attached to that Target and recomputes its priority. Other Targets and their Findings are untouched.
-- Next report generation reflects the new priorities.
-
-### Step 5: re-run the report
-
-Analyst runs the same `report generate` command again. Every step repeats; a fresh set of three files is written with a new ms-timestamped prefix. The previous three files stay on disk. The period directory now has two sets of timestamped outputs. That's the history.
+If the analyst wants to flag the finding as probably-FP without committing, they can tag it (`--tag probably-fp`) and the tag surfaces in reports without affecting priority.
 
 ## Extension points
 
 Where future work attaches to this architecture, in order of likelihood.
 
-- **New tool parser** (slice 2 brings reconFTW JSON; later, generic CSV). Drop a new module into `csak/ingest/<tool>.py`. Implement the parser interface. Add severity mapping entries in `csak/ingest/scoring.py` (or a YAML config if that arrives first). Add a dedup-key rule in `csak/ingest/dedup.py`. That's it — no changes to storage, query, or render.
-- **Tool execution** (slice 2). A new `csak/collect/` module runs tools and writes their output to disk as Artifacts. The ingest layer then picks them up exactly as it picks up analyst-provided files today. The existing pipeline stays unchanged; collect is a new on-ramp to the same pipeline.
-- **New export format** (HTML, PDF, CSV — deferred). Drop a new renderer into `csak/render/<format>.py` implementing the renderer interface. Register it. The CLI's `--format` flag now accepts it. No changes upstream.
-- **LLM layer** (later slice). Consumes the JSON export. Could be a new CLI command (`csak llm draft-impact --input <path-to-json>`) or a separate tool entirely; either way, the interface is the JSON schema, and CSAK's deterministic core never changes. See [[specs/slice-1|slice 1 spec §Report context]] for why the JSON shape is designed this way.
-- **Scheduled invocation** (slice 4+). Wraps `csak report generate` on a cron or event trigger. CSAK itself doesn't need a scheduler — the OS provides one. If we later add cadence-aware features (like period summaries that diff against prior reports), *those* touch the data model; the scheduler itself doesn't.
+- **New tool parser** (e.g. reconFTW JSON or generic CSV — both currently deferred). Drop a new module into `csak/ingest/<tool>.py`. Implement the parser interface. Add severity mapping entries in `csak/ingest/scoring.py`. Add a dedup-key rule in `csak/ingest/dedup.py`. That's it — no changes to storage, query, or render. Note that with slice 2's native orchestrator, the motivation for reconFTW JSON ingest is reduced (analysts can use CSAK directly instead of bringing reconFTW output).
+- **New tool to orchestrate** (slice 2.5+: Nessus via API, or any future addition). Drop a new module into `csak/collect/tools/<tool>.py` implementing the `Tool` interface. Add a `Tool.applies_to(target_type)` predicate. Add the entry to the router's tool-set table. The shared `Runner` handles subprocess invocation, rate limiting, and progress reporting uniformly. No changes elsewhere.
+- **New target type** (slice 3 might add `pcap`, `email-domain`, etc.). Add the type to `csak/collect/detect.py`'s detection logic. Update the routing matrix. Each tool's `applies_to` is consulted automatically.
+- **New export format** (HTML, PDF, CSV — deferred). Drop a new renderer into `csak/render/<format>.py` implementing the renderer interface. Register it. The CLI's `--format` flag accepts it. No changes upstream.
+- **Recursion** (slice 3). A new module that consumes findings, decides what to follow up on, and re-invokes collect with new targets. The collect module is shaped to support this — it's idempotent and target-driven.
+- **LLM layer** (later slice). Consumes the JSON export. Could be a new CLI command (`csak llm draft-impact --input <path-to-json>`) or a separate tool entirely; either way, the interface is the JSON schema, and CSAK's deterministic core never changes.
+- **Scheduled invocation** (slice 4+). Wraps `csak collect` and `csak report generate` on a cron or event trigger. CSAK itself doesn't need a scheduler — the OS provides one.
+- **Async / background collect** (slice 3 if needed). Wraps the existing sync collect pipeline with a job queue and status persistence. The collect module is shaped for this — runner is already a wrapper around subprocess; making it return a job handle instead of blocking is a localized change.
 
 ## What's deliberately not covered here
 
 Operational and engineering concerns that matter at build time but don't affect architecture:
 
-- **Error handling strategy.** Which errors halt, which warn, which get retried. Addressed per-module during implementation.
+- **Error handling philosophy in ingest and render.** Slice 1's choice ("errors halt where data is corrupted, warn-and-continue where data is partial") was made during implementation; not an architectural concern.
 - **Logging.** Structured vs. unstructured, log levels, where logs write. A build-time decision; the architecture doesn't care.
-- **Concurrency.** Slice 1 is single-process, single-threaded for simplicity. Can ingest-while-querying later if needed, but SQLite in WAL mode handles it natively without architectural changes.
-- **Config management.** Scoring tables live inline in `csak/ingest/scoring.py` for slice 1 (moving them to YAML files under `config/triage/severity/` is a slice 2 polish item); the rest (DB path, output path, defaults) is CLI flags or environment variables.
-- **Testing strategy.** Every module above has obvious test seams (parsers are pure functions of input bytes, the context builder is a pure function of DB state, renderers are pure functions of context). Slice 1 ships with 83 tests covering all five parsers, scoring, dedup, query, context, three renderers, two CLI paths, and a full end-to-end flow.
+- **Concurrency.** Slice 1 is single-process, single-threaded for simplicity. Slice 2's collect is single-process, sync; concurrent `collect` invocations are allowed under SQLite WAL but produce redundant work.
+- **Config management.** Scoring tables live inline in `csak/ingest/scoring.py`; the rest (DB path, output path, defaults) is CLI flags or environment variables. A proper config file is only needed once enough knobs warrant one — slice 2 deliberately doesn't add one.
+- **Testing strategy.** Every module above has obvious test seams. Slice 1 ships with 83 tests; slice 2's testing approach is per-module the same shape (parsers/runners are pure functions of input).
 - **Packaging and distribution.** CSAK ships as a pip-installable package with a `csak` entry point. Single-binary / Docker packaging is a later decision; doesn't affect any module boundary.
 
-## How this relates to the spec
+## How this relates to the specs
 
-| Concept | Defined in the spec at | Referenced here |
-|---------|----------------------|----------------|
+| Concept | Defined in | Referenced here |
+|---------|------------|----------------|
 | Data model (Org / Target / Scan / Finding / Artifact / FindingScanOccurrence) | [[specs/slice-1\|slice 1 spec §Data model]] | Storage module |
 | Scoring rules and priority formula | [[specs/slice-1\|slice 1 spec §Scoring]] | Ingest module |
 | Dedup keys per tool | [[specs/slice-1\|slice 1 spec §Dedup]] | Ingest module |
 | Report kinds and section content | [[specs/slice-1\|slice 1 spec §Reports]] | Render module |
 | Export formats | [[specs/slice-1\|slice 1 spec §Export formats]] | Render module |
-| CLI surface | [[specs/slice-1\|slice 1 spec §Interface]] | CLI module |
+| CLI surface for ingest / report / findings / target / scan | [[specs/slice-1\|slice 1 spec §Interface]] | CLI module |
 | Storage choices | [[specs/slice-1\|slice 1 spec §Storage]] | Storage module |
-| Exit criteria | [[specs/slice-1\|slice 1 spec §Exit criteria]] | (whole-system) |
+| Slice 1 exit criteria | [[specs/slice-1\|slice 1 spec §Exit criteria]] | (slice 1 whole-system) |
+| Target type detection and tool routing matrix | [[specs/slice-2\|slice 2 spec §Target type detection and tool routing]] | Collect module |
+| Tool catalog (Python module per tool) | [[specs/slice-2\|slice 2 spec §Tool catalog]] | Collect module |
+| Adaptive rate limiting | [[specs/slice-2\|slice 2 spec §Adaptive rate limiting]] | Collect module |
+| `csak doctor` permission-prompted auto-install | [[specs/slice-2\|slice 2 spec §`csak doctor`]] | CLI module + Collect module |
+| Live output format with progress bars | [[specs/slice-2\|slice 2 spec §Output format]] | Collect module + CLI module |
+| Slice 2 exit criteria | [[specs/slice-2\|slice 2 spec §Exit criteria]] | (slice 2 whole-system) |
 
-If this overview and the spec disagree on a detail, **the spec wins.** This page is a map to the spec, not a replacement for it.
+If this overview and a spec disagree on a detail, **the spec wins.** This page is a map to the specs, not a replacement for them.
 
 ## Related
 
 - [[specs/slice-1|Slice 1 — Ingest & Report]]
+- [[specs/slice-2|Slice 2 — Tool Orchestration]]
 - [[product/vision|Vision]]
 - [[product/slices|Slice Plan]]
 - [[product/glossary|Glossary]]
