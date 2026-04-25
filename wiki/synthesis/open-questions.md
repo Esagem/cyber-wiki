@@ -6,7 +6,7 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Open Questions
@@ -38,13 +38,9 @@ Closed. Every design question identified for slice 2 has been resolved in the [[
 |---|-------|--------|-------|
 | Nessus REST API orchestration — slice 2.5 add or defer further? | shared | open | Re-evaluate once slice 2 is in real use and we know whether analysts actually want CSAK to drive Nessus. The slice 2 spec defers but doesn't drop. |
 
-## Slice 3 (preview)
+## Slice 3 — status
 
-| Q | Owner | Status | Notes |
-|---|-------|--------|-------|
-| Recursion budget shape — time / depth / cost / token / all? | shared | deferred | Slice 3 design. |
-| How does adding a new tool work as a user-facing operation? | shared | deferred | Slice 3 design. May be when YAML finally earns its place over Python-module-per-tool. |
-| Async / background collect — when does sync-only stop being enough? | shared | deferred | Slice 3 design. The slice 2 spec calls this out explicitly: "If long-running scans become a real friction in practice, slice 3 adds backgrounding cleanly on top of the sync-mode foundation." |
+Closed. Every design question identified for slice 3 has been resolved in the [[specs/slice-3|slice 3 spec]] (now `draft`, awaiting review) and the resolutions are recorded in the Answered section below.
 
 ## Slice 4+ (preview)
 
@@ -123,6 +119,19 @@ All resolutions land in the [[specs/slice-1|slice 1 spec]]. Dates are when the r
 | Folder-of-logs for Zeek ingest? | 2026-04-23 | Yes. Directory or single-file paths both accepted. [[specs/slice-1\|slice 1 spec §Folder-aware Zeek ingest]]. |
 | `ID` column on `csak findings list`? | 2026-04-24 | Yes. 8-character display truncation with prefix-resolvable downstream commands. Closes the loop between `findings list` and `findings update <id>` without dropping into sqlite3. [[specs/slice-1\|slice 1 spec §`findings list` output format]]. |
 | Timestamp precision on report output filenames — second or millisecond? | 2026-04-24 | Millisecond. Prevents same-second collisions when an analyst pipes several `report generate` invocations. [[specs/slice-1\|slice 1 spec §Output layout]]. |
+
+### Slice 3 (closed)
+
+All resolutions land in the [[specs/slice-3|slice 3 spec]]. Dates are when the resolution was recorded in the spec.
+
+| Q | Resolved | Outcome |
+|---|----------|---------|
+| Recursion budget shape — time / depth / cost / token / all? | 2026-04-25 | Depth only, default `--max-depth 3`. `0` = infinite, `1` = no recursion, prompt-to-continue when depth limit hit and frontier non-empty. No time, cost, or token budgets — structural in-memory dedup of `(tool, target, mode)` is the natural termination mechanism, depth is the analyst's emergency brake. [[specs/slice-3\|slice 3 spec §Recursion model]]. |
+| Tool selection during recursion — heuristic, config, or LLM-assisted? | 2026-04-25 | Deterministic via output-to-input type matching. Each `Tool` declares `accepts: list[str]` and `produces: list[str]`; the runner builds the routing graph from declarations. No LLM (pulled forward into the LLM-layer slice if it ever lands). [[specs/slice-3\|slice 3 spec §Recursion model]]. |
+| Type system for routing — fixed list or extensible? | 2026-04-25 | Extensible via runtime registry. Built-in types (`network_block | host | domain | subdomain | url | service | finding_ref`) registered at startup; plugin tools can register additional types. `classify(value)` is a dispatcher consulting the registry, used both for `--target` resolution and for `extract_outputs`. Subtype hierarchy supports widening (a `domain` matches `accepts: [host]`). [[specs/slice-3\|slice 3 spec §Type system]]. |
+| How does adding a new tool work as a user-facing operation? | 2026-04-25 | Drop a Python file in `~/.csak/tools/`. The plugin registers its tool (and any new types) into the same toolbox as built-ins; routing, dedup, live output, and scan recording all apply uniformly. `csak tools list/show` for catalog introspection. `csak doctor` validates plugin set. Plugin trust posture: full Python under analyst's permissions, no sandbox (sandboxing deferred). [[specs/slice-3\|slice 3 spec §Tool catalog]] and §`csak tools`. |
+| Recursion-spawned scan lineage — how is parent/child tracked? | 2026-04-25 | Three new nullable columns on `Scan`: `parent_scan_id` (FK → Scan), `depth` (int, 0 for root), `triggered_by_finding_id` (FK → Finding). Single parent per child (correct under strict structural dedup); junction table considered and rejected for slice 3 because the data shape is queryable directly. [[specs/slice-3\|slice 3 spec §Data model additions]]. |
+| Async / background collect — when does sync-only stop being enough? | 2026-04-25 | Not in slice 3. Recursion makes long runs more likely; slice 3's mitigation is excellent live status (depth headers, frontier counts, prompt-to-continue), not backgrounding. Backgrounding revisited in a later slice if real friction emerges. [[specs/slice-3\|slice 3 spec §Out of scope]] and [[synthesis/deferred-features\|deferred-features]]. |
 
 ### Slice 2 (closed)
 
