@@ -39,21 +39,21 @@ Items raised during slice 3 design and deliberately punted. **Review these first
 - **Why deferred.** Slice 3's posture is "trust the analyst's choice of plugin, same as trusting any script they downloaded." Sandboxing adds substantial complexity (process isolation, capability restriction, IPC for typed-target results, plugin manifest schema) that earns its place only if (a) third-party plugin distribution becomes common, or (b) a real incident or near-miss surfaces.
 - **Trigger.** Either: an analyst reports a plugin caused harm or near-harm; *or* CSAK gets shared widely enough that "I downloaded a plugin from a stranger" becomes a normal use case; *or* a future slice introduces multi-user / shared-host scenarios where one user's plugin choice affects another.
 - **Possible shapes when revisited.** Capability declarations in plugin headers (filesystem, network, subprocess); load-time warnings for plugins requesting elevated capabilities; signature verification against a CSAK-maintained registry; sub-interpreter or subprocess isolation. None decided.
-- **Source.** Slice 3 spec design discussion, 2026-04-25. *(Source page: `specs/slice-3.md` once written.)*
+- **Source.** [[specs/slice-3|slice 3 spec §Plugin trust posture]] and §Out of scope.
 
 ### Async / background `csak collect` runs
 
 - **What.** Long-running collect runs (especially recursive ones) block the CLI for tens of minutes to hours. An async/background mode would queue runs, persist their state, and let the analyst close the terminal and check back later via `csak collect status` / `cancel` / `resume`.
 - **Why deferred.** Slice 2 chose sync-only deliberately ("if long-running scans become a real friction in practice, slice 3 adds backgrounding cleanly on top of the sync-mode foundation"). Slice 3 design considered folding async in but rejected it — recursion mechanics are enough scope on their own. Live CLI status from the slice 3 recursion implementation reduces (but doesn't eliminate) the friction.
 - **Trigger.** Eli or Christopher hits the "I left a recursive collect running and lost it when my SSH session dropped" pain often enough to be annoyed.
-- **Source.** [[specs/slice-2|slice 2 spec §Long-running tools]]; [[synthesis/open-questions|open-questions §Slice 3 (preview)]]; refined during slice 3 design.
+- **Source.** [[specs/slice-2|slice 2 spec §Long-running tools]]; [[synthesis/open-questions|open-questions §Slice 3 (closed)]]; [[specs/slice-3|slice 3 spec §Out of scope]].
 
 ### Recursion budgets beyond `--max-depth`
 
 - **What.** Slice 3 ships only `--max-depth N` as the recursion safety brake (default 3, 0 = infinite, 1 = no recursion). Wall-clock budgets, cost budgets, and token budgets were considered and rejected for slice 3 in favor of structural dedup as the natural termination mechanism.
 - **Why deferred.** The simpler model wants to be tested first. If structural dedup proves insufficient (some recursion graph blows up because the dedup keys aren't capturing the right equivalence) we'd add a wall-clock budget; if paid services or LLMs enter the loop in a later slice, we'd add cost.
 - **Trigger.** A real recursion run produces runaway behavior despite dedup; *or* paid services / LLMs are integrated and cost becomes meaningful.
-- **Source.** Slice 3 spec design discussion, 2026-04-25.
+- **Source.** [[specs/slice-3|slice 3 spec §Termination by exhaustion, not by budget]] and §Out of scope.
 
 ---
 
@@ -213,7 +213,7 @@ Larger features that would each justify a full slice. Order is rough priority gu
 - **What.** `pcap`, `email-domain`, `asn`, others not in the slice 2/3 vocabulary. Each enables a category of tool that takes that type as input.
 - **Why deferred.** Slice 3's type registry is designed so new types come with the tool that needs them — adding `asn` happens when an `asnmap`-style tool gets added, not before.
 - **Trigger.** A new tool earns its place in the catalog and brings its own type.
-- **Source.** [[architecture/overview|architecture overview §Extension points]]; slice 3 spec design discussion, 2026-04-25.
+- **Source.** [[architecture/overview|architecture overview §Extension points]]; [[specs/slice-3|slice 3 spec §Type system]] (the registry shape; new types arrive when their tool arrives).
 
 ### Soft warning on concurrent collect runs against the same target
 
