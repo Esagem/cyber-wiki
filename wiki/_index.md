@@ -75,6 +75,7 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, on
 | [[sessions/2026-04-22-slice-1-kickoff\|2026-04-22 — Slice 1 Kickoff]] | active | medium | slice-1, product-shape, tools |
 | [[sessions/2026-04-24-slice-1-implementation-review\|2026-04-24 — Slice 1 Implementation Review]] | active | high | slice-1, implementation, review, verification |
 | [[sessions/2026-04-24-slice-1-shipped\|2026-04-24 — Slice 1 Shipped]] | active | high | slice-1, implementation, ms-timestamps, id-column |
+| [[sessions/2026-04-25-slice-3-design\|2026-04-25 — Slice 3 Design]] | active | high | slice-3, recursion, type-system, plugins, design |
 
 ## Synthesis
 
