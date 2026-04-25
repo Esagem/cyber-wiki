@@ -263,3 +263,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | synthesis/deferred-features.md | edit - deferred-features.md - update slice-3-introduced source pointers from design-discussion placeholders to the actual slice 3 spec sections; sandboxing -> Plugin trust posture, async -> Out of scope, budgets -> Termination by exhaustion
 
 ## [2026-04-25] edit | _index.md | edit - _index.md - flip slice 3 row from planned to draft now that spec is written; add recent-activity entry for the slice 3 spec draft and bookkeeping updates
+
+## [2026-04-25] edit | architecture/overview.md | edit - architecture/overview.md - extend preamble for slice 3 status; add slice 3 module section (recursion runner + type registry + plugin discovery); update extension points entries that mention slice 3; add slice 3 entries to specs-relationship table; add slice 3 spec to Related
