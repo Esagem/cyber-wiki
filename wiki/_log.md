@@ -247,3 +247,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | _index.md | index - remove wiki-acceleration row (page deleted as off-scope per CYBER.md §1), update recent activity entry
 
 ## [2026-04-25] write | synthesis/deferred-features.md | write - synthesis/deferred-features.md - new page consolidating all deferred / future-work items across the wiki for post-slice-3 review; includes plugin sandboxing as the slice-3-introduced item driving the consolidation
+
+## [2026-04-25] write | _index.md | write - _index.md - add deferred-features row to synthesis section, update phase marker to reflect slice 2 in implementation and slice 3 in design, add recent activity entry for the new consolidation page
