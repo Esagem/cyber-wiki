@@ -231,3 +231,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | product/slices.md | slices H3-3 lint fix - rewrite slice 2 section to mirror slice 1 pattern, drop stale open-questions list
 
 ## [2026-04-25] write | synthesis/open-questions.md | open-questions H3-1 M3-5 lint fix - move all slice 2 questions to Answered with spec pointers, drop quick-rescan
+
+## [2026-04-25] write | competitive/leverage-analysis.md | leverage-analysis H3-4 L3-6 lint fix - reconFTW Strategy 3 + Combined picture + Recommendations updated for slice 2 spec resolution, status bumped to active/medium
