@@ -6,7 +6,7 @@ status: draft
 confidence: low
 owner: shared
 created: 2026-04-22
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # Users & Jobs
@@ -72,11 +72,11 @@ This is the deliverable-quality pain. One report family for analysts, one for th
 
 This is the signal-from-noise pain. Deterministic triage with three axes (severity × confidence × target_weight), explainable scoring, and status-based suppression that survives across runs. When the analyst is confident a Finding is noise, they set `status = false-positive` or `suppressed` and it stops showing up in active reports. Slice 1 does not offer a fractional "probably FP" downweight — the analyst commits or leaves it active.
 
-### Job 5 (slice 2+) — "Run the tools for me"
+### Job 5 (slice 2) — "Run the tools for me"
 
 > "I know I want Subfinder + httpx + Nuclei against this domain. Don't make me wire them up by hand every time."
 
-This is the orchestration pain. Slice 1 doesn't address it; slice 2 does. reconFTW already solves most of this problem in the offensive-recon domain — slice 2 design has to decide whether CSAK builds its own orchestrator, delegates to reconFTW, or supports both. See [[competitive/reconftw|reconFTW analysis]].
+This is the orchestration pain. Slice 1 doesn't address it; slice 2 does. Slice 2 ships CSAK's own orchestrator over Subfinder + httpx + Nuclei with target-type-aware tool routing (a domain triggers the full pipeline, an IP or URL skips earlier stages). reconFTW's invocation recipes are adapted into CSAK's tool catalog with attribution; CSAK doesn't depend on reconFTW at runtime — see [[specs/slice-2|the slice 2 spec]] and the [[competitive/reconftw|reconFTW case study]].
 
 ### Job 6 (slice 3+) — "Keep going on your own when it's obvious what's next"
 
@@ -106,5 +106,6 @@ People who explicitly should NOT use CSAK in slice 1 or 2:
 - [[product/slices|Slice Plan]]
 - [[product/glossary|Glossary]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
 - [[synthesis/open-questions|Open Questions]]
 - [[competitive/reconftw|reconFTW]]
