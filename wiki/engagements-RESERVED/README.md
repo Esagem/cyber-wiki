@@ -6,7 +6,7 @@ status: seed
 confidence: high
 owner: shared
 created: 2026-04-21
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # engagements-RESERVED — placeholder folder
@@ -32,7 +32,17 @@ Until all four happen, **no real engagement data goes in this folder**. The LLM 
 
 Leaving the name reserved prevents someone (human or LLM) from later creating `engagements/` with a different structure, discovering it conflicts with the product's own idea of an engagement, and having to migrate. A deliberate empty folder today is cheaper than a rename later.
 
-There is one active question worth flagging: the presence of the `Org` entity in slice 1's data model may make this folder less necessary than originally planned. If CSAK's own database holds the engagement-shaped data, `engagements-RESERVED/` is redundant — the wiki doesn't need to mirror what the product already stores. Revisit when slice 1 is close to build-ready.
+## Should this folder retire?
+
+**Updated 2026-04-24:** slice 1 has shipped, and the `Org` entity exists in CSAK code. The product itself now provides engagement-shaped storage. The original justification for this folder — "the wiki may want to mirror what the product stores" — is now weaker, because the product can be queried directly for the structured engagement data, with the wiki holding only the unstructured notes-about-engagements that the product wouldn't naturally hold.
+
+The question "should this folder retire?" is now **actionable** rather than deferred to "when slice 1 is close to build-ready." Awaiting Eli's call. Three reasonable outcomes:
+
+1. **Retire entirely.** Remove the folder. Engagement-shaped data lives in CSAK; engagement-adjacent notes (anything that doesn't fit CSAK's data model — internal team commentary, client communication patterns, lessons learned) goes in a new `notes/` folder or under `sessions/`.
+2. **Keep but rescope.** Folder stays as the home for notes-about-engagements that CSAK itself wouldn't hold (debriefs, client-relationship notes, lessons learned). Update this README to describe the rescoped purpose.
+3. **Keep as-is.** Defensible if we anticipate the wiki being a useful place to dogfood CSAK output (rendered reports, copies of artifacts) for review and discussion. Lower-confidence option since CSAK's filesystem already does this.
+
+No action without an explicit decision. If unaddressed by the time the first real engagement runs through CSAK, the default behavior is option 1 (retire) — but a deliberate choice between the three is preferred.
 
 ## Related
 
