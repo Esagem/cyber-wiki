@@ -241,3 +241,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | CYBER.md | CYBER.md §9 rewritten to teach LLM the new MCP tools (wiki_edit, wiki_read sections, wiki_read_many, wiki_status_set, wiki_log_tail) and when to use each. Other sections unchanged.
 
 ## [2026-04-25] write | _index.md | index - add wiki-acceleration row to synthesis, add recent activity entry for the MCP tooling spec and CYBER.md §9 rewrite
+
+## [2026-04-25] delete | synthesis/wiki-acceleration.md | Wrong wiki - per CYBER.md §1 this wiki is for CSAK design only, not for meta-work about the wiki's own MCP tooling. Spec content belongs with the MCP server code, not here. Once implemented, CYBER.md §9 covers user-facing usage and the implementation itself is the contract.
