@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-24
+updated: 2026-04-25
 sources:
   - "[[competitive/defectdojo]]"
   - "[[competitive/reconftw]]"
@@ -143,19 +143,22 @@ An alternative path — fork DefectDojo, rip out the Django shell, evolve it int
 
 The same reasoning applies to reconFTW with two added problems: (1) it's bash, which we've rejected as an implementation language, and (2) the orchestration logic itself isn't worth porting — only the recipes are.
 
-## What this means for slice 2 design
+## What slice 2 actually adopted from this analysis
 
-Concrete inputs to the slice 2 spec, when it gets written:
+This section was originally written as forward-looking guidance to a slice-2-designer. With slice 2 now built (per Eli, 2026-04-25), it's been rewritten as a retrospective. The authoritative record is the [[specs/slice-2|slice 2 spec]] and the slice 2 implementation; this is the build-vs-adapt page's view of what actually got adopted.
 
-- **Tool catalog** under `config/tools/<tool>.yaml` (or similar) carries the invocation recipes adapted from reconFTW with attribution. Slice 2 supports the on-demand active tools that earn their keep: Nuclei, Subfinder, httpx, possibly Nessus via API. Zeek and osquery stay ingest-only.
-- **Orchestration code** is CSAK-native Python. Subprocess runner, stage sequencer, dedup-on-merge. No subprocess invocation of reconFTW. No bash shelled out.
-- **Mode model** is a small set (probably 2-4 modes — something like `quick`, `standard`, `deep`) plus per-tool overrides at the CLI. Not 300 booleans.
-- **Adaptive rate limiting** is a slice 2 requirement, not a nice-to-have, because external active tools hit 429/503 in the real world. Adopted from reconFTW's pattern.
-- **Quick rescan** pattern from reconFTW (skip heavy stages when cheap stages reveal no new assets) is the one piece of reconFTW's actual runtime logic worth adapting.
+- **Tool catalog as Python module per tool.** The original guidance proposed `config/tools/<tool>.yaml`. Slice 2 chose Python modules under `csak/collect/tools/<tool>.py` instead — each tool needs real logic (`applies_to(target_type)` predicates, conditional flag building, tool-specific stderr pattern matching) that YAML can't express without growing an ugly schema. Reversal to YAML stays cheap if the catalog grows past ~10 tools.
+- **Three orchestrated tools, not four.** The original guidance proposed "Nuclei, Subfinder, httpx, possibly Nessus via API." Slice 2 shipped with Subfinder + httpx + Nuclei. Nessus via API was deferred to slice 2.5+ (meaningful integration work; value not proven until slice 2 is in real use). Tracked in [[synthesis/deferred-features|deferred-features]].
+- **Three modes (`quick`, `standard`, `deep`).** The original guidance proposed "a small set (probably 2-4 modes — something like `quick`, `standard`, `deep`)." The exact prediction shipped: three modes plus per-tool overrides at the CLI, no 300-knob config. `quick` mode skips Nuclei entirely (the only case where mode affects which tools run rather than how they run).
+- **Adaptive rate limiting default-on.** Adopted from reconFTW's pattern as predicted. Floor 1 req/s, ceiling per-tool starting rate, ~100-200 LOC wrapper. Tool-specific signal detection (e.g. Nuclei surfaces target rate-limiting as `[WRN] context deadline exceeded` rather than a clean 429).
+- **reconFTW recipes adapted with attribution.** The slice 2 catalog modules carry `# source: reconFTW v4.0 modules/<file>.sh` comments where recipes were adapted. CSAK has no runtime dependency on reconFTW.
+- **Quick rescan pattern — deliberately rejected.** The original guidance proposed adopting reconFTW's quick-rescan pattern (skip heavy stages when no new assets are discovered). Slice 2 rejected it: every `csak collect` invocation runs the full pipeline fresh, and the slice 1 dedup layer prevents data pollution from re-running. May revisit in a later slice if it earns its place — tracked in [[synthesis/deferred-features|deferred-features]].
+
+The build-vs-adapt thesis held up well in retrospect: the recipes (data) were the high-leverage adaptation, the orchestration code (logic) was straightforward to write fresh, and the 300-knob config model was correctly rejected.
 
 ## A central references page
 
-A `research/references.md` page should catalog which external projects have contributed ideas or data to CSAK, so attribution is in one place instead of scattered across spec sections. Low priority; add when the first reconFTW recipe lands in the slice 2 tool catalog.
+A `research/references.md` page should catalog which external projects have contributed ideas or data to CSAK, so attribution is in one place instead of scattered across spec sections. The trigger condition ("add when the first reconFTW recipe lands in the slice 2 tool catalog") has fired — slice 2 catalog modules carry reconFTW recipe attributions per the spec. Tracked as a polish item in [[synthesis/deferred-features|deferred-features]] which is now the canonical home for this kind of cross-page deferral.
 
 ## Related
 
@@ -164,4 +167,7 @@ A `research/references.md` page should catalog which external projects have cont
 - [[competitive/leverage-analysis|Leverage Analysis]]
 - [[competitive/README|Competitive Analysis Index]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
+- [[synthesis/deferred-features|Deferred Features]]
 - [[synthesis/open-questions|Open Questions]]
