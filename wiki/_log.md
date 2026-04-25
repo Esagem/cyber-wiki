@@ -225,3 +225,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | product/users-and-jobs.md | users-and-jobs M3-2 lint fix - Job 5 reflects slice 2 spec resolution of reconFTW question
 
 ## [2026-04-25] write | product/glossary.md | glossary M3-3 lint fix - add slice 2 vocabulary section (collect, target type, mode, tool catalog, adaptive rate limiting, csak doctor)
+
+## [2026-04-25] write | product/scope.md | scope H3-2 lint fix - rewrite slice 2 preview to spec link plus summary, mirror slice 1 pattern
