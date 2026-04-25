@@ -229,3 +229,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | product/scope.md | scope H3-2 lint fix - rewrite slice 2 preview to spec link plus summary, mirror slice 1 pattern
 
 ## [2026-04-25] write | product/slices.md | slices H3-3 lint fix - rewrite slice 2 section to mirror slice 1 pattern, drop stale open-questions list
+
+## [2026-04-25] write | synthesis/open-questions.md | open-questions H3-1 M3-5 lint fix - move all slice 2 questions to Answered with spec pointers, drop quick-rescan
