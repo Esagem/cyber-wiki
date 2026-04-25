@@ -245,3 +245,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] delete | synthesis/wiki-acceleration.md | Wrong wiki - per CYBER.md §1 this wiki is for CSAK design only, not for meta-work about the wiki's own MCP tooling. Spec content belongs with the MCP server code, not here. Once implemented, CYBER.md §9 covers user-facing usage and the implementation itself is the contract.
 
 ## [2026-04-25] write | _index.md | index - remove wiki-acceleration row (page deleted as off-scope per CYBER.md §1), update recent activity entry
+
+## [2026-04-25] write | synthesis/deferred-features.md | write - synthesis/deferred-features.md - new page consolidating all deferred / future-work items across the wiki for post-slice-3 review; includes plugin sandboxing as the slice-3-introduced item driving the consolidation
