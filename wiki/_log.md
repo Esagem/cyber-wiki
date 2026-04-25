@@ -243,3 +243,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | _index.md | index - add wiki-acceleration row to synthesis, add recent activity entry for the MCP tooling spec and CYBER.md §9 rewrite
 
 ## [2026-04-25] delete | synthesis/wiki-acceleration.md | Wrong wiki - per CYBER.md §1 this wiki is for CSAK design only, not for meta-work about the wiki's own MCP tooling. Spec content belongs with the MCP server code, not here. Once implemented, CYBER.md §9 covers user-facing usage and the implementation itself is the contract.
+
+## [2026-04-25] write | _index.md | index - remove wiki-acceleration row (page deleted as off-scope per CYBER.md §1), update recent activity entry
