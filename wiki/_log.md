@@ -211,3 +211,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | research/slice-2-tool-output-reference.md | research - tool output reference for slice 2 collect, captures verified facts from official docs for subfinder httpx nuclei before code starts
 
 ## [2026-04-25] write | _index.md | index - slice 2 spec approved active high, add tool output reference page to research section, update phase marker and recent activity for code handoff readiness
+
+## [2026-04-25] write | synthesis/lint-report.md | lint pass third - post slice 2 spec finalization, catalogues drift in product scope+slices, open-questions, leverage-analysis, competitive README, vision, users-and-jobs, glossary, and engagements-RESERVED
