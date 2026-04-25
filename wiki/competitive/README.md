@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-22
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Competitive Analysis
@@ -109,7 +109,7 @@ From the analyses, the leverage study, the build-vs-adapt decision, and the reco
 
 1. **Slice 1 has a real competitor.** DefectDojo is mature, free, and widely adopted. CSAK's differentiation must be concrete (CLI, on-demand, narrative reports, clean JSON export designed for future LLM use) — not "we built a better one." Slice 1 has shipped on those differentiators.
 2. **Slice 2's relationship to reconFTW is settled.** The [[competitive/reconftw|case study]] reframed it: reconFTW doesn't have intelligent runtime tool selection (it runs all enabled tools in a fixed pipeline with ~300 config knobs), so the choice isn't "replace, augment, or integrate" — it's "what should we adapt and what should we build?" Answer: build the orchestration ourselves, adapt the recipes from reconFTW with attribution. CSAK has no runtime dependency on reconFTW. See [[specs/slice-2|slice 2 spec]] and [[competitive/build-vs-adapt|build-vs-adapt]].
-3. **Foreign-JSON ingest is deferred indefinitely.** Both DefectDojo and reconFTW JSON ingest were considered for slice 2 and dropped — slice 2's native orchestrator means analysts don't need to bring foreign JSON into CSAK if they can use CSAK directly. The parser architecture remains plugin-shaped so this can return if a real analyst needs it.
+3. **Foreign-JSON ingest is deferred indefinitely.** Both DefectDojo and reconFTW JSON ingest were considered for slice 2 and dropped — slice 2's native orchestrator means analysts can use CSAK directly rather than bringing foreign JSON into CSAK. The parser architecture remains plugin-shaped so this can return if a real analyst needs it. Tracked in [[synthesis/deferred-features|deferred-features]].
 4. **Build the code ourselves.** Both projects' code is architecturally coupled to decisions we've explicitly rejected (Django webapp, bash orchestration). Extraction costs more than rewriting. The valuable takings are data, content, and configuration — not code.
 5. **Adapt non-code artifacts with attribution.** DefectDojo's severity tables and CWE remediation templates (adopted into slice 1); reconFTW's tool invocation flag sets (adopted into slice 2's tool catalog with `# source: reconFTW v4.0` comments). These are small, proven, and expensive to reproduce from scratch.
 6. **reconFTW's license ambiguity no longer blocks anything.** LICENSE file says MIT, README says GPL-3.0. Worth resolving as a courtesy via a GitHub issue, but doesn't affect any CSAK decision since we have no runtime dependency. Demoted from "high priority resolution" to "courtesy / not blocking."
