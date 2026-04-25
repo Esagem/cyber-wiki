@@ -279,3 +279,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | product/users-and-jobs.md | lint H4-3 - users-and-jobs.md - Job 6 updated to point at slice 3 spec with one-line summary; tweak with-a-budget connotation to with-a-sensible-depth-limit; add slice 3 spec to Related
 
 ## [2026-04-25] edit | competitive/build-vs-adapt.md | lint H4-4 L4-4 L4-5 - build-vs-adapt.md - rewrite What-this-means-for-slice-2-design as retrospective What-slice-2-actually-adopted; correct YAML/Nessus-API/quick-rescan predictions to reflect what actually shipped; update central references page section to acknowledge trigger has fired and point at deferred-features as canonical home; add slice 3 spec to Related
+
+## [2026-04-25] edit | competitive/leverage-analysis.md | lint H4-5 M4-5 - leverage-analysis.md - rename DefectDojo Slice-3-recursion-with-budgets row to Slice-3-recursion (drop wrong with-budgets phrasing); add clarifying parenthetical to reconFTW recursion row noting different shape from CSAK type-driven model; rename Recommendations section to Recommendations-status with deferred-features pointers; add slice 3 spec to Related
