@@ -205,3 +205,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | specs/slice-2.md | slice 2 spec - second pass per Eli, target type auto-detection drives tool routing, error logging, csak doctor with auto-install on permission, output format with progress, python module catalog
 
 ## [2026-04-25] write | architecture/overview.md | architecture overview - add slice 2 collect column to diagram, new collect module section, new walkthrough showing target detection and pipeline, update extension points and module count
+
+## [2026-04-25] write | specs/slice-2.md | slice 2 spec approved by Eli - status draft to active, confidence medium to high, preamble updated
