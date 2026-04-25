@@ -11,11 +11,23 @@
 //
 // Auth: optional shared Bearer token. If MCP_BEARER_TOKEN is set as a Wrangler
 // secret, clients must send `Authorization: Bearer <token>`. Leave it unset
-// only if you want a public server (not recommended, since wiki_write is
-// exposed).
+// only if you want a public server (not recommended, since the mutating tools
+// are exposed).
 
-import { listPages, readPage, writePage, deletePage, NotFoundError, ConcurrentWriteError, type GitHubConfig } from "./github";
-import { searchWiki } from "./search";
+import { type GitHubConfig } from "./github";
+import {
+  toolDelete,
+  toolEdit,
+  toolIndex,
+  toolList,
+  toolLogTail,
+  toolRead,
+  toolReadMany,
+  toolSearch,
+  toolStatusSet,
+  toolWrite,
+  type TextResult,
+} from "./tools";
 
 // ---------- Env -------------------------------------------------------------
 
@@ -66,19 +78,21 @@ interface JsonRpcResult {
 }
 
 const PROTOCOL_VERSION = "2025-06-18";
-const SERVER_INFO = { name: "cyber-wiki", version: "0.1.0" };
+const SERVER_INFO = { name: "cyber-wiki", version: "0.2.0" };
 
 // ---------- Tool catalog ----------------------------------------------------
 
 const TOOLS = [
   {
     name: "wiki_index",
-    description: "Return the master index of the wiki (_index.md). Read this first for any non-trivial query.",
+    description:
+      "Return the master index of the wiki (_index.md). Read this first for any non-trivial query.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "wiki_list",
-    description: "List all wiki pages, optionally filtered by category folder (e.g. 'triage', 'reporting', 'engagements/EXAMPLE-acme-2026-q2').",
+    description:
+      "List all wiki pages, optionally filtered by category folder (e.g. 'specs', 'competitive', 'engagements/EXAMPLE-acme-2026-q2').",
     inputSchema: {
       type: "object",
       properties: {
@@ -92,13 +106,30 @@ const TOOLS = [
   },
   {
     name: "wiki_read",
-    description: "Read a specific wiki page by its path relative to the wiki root (e.g. 'triage/severity-model.md').",
+    description:
+      "Read a wiki page by path. Pass `section` to return just one (or several) sections; pass `include_front_matter: false` to strip the YAML block. Default behavior with no extras returns the full page exactly as wiki_read always has.",
     inputSchema: {
       type: "object",
       properties: {
         page_path: {
           type: "string",
-          description: "Path relative to the wiki root, e.g. 'triage/severity-model.md'.",
+          description: "Path relative to the wiki root, e.g. 'specs/slice-1.md'.",
+        },
+        section: {
+          description:
+            "Optional section name to extract. String for one section, array for several. " +
+            "Use the bare header text ('Modes') for any-level match, or prefix with `#`s ('## Modes') to pin the level. " +
+            "Subsections are included.",
+          oneOf: [
+            { type: "string" },
+            { type: "array", items: { type: "string" } },
+          ],
+        },
+        include_front_matter: {
+          type: "boolean",
+          description:
+            "Whether to include the YAML front matter block in the returned text. Default true.",
+          default: true,
         },
       },
       required: ["page_path"],
@@ -106,8 +137,48 @@ const TOOLS = [
     },
   },
   {
+    name: "wiki_read_many",
+    description:
+      "Batched read of N pages. Provide `page_paths` (explicit list) OR `category` (folder), not both. Optional `section` filter applies to every page. Partial failures land in `errors`. Default max 10 pages, hard cap 25.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_paths: {
+          type: "array",
+          items: { type: "string" },
+          description: "Explicit list of page paths to read.",
+        },
+        category: {
+          type: "string",
+          description:
+            "Folder prefix; reads every page under it. Mutually exclusive with page_paths.",
+        },
+        section: {
+          description:
+            "Optional section filter (same semantics as wiki_read). Pages where the section is missing land in `errors`.",
+          oneOf: [
+            { type: "string" },
+            { type: "array", items: { type: "string" } },
+          ],
+        },
+        include_front_matter: {
+          type: "boolean",
+          description: "Whether to include each page's YAML front matter. Default true.",
+          default: true,
+        },
+        max_pages: {
+          type: "number",
+          description: "Cap on pages returned. Default 10, hard cap 25.",
+          default: 10,
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "wiki_search",
-    description: "Full-text BM25 search across all wiki pages. Use content terms (technology, CVE IDs, finding IDs, asset names), not meta words like 'page' or 'wiki'. Returns top matching pages with snippets.",
+    description:
+      "Full-text BM25 search across all wiki pages. Use content terms (technology, CVE IDs, finding IDs, asset names), not meta words like 'page' or 'wiki'. Returns top matching pages with snippets.",
     inputSchema: {
       type: "object",
       properties: {
@@ -115,11 +186,7 @@ const TOOLS = [
           type: "string",
           description: "Search query. Use content terms, not meta words like 'page' or 'wiki'.",
         },
-        max_results: {
-          type: "number",
-          description: "Max results to return (default 10).",
-          default: 10,
-        },
+        max_results: { type: "number", description: "Max results (default 10).", default: 10 },
       },
       required: ["query"],
       additionalProperties: false,
@@ -127,21 +194,20 @@ const TOOLS = [
   },
   {
     name: "wiki_write",
-    description: "Create or update a wiki page. Content must include YAML front matter per CYBER.md conventions. Also appends a dated entry to _log.md automatically. If the write is blocked because the page was modified concurrently (e.g. by a human editing in Obsidian), the tool returns an informative message — re-read the page with wiki_read, integrate the changes into your content, and call wiki_write again.",
+    description:
+      "Create or replace an entire page. Content must include YAML front matter per CYBER.md conventions. Use `wiki_edit` for sub-page changes — `wiki_write` is for new pages or rewrites of more than ~50% of a page.",
     inputSchema: {
       type: "object",
       properties: {
-        page_path: {
-          type: "string",
-          description: "Path relative to the wiki root, e.g. 'engagements/acme-2026-q2/findings/FIND-2026-001.md'.",
-        },
+        page_path: { type: "string", description: "Path relative to the wiki root." },
         content: {
           type: "string",
           description: "Full markdown content, including YAML front matter.",
         },
         changelog_entry: {
           type: "string",
-          description: "One-line description for the _log.md entry. Example: 'ingest | acme-2026-q2 | added FIND-2026-001 from Nessus export'.",
+          description:
+            "One-line description for the _log.md entry. Auto-generated if omitted.",
         },
       },
       required: ["page_path", "content"],
@@ -149,22 +215,117 @@ const TOOLS = [
     },
   },
   {
-    name: "wiki_delete",
-    description: "Permanently delete a wiki page. Use sparingly — for stale design material the correct move is almost always to set `status: retired` in the page's front matter, not delete the page. This tool is for genuine test artifacts and mistakes. By default refuses to delete anything that doesn't look like a test file (path must start with 'smoke-test', 'test-', or live under 'tmp/'). Pass force=true to override. The reason field is required and lands in the commit message.",
+    name: "wiki_edit",
+    description:
+      "Patch a page by replacing exact strings. Edits are applied in order and are transactional — a single uniqueness/overlap failure rolls back the whole batch. Refuses any edit that overlaps the YAML front matter (use `wiki_status_set`). Auto-bumps `updated:` and appends to `_log.md`.",
     inputSchema: {
       type: "object",
       properties: {
-        page_path: {
-          type: "string",
-          description: "Path relative to the wiki root, e.g. 'synthesis/smoke-test.md'.",
+        page_path: { type: "string", description: "Path relative to the wiki root." },
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              old_str: {
+                type: "string",
+                description:
+                  "Exact string to replace. Must match exactly once at the time this edit is applied (after earlier edits in the batch).",
+              },
+              new_str: {
+                type: "string",
+                description: "Replacement string. Empty string deletes the matched text.",
+              },
+            },
+            required: ["old_str", "new_str"],
+            additionalProperties: false,
+          },
+          minItems: 1,
         },
+        changelog_entry: {
+          type: "string",
+          description:
+            "One-line description for the _log.md entry. Auto-generated if omitted.",
+        },
+      },
+      required: ["page_path", "edits"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "wiki_status_set",
+    description:
+      "Mutate a page's YAML front matter only. Validates against the CYBER.md §4 schema (status, confidence vocabularies; superseded_by gating; mutually exclusive tag operations). Body content is untouched. Auto-bumps `updated:` and appends to `_log.md`.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_path: { type: "string", description: "Path relative to the wiki root." },
+        status: {
+          type: "string",
+          enum: ["seed", "draft", "active", "mature", "planned", "retired", "superseded"],
+        },
+        confidence: { type: "string", enum: ["low", "medium", "high"] },
+        owner: { type: "string", description: "Free-text owner field." },
+        superseded_by: {
+          type: "string",
+          description:
+            "Path to the newer page. Requires status=superseded (in this call or already set).",
+        },
+        tags: {
+          type: "object",
+          properties: {
+            add: { type: "array", items: { type: "string" } },
+            remove: { type: "array", items: { type: "string" } },
+            replace: {
+              type: "array",
+              items: { type: "string" },
+              description: "Mutually exclusive with add/remove.",
+            },
+          },
+          additionalProperties: false,
+        },
+        changelog_entry: { type: "string", description: "Auto-generated if omitted." },
+      },
+      required: ["page_path"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "wiki_log_tail",
+    description:
+      "Recent _log.md entries as structured records, optionally filtered by op or date. Cheap orientation tool — prefer this over reading the whole _log.md.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        n: { type: "number", description: "Max entries (default 20, hard cap 100).", default: 20 },
+        op: {
+          description: "Filter by op type. String for one, array for several.",
+          oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+        },
+        since: {
+          type: "string",
+          description: "ISO date YYYY-MM-DD. Only entries on or after this date.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "wiki_delete",
+    description:
+      "Permanently delete a wiki page. By default refuses unless the path looks like a test artifact (starts with 'smoke-test', 'test-', or under 'tmp/'). Pass force=true to override. For stale design material, prefer `wiki_status_set(status='retired')` instead.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_path: { type: "string" },
         reason: {
           type: "string",
-          description: "Why this page is being deleted. Required. Lands in the git commit message.",
+          description: "Why this page is being deleted. Required. Lands in the commit message.",
         },
         force: {
           type: "boolean",
-          description: "If true, bypass the test-artifact safety check. Use only when you're sure deletion is correct and you've considered marking the page `status: retired` instead.",
+          description:
+            "Bypass the test-artifact safety check. Use only when sure deletion is correct.",
           default: false,
         },
       },
@@ -181,7 +342,6 @@ function authOk(req: Request, env: Env): boolean {
   const header = req.headers.get("authorization") ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) return false;
-  // Constant-time compare to avoid timing leaks.
   return timingSafeEqual(match[1], env.MCP_BEARER_TOKEN);
 }
 
@@ -192,235 +352,31 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// ---------- Tool handlers ---------------------------------------------------
+// ---------- Dispatch --------------------------------------------------------
 
-async function handleToolCall(name: string, args: Record<string, unknown>, env: Env): Promise<unknown> {
-  const cfg = gh(env);
+type ToolFn = (cfg: GitHubConfig, args: Record<string, unknown>) => Promise<TextResult>;
 
-  switch (name) {
-    case "wiki_index": {
-      try {
-        const { text } = await readPage(cfg, "_index.md");
-        return toolText(text);
-      } catch (e) {
-        if (e instanceof NotFoundError) {
-          return toolText("_index.md not found. Has the wiki been initialized?");
-        }
-        throw e;
-      }
-    }
+const DISPATCH: Record<string, ToolFn> = {
+  wiki_index: (cfg) => toolIndex(cfg),
+  wiki_list: toolList,
+  wiki_read: toolRead,
+  wiki_read_many: toolReadMany,
+  wiki_search: toolSearch,
+  wiki_write: toolWrite,
+  wiki_edit: toolEdit,
+  wiki_status_set: toolStatusSet,
+  wiki_log_tail: toolLogTail,
+  wiki_delete: toolDelete,
+};
 
-    case "wiki_list": {
-      const category = typeof args.category === "string" ? args.category : undefined;
-      const paths = await listPages(cfg, category);
-      if (paths.length === 0) {
-        return toolText(`No pages found${category ? ` under category "${category}"` : ""}.`);
-      }
-      const body = paths.map((p) => `- ${p}`).join("\n");
-      return toolText(`Found ${paths.length} page${paths.length === 1 ? "" : "s"}${category ? ` under ${category}` : ""}:\n\n${body}`);
-    }
-
-    case "wiki_read": {
-      const page = args.page_path;
-      if (typeof page !== "string" || page.length === 0) {
-        throw new Error("page_path is required");
-      }
-      if (!page.endsWith(".md")) {
-        throw new Error("page_path must end with .md");
-      }
-      try {
-        const { text } = await readPage(cfg, page);
-        return toolText(text);
-      } catch (e) {
-        if (e instanceof NotFoundError) return toolText(`Page not found: ${page}`);
-        throw e;
-      }
-    }
-
-    case "wiki_search": {
-      const query = args.query;
-      if (typeof query !== "string" || query.length === 0) {
-        throw new Error("query is required");
-      }
-      const maxRaw = args.max_results;
-      const max = typeof maxRaw === "number" && maxRaw > 0 ? Math.min(maxRaw, 50) : 10;
-      const hits = await searchWiki(cfg, query, max);
-      if (hits.length === 0) {
-        return toolText(`No matches for "${query}".`);
-      }
-      const out = hits
-        .map((h, i) => `${i + 1}. **${h.title}** — \`${h.path}\` (score ${h.score.toFixed(2)})\n   ${h.snippet}`)
-        .join("\n\n");
-      return toolText(`Top ${hits.length} match${hits.length === 1 ? "" : "es"} for "${query}":\n\n${out}`);
-    }
-
-    case "wiki_write": {
-      const pagePath = args.page_path;
-      const content = args.content;
-      const changelog = typeof args.changelog_entry === "string" ? args.changelog_entry : "";
-      if (typeof pagePath !== "string" || pagePath.length === 0) throw new Error("page_path is required");
-      if (!pagePath.endsWith(".md")) throw new Error("page_path must end with .md");
-      if (typeof content !== "string" || content.length === 0) throw new Error("content is required");
-      if (pagePath.startsWith("/") || pagePath.includes("..")) throw new Error("page_path must be a safe relative path");
-      if (!/^---\s*\n[\s\S]*?\n---/.test(content)) {
-        throw new Error("content must begin with YAML front matter (---...---). See CYBER.md §3.");
-      }
-
-      const commitMsg = changelog
-        ? `wiki: ${pagePath} — ${changelog}`
-        : `wiki: update ${pagePath}`;
-
-      let writeResult;
-      try {
-        writeResult = await writePage(cfg, pagePath, content, commitMsg);
-      } catch (e) {
-        if (e instanceof ConcurrentWriteError) {
-          // Return this as a successful tool call with an informative message
-          // rather than throwing — the LLM can read the result and retry.
-          return toolText(
-            `Write blocked: the page was modified concurrently (likely by a human ` +
-            `editor in Obsidian pushing through Obsidian Git). Re-read '${pagePath}' ` +
-            `with wiki_read, integrate the changes into your new content, and call ` +
-            `wiki_write again.\n\nDetails: ${e.message}`,
-          );
-        }
-        throw e;
-      }
-
-      // Append to _log.md. Best-effort: if the log is missing or the append
-      // fails, we still succeed on the primary write. We retry once on a
-      // concurrent-write error, since the log is a high-contention file
-      // (every LLM write touches it).
-      let logStatus = "log updated";
-      const appendToLog = async (): Promise<void> => {
-        const date = new Date().toISOString().slice(0, 10);
-        const line = changelog
-          ? `\n## [${date}] write | ${pagePath} | ${changelog}\n`
-          : `\n## [${date}] write | ${pagePath} | (no changelog entry supplied)\n`;
-        let existing = "";
-        try {
-          existing = (await readPage(cfg, "_log.md")).text;
-        } catch (e) {
-          if (e instanceof NotFoundError) {
-            existing = "# Wiki Log\n\nAppend-only chronological record. Most recent at the bottom.\n";
-          } else {
-            throw e;
-          }
-        }
-        const newLog = existing.endsWith("\n") ? existing + line : existing + "\n" + line;
-        await writePage(cfg, "_log.md", newLog, `log: ${date} ${pagePath}`);
-      };
-
-      try {
-        await appendToLog();
-      } catch (e) {
-        if (e instanceof ConcurrentWriteError) {
-          // Someone else wrote to _log.md between our read and write. Retry
-          // once — our line is append-only so merging is safe.
-          try {
-            await appendToLog();
-          } catch (e2) {
-            logStatus = `log append failed after retry: ${(e2 as Error).message}`;
-          }
-        } else {
-          logStatus = `log append failed: ${(e as Error).message}`;
-        }
-      }
-
-      return toolText(
-        `Wrote ${pagePath} (blob sha ${writeResult.sha.slice(0, 7)}, commit ${writeResult.commitSha.slice(0, 7)}). ${logStatus}.`,
-      );
-    }
-
-    case "wiki_delete": {
-      const pagePath = args.page_path;
-      const reason = args.reason;
-      const force = args.force === true;
-      if (typeof pagePath !== "string" || pagePath.length === 0) throw new Error("page_path is required");
-      if (!pagePath.endsWith(".md")) throw new Error("page_path must end with .md");
-      if (typeof reason !== "string" || reason.length === 0) throw new Error("reason is required");
-      if (pagePath.startsWith("/") || pagePath.includes("..")) throw new Error("page_path must be a safe relative path");
-
-      // Protect core wiki infrastructure absolutely.
-      const protectedPaths = ["CYBER.md", "_index.md", "_log.md"];
-      if (protectedPaths.includes(pagePath)) {
-        throw new Error(`Refusing to delete protected file '${pagePath}'. This file is part of the wiki's operating infrastructure.`);
-      }
-
-      // Safety gate: by default, only allow deleting obvious test artifacts.
-      const basename = pagePath.split("/").pop() ?? "";
-      const looksLikeTest =
-        basename.startsWith("smoke-test") ||
-        basename.startsWith("test-") ||
-        pagePath.startsWith("tmp/");
-      if (!looksLikeTest && !force) {
-        return toolText(
-          `Refused to delete '${pagePath}'. The page does not look like a test artifact ` +
-          `(filename doesn't start with 'smoke-test' or 'test-', not under 'tmp/'). ` +
-          `For stale design material, the correct move is almost always to set ` +
-          `\`status: retired\` in the page's front matter and keep the page for history. ` +
-          `If you're sure deletion is right, call wiki_delete again with force=true.`,
-        );
-      }
-
-      const commitMsg = `wiki: delete ${pagePath} — ${reason}`;
-      let deleteResult;
-      try {
-        deleteResult = await deletePage(cfg, pagePath, commitMsg);
-      } catch (e) {
-        if (e instanceof NotFoundError) {
-          return toolText(`Page '${pagePath}' does not exist. Nothing to delete.`);
-        }
-        if (e instanceof ConcurrentWriteError) {
-          return toolText(
-            `Delete blocked: the page was modified concurrently. Re-read it, ` +
-            `decide whether deletion is still correct, and try again.\n\n` +
-            `Details: ${e.message}`,
-          );
-        }
-        throw e;
-      }
-
-      // Append to _log.md, same pattern as wiki_write.
-      let logStatus = "log updated";
-      const appendToLog = async (): Promise<void> => {
-        const date = new Date().toISOString().slice(0, 10);
-        const line = `\n## [${date}] delete | ${pagePath} | ${reason}\n`;
-        let existing = "";
-        try {
-          existing = (await readPage(cfg, "_log.md")).text;
-        } catch (e) {
-          if (e instanceof NotFoundError) {
-            existing = "# Wiki Log\n\nAppend-only chronological record. Most recent at the bottom.\n";
-          } else {
-            throw e;
-          }
-        }
-        const newLog = existing.endsWith("\n") ? existing + line : existing + "\n" + line;
-        await writePage(cfg, "_log.md", newLog, `log: ${date} delete ${pagePath}`);
-      };
-      try {
-        await appendToLog();
-      } catch (e) {
-        if (e instanceof ConcurrentWriteError) {
-          try { await appendToLog(); } catch (e2) { logStatus = `log append failed after retry: ${(e2 as Error).message}`; }
-        } else {
-          logStatus = `log append failed: ${(e as Error).message}`;
-        }
-      }
-
-      return toolText(
-        `Deleted '${pagePath}' (commit ${deleteResult.commitSha.slice(0, 7)}). ${logStatus}.`,
-      );
-    }
-
-    default:
-      throw new Error(`Unknown tool: ${name}`);
-  }
-}
-
-function toolText(text: string) {
-  return { content: [{ type: "text", text }] };
+async function handleToolCall(
+  name: string,
+  args: Record<string, unknown>,
+  env: Env,
+): Promise<unknown> {
+  const fn = DISPATCH[name];
+  if (!fn) throw new Error(`Unknown tool: ${name}`);
+  return fn(gh(env), args);
 }
 
 // ---------- JSON-RPC router -------------------------------------------------
@@ -443,7 +399,6 @@ async function handleRpc(msg: JsonRpcRequest, env: Env): Promise<JsonRpcResult |
 
       case "notifications/initialized":
       case "notifications/cancelled":
-        // Notifications get no response.
         return null;
 
       case "ping":
@@ -487,7 +442,6 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
 
-    // CORS preflight for browser-based MCP clients.
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -500,7 +454,6 @@ export default {
       });
     }
 
-    // Health check / landing page.
     if (url.pathname === "/" || url.pathname === "/health") {
       return json({
         ok: true,
@@ -522,12 +475,9 @@ export default {
       });
     }
 
-    // Streamable HTTP: GET is used for server-initiated streams. We don't push
-    // anything, so respond with 405. Claude's custom connector only POSTs.
     if (req.method === "GET") {
       return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
     }
-
     if (req.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
     }
@@ -539,7 +489,6 @@ export default {
       return rpcError(null, -32700, "Parse error");
     }
 
-    // A payload can be a single JSON-RPC message or a batch. Handle both.
     if (Array.isArray(payload)) {
       const responses = await Promise.all(
         payload.map((m) => handleRpc(m as JsonRpcRequest, env)),
