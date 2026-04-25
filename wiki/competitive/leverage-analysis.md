@@ -6,7 +6,7 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-23
-updated: 2026-04-24
+updated: 2026-04-25
 sources:
   - "[[competitive/defectdojo]]"
   - "[[competitive/reconftw]]"
@@ -96,7 +96,7 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 | Slice 1: Scan-level lineage (FindingScanOccurrence) | ⚠️ partial | DefectDojo's Engagement/Test layer provides similar grouping but with different semantics. |
 | Slice 1: stateless reports with clean JSON export for future LLM | ❌ | DefectDojo persists reports; LLM features are behind the Pro paywall. |
 | Slice 2: tool orchestration | ❌ | Out of DefectDojo's scope entirely. |
-| Slice 3: recursion with budgets | ❌ | Out of DefectDojo's scope entirely. |
+| Slice 3: recursion | ❌ | Out of DefectDojo's scope entirely. |
 
 **Key gap:** DefectDojo covers roughly half of slice 1's ingest surface but nothing of the differentiating layer (three-axis triage, narrative reports, clean JSON export designed for future LLM use, zero-deployment CLI). Its architectural bulk makes it an unsuitable foundation to build the differentiators on top of.
 
@@ -156,7 +156,7 @@ See [[specs/slice-2|slice 2 spec]] §"No reconFTW" and [[competitive/build-vs-ad
 | Slice 2: tool orchestration | ✅ runs all enabled tools in fixed pipeline | Per the [[competitive/reconftw\|case study]], not "intelligent" orchestration — it's a fixed pipeline with ~300 config knobs. |
 | Slice 2: adaptive rate limiting | ✅ built-in | `--adaptive-rate` flag. CSAK adopted the pattern. |
 | Slice 2: quick rescan pattern | ✅ built-in | `--quick-rescan` flag. CSAK considered and rejected for slice 2. |
-| Slice 3: recursion | ✅ native | This is what reconFTW's pipeline is. |
+| Slice 3: recursion | ✅ native (different shape) | reconFTW's pipeline is a fixed-order chain with config knobs; CSAK slice 3 specs deterministic recursion via output-to-input type matching. Same problem, different shape. See [[specs/slice-3\|slice 3 spec]]. |
 | Slice 3: distributed execution | ✅ Ax Framework | Out of CSAK's current scope but proven by reconFTW. |
 
 **Key gap:** reconFTW is offensive-only. An analyst doing both offensive (reconFTW) and defensive (osquery, Zeek) work still needs something to ingest the defensive side and unify triage across both. **That's CSAK.**
@@ -185,12 +185,14 @@ Even with both tools fully leveraged (in the documentation-source sense, since n
 - **The zero-deployment CLI experience.** Slice 1 delivered this; slice 2 preserves it (CSAK's only added dependencies are three Go binaries the analyst installs themselves, with `csak doctor` to help).
 - **Target-type-aware tool routing.** Neither tool does this. reconFTW relies on user config; DefectDojo doesn't orchestrate tools at all. Slice 2 is the answer.
 
-## Recommendations — what to do next
+## Recommendations — status
+
+All four numbered recommendations from the original analysis are now resolved, demoted, or deferred with a referral elsewhere. Kept here (with status annotations) for the audit trail; live items moved to [[synthesis/deferred-features|deferred-features]] which is the canonical home for cross-page deferral tracking.
 
 1. ~~Resolve reconFTW license ambiguity.~~ **Demoted to courtesy/non-blocking.** No CSAK decision depends on the resolution since CSAK has no runtime dependency on reconFTW. Worth opening a GitHub issue at some point as a contribution back to the reconFTW community, but not on any CSAK critical path.
-2. **Foreign-JSON ingest stays deferred indefinitely** for both DefectDojo and reconFTW. Re-evaluate if a real analyst requests it.
+2. **Foreign-JSON ingest stays deferred indefinitely** for both DefectDojo and reconFTW. Re-evaluation tracked in [[synthesis/deferred-features|deferred-features §Slice 4+]].
 3. ~~Defer the "fork vs integrate reconFTW" question.~~ **Resolved 2026-04-24** by the [[specs/slice-2|slice 2 spec]] and the [[competitive/reconftw|reconFTW case study]]. None of fork/integrate/replace; build our own and adapt recipes with attribution.
-4. **Do not fork either project.** Both are architecturally unsuitable foundations for CSAK, even setting aside license concerns. See [[competitive/build-vs-adapt|build-vs-adapt]] for the full argument.
+4. **Do not fork either project.** Settled. Both are architecturally unsuitable foundations for CSAK, even setting aside license concerns. See [[competitive/build-vs-adapt|build-vs-adapt]] for the full argument.
 
 ## Related
 
@@ -200,4 +202,6 @@ Even with both tools fully leveraged (in the documentation-source sense, since n
 - [[competitive/README|Competitive Analysis Index]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
+- [[synthesis/deferred-features|Deferred Features]]
 - [[synthesis/open-questions|Open Questions]]
