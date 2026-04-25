@@ -239,3 +239,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | synthesis/wiki-acceleration.md | wiki acceleration spec - five new MCP tools designed (wiki_edit, wiki_read sections, wiki_read_many, wiki_status_set, wiki_log_tail) with full contracts, error semantics, and rationale
 
 ## [2026-04-25] write | CYBER.md | CYBER.md §9 rewritten to teach LLM the new MCP tools (wiki_edit, wiki_read sections, wiki_read_many, wiki_status_set, wiki_log_tail) and when to use each. Other sections unchanged.
+
+## [2026-04-25] write | _index.md | index - add wiki-acceleration row to synthesis, add recent activity entry for the MCP tooling spec and CYBER.md §9 rewrite
