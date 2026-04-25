@@ -249,3 +249,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | synthesis/deferred-features.md | write - synthesis/deferred-features.md - new page consolidating all deferred / future-work items across the wiki for post-slice-3 review; includes plugin sandboxing as the slice-3-introduced item driving the consolidation
 
 ## [2026-04-25] write | _index.md | write - _index.md - add deferred-features row to synthesis section, update phase marker to reflect slice 2 in implementation and slice 3 in design, add recent activity entry for the new consolidation page
+
+## [2026-04-25] write | specs/slice-3.md | spec - specs/slice-3.md - first draft - recursion via deterministic output-to-input type matching, structural in-memory frontier dedup, --max-depth flag default 3 with continue prompt, type registry with toolbox-driven type registration, pluggable third-party tools in ~/.csak/tools, csak tools list/show, depth-aware live output, data model adds parent_scan_id/depth/triggered_by_finding_id
