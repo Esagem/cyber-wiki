@@ -14,7 +14,7 @@ updated: 2026-04-24
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: slice 1 shipped, slice 2 in design.** Slice 1 spec is `active` and implementation is complete (83 tests pass, end-to-end verified 2026-04-24). Slice 2 spec is `draft` pending review. The wiki is the reference alongside the CSAK repo for slice 1 work and the primary working surface for slice 2 design.
+**Phase: slice 1 shipped, slice 2 ready for implementation.** Slice 1 spec is `active` and implementation is complete (83 tests pass, end-to-end verified 2026-04-24). Slice 2 spec is `active` (approved 2026-04-24); tool output reference for the slice 2 catalog modules is documented from official sources. The wiki is the reference alongside the CSAK repo.
 
 See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
 
@@ -43,7 +43,7 @@ _`architecture/data-flow.md` was planned but folded into the overview's walkthro
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[specs/slice-1\|Slice 1 — Ingest & Report]] | **active — shipped** | high | slice-1, ingest, triage, report |
-| [[specs/slice-2\|Slice 2 — Tool Orchestration]] | **draft (pending review)** | medium | slice-2, orchestration, collect |
+| [[specs/slice-2\|Slice 2 — Tool Orchestration]] | **active — ready for impl** | high | slice-2, orchestration, collect |
 | [[specs/ingestion-model\|Ingestion Model]] | **planned** | — | ingestors, adapters, sources |
 | [[specs/triage-model\|Triage Model]] | **planned** | — | severity, confidence, importance |
 | [[specs/report-formats\|Report Formats]] | **planned** | — | internal-reviews, fix-it-tickets |
@@ -53,8 +53,7 @@ _`architecture/data-flow.md` was planned but folded into the overview's walkthro
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[research/README\|Research process]] | active | high | meta, process |
-
-_No research pages yet. Drop sources into [[research/sources|research/sources/]] with summary pages beside them._
+| [[research/slice-2-tool-output-reference\|Tool Output Reference — Slice 2 Catalog]] | active | high | slice-2, subfinder, httpx, nuclei, reference |
 
 ## Competitive
 
@@ -95,7 +94,8 @@ _Empty until we choose to activate it. Note: the existence of an `Org` entity in
 
 ## Recent activity
 
-- **2026-04-24 (slice 2 spec draft)** — [[specs/slice-2|Slice 2 spec]] written end-to-end as a first draft. Scope: orchestrate Subfinder + httpx + Nuclei (the three on-demand active tools that earn their keep from a CLI). Three modes (`quick` / `standard` / `deep`) plus per-tool overrides — no 300-knob config file. Pipeline shape: subfinder → httpx → nuclei, each stage producing an Artifact that flows through slice 1's existing ingest pipeline. Adaptive rate limiting default-on. Sync-only execution with per-stage timeouts. No quick rescan (every scan runs fresh). No LLM. No Nessus API yet (deferred to 2.5+). No reconFTW JSON ingest (deferred indefinitely). Status `draft` pending Eli's review.
+- **2026-04-24 (tool output reference for slice 2)** — Wrote [[research/slice-2-tool-output-reference|tool output reference page]] documenting verified flag names, output formats, stderr patterns, and rate-limit signal heuristics for Subfinder, httpx, and Nuclei. Compiled from official ProjectDiscovery docs and verified GitHub issues. Key finding: nuclei does not emit a clean "429" signal — it surfaces target rate-limiting as `[WRN] context deadline exceeded` lines, which the catalog's `detect_rate_limit_signal` must heuristically detect. Avoiding a half-day discovery during build by surfacing this up front. Page is the reference Code reads to write the per-tool catalog modules in `csak/collect/tools/<tool>.py`.
+- **2026-04-24 (slice 2 spec approved)** — Eli signed off on the [[specs/slice-2|slice 2 spec]]. Status flipped `draft` → `active`, confidence bumped medium → high. Spec is ready for implementation alongside the existing CSAK repo. Strategic shape: orchestrate Subfinder + httpx + Nuclei (the on-demand active tools that earn their keep from a CLI), with target-type auto-detection driving tool routing, three modes, adaptive rate limiting default-on, sync-only, no quick rescan, no LLM, no Nessus API yet, no reconFTW JSON ingest.
 - **2026-04-24 (reconFTW case study)** — Direct reading of reconFTW's source corrected an earlier framing. reconFTW does not have intelligent runtime tool selection — it runs all enabled tools in a fixed pipeline and dedups the union. The "selection" is config-file knobs (~300 of them). Real value is the recipes (tool-flag combinations), not the orchestration logic. [[competitive/reconftw|reconFTW page]] and [[competitive/build-vs-adapt|build-vs-adapt]] both updated; informs slice 2 design directly (adapt recipes, build orchestration, no runtime dependency on reconFTW).
 - **2026-04-24 (slice 1 shipped)** — Slice 1 implementation delivered and reviewed. 83 tests pass, end-to-end run on a Nessus fixture verified. Two small deviations from the original spec text — millisecond timestamp precision and an `ID` column on `csak findings list` — were accepted and written back into [[specs/slice-1|the spec]] and [[architecture/overview|architecture overview]]. See [[sessions/2026-04-24-slice-1-shipped|session notes]].
 - **2026-04-23 (probability_real removed)** — Feature pulled from slice 1 per Eli after a clarification exchange. Priority formula is now `severity × confidence × target_weight` (three axes). Spec, glossary, architecture overview, users-and-jobs, open-questions, competitive pages, and session notes all updated to reflect the removal. Analyst doubt is now expressed via `status` (`active` / `suppressed` / `false-positive`) or `tags`.
