@@ -6,16 +6,18 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # Architecture Overview
 
-> Companion to [[specs/slice-1|slice 1 spec]] and [[specs/slice-2|slice 2 spec]]. The specs are authoritative for every decision; this page is the map. A new contributor should be able to read this in five minutes and know where each responsibility lives and where to look in the specs for detail. This page also covers what `architecture/data-flow` would have covered — the two have been folded together.
+> Companion to [[specs/slice-1|slice 1 spec]], [[specs/slice-2|slice 2 spec]], and [[specs/slice-3|slice 3 spec]]. The specs are authoritative for every decision; this page is the map. A new contributor should be able to read this in five minutes and know where each responsibility lives and where to look in the specs for detail. This page also covers what `architecture/data-flow` would have covered — the two have been folded together.
 >
 > **Slice 1 implemented 2026-04-24.** The slice 1 module layout below matches the repository layout; the slice 1 walkthrough matches shipped behavior.
 >
-> **Slice 2 in design 2026-04-24.** The collect module section and the slice 2 walkthrough reflect the [[specs/slice-2|slice 2 spec]] (status: draft); the diagram shows where collect attaches.
+> **Slice 2 implemented 2026-04-25 (under test).** The collect module section and the slice 2 walkthrough reflect the [[specs/slice-2|slice 2 spec]]; the diagram shows where collect attaches.
+>
+> **Slice 3 in design 2026-04-25.** The slice 3 module section below describes the additions (recursion runner, type registry, plugin discovery) per the [[specs/slice-3|slice 3 spec]] (status: draft). Walkthrough not yet added — will follow when the spec is approved.
 
 ## What CSAK is, briefly
 
@@ -191,6 +193,28 @@ See [[specs/slice-1|slice 1 spec §Scoring]] and §Dedup for the rules each pars
 
 **Extension point:** a new format (HTML, PDF, CSV) is a new file in `csak/render/` implementing the same renderer interface. No changes elsewhere.
 
+### 7. Collect, extended for recursion — slice 3
+
+Slice 3 doesn't add a seventh module — it extends the existing **Collect** module (§2 above) with three new sub-responsibilities. Calling them out separately because they're load-bearing additions and a contributor reading the architecture should know where they live.
+
+**Recursion runner extension.** Wraps the existing slice 2 runner. After every stage completes, calls the tool's `extract_outputs(artifact, scan)` to harvest typed outputs, consults the in-memory frontier dedup set, and queues the deduped survivors for the next depth. Maintains the per-invocation dedup set as a Python `set[(tool_name, target_value, mode)]`. Owns the depth-aware live output (depth headers, frontier counts, prompt-to-continue at `--max-depth` limit). Also owns the `Scan.parent_scan_id` / `depth` / `triggered_by_finding_id` write-through when persisting recursion-spawned Scans.
+
+**Lives in:** `csak/collect/recursion.py` (new) for the runner extension; the slice 2 `runner.py` stays the per-stage subprocess wrapper. Live output extension in `csak/collect/output.py` (slice 2's progress reporter, extended for depth headers). The split keeps the per-stage primitives reusable by future non-recursive callers.
+
+**Type registry.** A runtime collection of `TargetType` rows, populated at startup from built-in types and any plugins. Provides `register_type()`, `classify(value)`, `matches(candidate_type, accepts)`, and the validation that runs at startup (no name collisions, no parent cycles, all accepts/produces references resolve). `classify()` is the dispatcher both the CLI's `--target` resolution and per-tool `extract_outputs` consult — single seam for type detection.
+
+**Lives in:** `csak/collect/types.py` for the registry, `TargetType` dataclass, and `classify()` / `matches()`. `csak/collect/types/builtin.py` registers the seven core types (`network_block | host | domain | subdomain | url | service | finding_ref`) at import. The slice 2 `csak/collect/detect.py` is replaced by `classify()` calls; the file is removed in the slice 3 migration.
+
+**Plugin discovery.** At `csak collect` startup, imports every `*.py` under `~/.csak/tools/` in alphabetical order. Plugins use the same `register_type()` and `register_tool()` entry points as built-ins. Validation runs after all imports complete; failures fail-closed with the offending plugin identified. `csak doctor` runs the same discovery + validation on demand for plugin-debugging.
+
+**Lives in:** `csak/collect/plugins.py` for the discovery loop and the registration entry points. Plugins themselves live in `~/.csak/tools/` on the analyst's machine, not in the CSAK repo.
+
+**Trust posture:** plugins run as full Python under the analyst's user permissions. No sandbox, no signature verification, no capability declarations. Documented explicitly as a slice 3 deferral with sandboxing as a later-slice question. See [[specs/slice-3|slice 3 spec §Plugin trust posture]] and [[synthesis/deferred-features|deferred-features §Plugin sandboxing]].
+
+**Extended Tool interface:** the slice 2 `Tool` interface gains three new fields — `accepts: list[str]`, `produces: list[str]`, and `extract_outputs(artifact, scan) -> list[TypedTarget]`. The slice 2 `applies_to(target_type)` becomes a thin wrapper over `matches(t, self.accepts)` for backward compatibility during the slice 3 migration. After migration completes, `applies_to` can be removed.
+
+See [[specs/slice-3|slice 3 spec §Recursion model]], §Type system, §Tool catalog, and §`csak tools` for the full rules.
+
 ## End-to-end walkthroughs
 
 Two concrete invocations, traced through every module. The first is the slice 1 ingest path (an analyst-uploaded file). The second is the slice 2 collect path (CSAK runs the tools).
@@ -279,13 +303,14 @@ If the analyst wants to flag the finding as probably-FP without committing, they
 Where future work attaches to this architecture, in order of likelihood.
 
 - **New tool parser** (e.g. reconFTW JSON or generic CSV — both currently deferred). Drop a new module into `csak/ingest/<tool>.py`. Implement the parser interface. Add severity mapping entries in `csak/ingest/scoring.py`. Add a dedup-key rule in `csak/ingest/dedup.py`. That's it — no changes to storage, query, or render. Note that with slice 2's native orchestrator, the motivation for reconFTW JSON ingest is reduced (analysts can use CSAK directly instead of bringing reconFTW output).
-- **New tool to orchestrate** (slice 2.5+: Nessus via API, or any future addition). Drop a new module into `csak/collect/tools/<tool>.py` implementing the `Tool` interface. Add a `Tool.applies_to(target_type)` predicate. Add the entry to the router's tool-set table. The shared `Runner` handles subprocess invocation, rate limiting, and progress reporting uniformly. No changes elsewhere.
-- **New target type** (slice 3 might add `pcap`, `email-domain`, etc.). Add the type to `csak/collect/detect.py`'s detection logic. Update the routing matrix. Each tool's `applies_to` is consulted automatically.
+- **New tool to orchestrate** (slice 2.5+: Nessus via API, or any future addition). Drop a new module into `csak/collect/tools/<tool>.py` implementing the `Tool` interface. Slice 3 onward: also declare `accepts: list[str]`, `produces: list[str]`, and `extract_outputs(...)` for the recursion graph. The shared `Runner` handles subprocess invocation, rate limiting, and progress reporting uniformly. No changes elsewhere.
+- **New target type** (slice 3 enables this via the type registry; slice 3+ tools that need types like `pcap`, `email-domain`, `asn` register them in the same module that defines the consuming tool). Add a `TargetType` registration in the tool's catalog file. The `classify()` dispatcher picks it up automatically; `matches()` handles subtype widening; the recursion graph in `csak tools show` updates without further code changes.
+- **New plugin tool** (slice 3+). Drop a `*.py` file in `~/.csak/tools/` implementing the `Tool` interface and registering the tool (and any new types) via the standard entry points. Discovered at startup; participates in routing, dedup, live output, and Scan recording identically to built-ins. Run `csak doctor` to validate. See [[specs/slice-3|slice 3 spec §Plugin discovery]].
 - **New export format** (HTML, PDF, CSV — deferred). Drop a new renderer into `csak/render/<format>.py` implementing the renderer interface. Register it. The CLI's `--format` flag accepts it. No changes upstream.
-- **Recursion** (slice 3). A new module that consumes findings, decides what to follow up on, and re-invokes collect with new targets. The collect module is shaped to support this — it's idempotent and target-driven.
+- **Recursion** (slice 3, in design). The recursion runner extension to the Collect module consumes findings/artifacts via per-tool `extract_outputs`, classifies typed values, deduplicates against the in-memory frontier, and re-invokes appropriate tools at the next depth. The collect module is shaped to support this — it's idempotent and target-driven. See [[specs/slice-3|slice 3 spec]].
 - **LLM layer** (later slice). Consumes the JSON export. Could be a new CLI command (`csak llm draft-impact --input <path-to-json>`) or a separate tool entirely; either way, the interface is the JSON schema, and CSAK's deterministic core never changes.
 - **Scheduled invocation** (slice 4+). Wraps `csak collect` and `csak report generate` on a cron or event trigger. CSAK itself doesn't need a scheduler — the OS provides one.
-- **Async / background collect** (slice 3 if needed). Wraps the existing sync collect pipeline with a job queue and status persistence. The collect module is shaped for this — runner is already a wrapper around subprocess; making it return a job handle instead of blocking is a localized change.
+- **Async / background collect** (deferred to a later slice; not slice 3). Wraps the existing sync collect pipeline with a job queue and status persistence. The collect module is shaped for this — runner is already a wrapper around subprocess; making it return a job handle instead of blocking is a localized change. Slice 3 stays sync-only and compensates with excellent live status. See [[synthesis/deferred-features|deferred-features]].
 
 ## What's deliberately not covered here
 
@@ -316,6 +341,13 @@ Operational and engineering concerns that matter at build time but don't affect 
 | `csak doctor` permission-prompted auto-install | [[specs/slice-2\|slice 2 spec §`csak doctor`]] | CLI module + Collect module |
 | Live output format with progress bars | [[specs/slice-2\|slice 2 spec §Output format]] | Collect module + CLI module |
 | Slice 2 exit criteria | [[specs/slice-2\|slice 2 spec §Exit criteria]] | (slice 2 whole-system) |
+| Recursion model (frontier dedup, max-depth, prompt-to-continue) | [[specs/slice-3\|slice 3 spec §Recursion model]] | Collect module (recursion runner) |
+| Type system (registry, hierarchy, classify, extension via plugins) | [[specs/slice-3\|slice 3 spec §Type system]] | Collect module (type registry) |
+| Extended Tool interface (accepts, produces, extract_outputs) | [[specs/slice-3\|slice 3 spec §Tool catalog]] | Collect module |
+| Plugin discovery from `~/.csak/tools/` | [[specs/slice-3\|slice 3 spec §Plugin discovery]] | Collect module (plugin discovery) |
+| `csak tools list/show` introspection | [[specs/slice-3\|slice 3 spec §`csak tools`]] | CLI module + Collect module |
+| Data model additions (parent_scan_id, depth, triggered_by_finding_id) | [[specs/slice-3\|slice 3 spec §Data model additions]] | Storage module |
+| Slice 3 exit criteria | [[specs/slice-3\|slice 3 spec §Exit criteria]] | (slice 3 whole-system) |
 
 If this overview and a spec disagree on a detail, **the spec wins.** This page is a map to the specs, not a replacement for them.
 
@@ -323,6 +355,7 @@ If this overview and a spec disagree on a detail, **the spec wins.** This page i
 
 - [[specs/slice-1|Slice 1 — Ingest & Report]]
 - [[specs/slice-2|Slice 2 — Tool Orchestration]]
+- [[specs/slice-3|Slice 3 — Recursion & Catalog]]
 - [[product/vision|Vision]]
 - [[product/slices|Slice Plan]]
 - [[product/glossary|Glossary]]
