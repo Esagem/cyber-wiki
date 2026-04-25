@@ -269,3 +269,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | sessions/2026-04-25-slice-3-design.md | session - sessions/2026-04-25-slice-3-design.md - slice 3 design session - deterministic recursion via output-to-input type matching, structural in-memory frontier dedup, max-depth flag default 3, sync-only, pluggable tools in same toolbox, type registry with toolbox-driven registration, classify as dispatcher
 
 ## [2026-04-25] edit | _index.md | edit - _index.md - add slice 3 design session row to Sessions table
+
+## [2026-04-25] edit | synthesis/lint-report.md | lint - synthesis/lint-report.md - fourth pass - post slice 3 spec draft - 5 high, 6 medium, 6 low; main themes are slice 2 status drift (built but pages still say ready-for-implementation) and slice 3 not propagated to product-layer pages and competitive cluster; also annotate third-pass fixes with STATUS markers per CYBER.md §5.4 pattern
