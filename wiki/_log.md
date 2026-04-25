@@ -253,3 +253,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | specs/slice-3.md | spec - specs/slice-3.md - first draft - recursion via deterministic output-to-input type matching, structural in-memory frontier dedup, --max-depth flag default 3 with continue prompt, type registry with toolbox-driven type registration, pluggable third-party tools in ~/.csak/tools, csak tools list/show, depth-aware live output, data model adds parent_scan_id/depth/triggered_by_finding_id
 
 ## [2026-04-25] edit | synthesis/open-questions.md | edit - open-questions.md - move 3 slice 3 questions from deferred to Answered with slice-3-spec pointers
+
+## [2026-04-25] edit | synthesis/roadmap.md | edit - roadmap.md - replace stale Phase 3 (slice 2 next) with Phase 3 done (slice 2 design+build) and Phase 4 (slice 3 design draft-complete); update preamble; add Related links to slice 3 spec and deferred-features
