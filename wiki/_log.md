@@ -201,3 +201,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-24] write | specs/slice-2.md | slice 2 spec - first draft, on-demand orchestration of nuclei subfinder httpx, three modes, sync, adaptive rate limiting, no quick rescan, no LLM, no Nessus API yet
 
 ## [2026-04-24] write | _index.md | index - slice 2 spec drafted, recent activity entries for case study and slice 2 draft
+
+## [2026-04-25] write | specs/slice-2.md | slice 2 spec - second pass per Eli, target type auto-detection drives tool routing, error logging, csak doctor with auto-install on permission, output format with progress, python module catalog
