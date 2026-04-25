@@ -2,8 +2,8 @@
 title: "Slice 2 — Tool Orchestration"
 category: specs
 tags: [slice-2, orchestration, collect, spec]
-status: draft
-confidence: medium
+status: active
+confidence: high
 owner: shared
 created: 2026-04-24
 updated: 2026-04-24
@@ -11,7 +11,7 @@ updated: 2026-04-24
 
 # Slice 2 — Tool Orchestration
 
-> Second draft, 2026-04-24. Refined per Eli's feedback: target type auto-detection drives tool routing (CSAK identifies what the target is, then runs only the tools that apply), structured live output with progress bars and ETA, `csak doctor` with auto-install on permission, error and zero-finding outcomes both logged. Python module per tool for the catalog. Status stays `draft` pending review.
+> Approved 2026-04-24. This is the authoritative spec for slice 2 implementation. Pre-implementation: hand off to Claude Code for build alongside the existing CSAK repo.
 
 ## Goal
 
