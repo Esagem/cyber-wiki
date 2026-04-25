@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # CSAK — Vision
@@ -96,15 +96,15 @@ Whether and when the LLM layer ships is a later-slice decision. Slice 1's commit
 
 We're shipping CSAK in slices, each of which is independently useful:
 
-- **Slice 1 — Ingest & Report.** User brings data (scanner output, logs, OSINT dumps) and/or org context. CSAK normalizes findings, scores them deterministically at ingest, and generates reports on demand for any (org, period) the analyst specifies. No tool orchestration. No recursion. No LLM. See [[specs/slice-1|Slice 1 Spec]].
-- **Slice 2 — Tool Orchestration.** CSAK picks and runs tools against targets itself. Adds the "collect" stage from the four-step model above.
+- **Slice 1 — Ingest & Report.** User brings data (scanner output, logs, OSINT dumps) and/or org context. CSAK normalizes findings, scores them deterministically at ingest, and generates reports on demand for any (org, period) the analyst specifies. No tool orchestration. No recursion. No LLM. **Shipped 2026-04-24.** See [[specs/slice-1|Slice 1 Spec]].
+- **Slice 2 — Tool Orchestration.** CSAK picks and runs tools against targets itself. Adds the "collect" stage from the four-step model above. **Spec approved 2026-04-24, ready for implementation.** See [[specs/slice-2|Slice 2 Spec]].
 - **Slice 3 — Recursion & Catalog Expansion.** Tool output can trigger further tool runs (exposed IPs → deeper recon). Tool catalog grows.
 - **LLM layer** (future slice, not yet numbered). Wraps LLM features over the structured outputs produced by slices 1–3.
 - **Slice 4+.** Deliberately undefined. Scheduled/automated report generation is a likely candidate.
 
 ## What's settled
 
-Everything that blocks slice 1 implementation is settled in the [[specs/slice-1|slice 1 spec]]. Open questions tracked in [[synthesis/open-questions|open-questions]] are now all scoped to slice 2+, the LLM layer, or cross-cutting product questions that don't block the current work.
+Slice 1 is shipped; slice 2 is spec-complete and ready for implementation. Open questions tracked in [[synthesis/open-questions|open-questions]] are scoped to the LLM layer, slice 2.5+ extensions (Nessus API integration is the leading candidate), and cross-cutting product positioning — none block slice 2 implementation.
 
 ## Related
 
@@ -113,4 +113,5 @@ Everything that blocks slice 1 implementation is settled in the [[specs/slice-1|
 - [[product/users-and-jobs|Users & Jobs]]
 - [[product/glossary|Glossary]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
 - [[synthesis/open-questions|Open Questions]]
