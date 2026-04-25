@@ -257,3 +257,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | synthesis/roadmap.md | edit - roadmap.md - replace stale Phase 3 (slice 2 next) with Phase 3 done (slice 2 design+build) and Phase 4 (slice 3 design draft-complete); update preamble; add Related links to slice 3 spec and deferred-features
 
 ## [2026-04-25] edit | product/slices.md | edit - slices.md - rewrite slice 3 section to mirror slice 1/2 pattern with summary + spec link, drop deliberately-not-specced framing, add slice 3 spec to Related
+
+## [2026-04-25] edit | product/glossary.md | edit - glossary.md - add slice 3 vocabulary section (TypedTarget, target type registry, classify, accepts/produces/extract_outputs, recursion frontier, recursion depth, plugin tool, max-depth) between slice 2 and Deliverables sections; add slice 3 spec to Related
