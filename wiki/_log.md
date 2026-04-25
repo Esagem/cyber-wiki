@@ -273,3 +273,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | synthesis/lint-report.md | lint - synthesis/lint-report.md - fourth pass - post slice 3 spec draft - 5 high, 6 medium, 6 low; main themes are slice 2 status drift (built but pages still say ready-for-implementation) and slice 3 not propagated to product-layer pages and competitive cluster; also annotate third-pass fixes with STATUS markers per CYBER.md §5.4 pattern
 
 ## [2026-04-25] edit | product/scope.md | lint H4-1 - scope.md - bump slice 2 from spec-approved to in-implementation; rewrite slice 3 preview to mirror slice 1/2 pattern with summary plus spec link, drop wrong with-budgets phrasing
+
+## [2026-04-25] edit | product/vision.md | lint H4-2 - vision.md - bump slice 2 to in-implementation; add slice 3 spec link with status; rewrite What's settled paragraph for current state (slice 2 implementation no longer blocked, slice 3 spec drafted)
