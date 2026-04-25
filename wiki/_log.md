@@ -215,3 +215,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | synthesis/lint-report.md | lint pass third - post slice 2 spec finalization, catalogues drift in product scope+slices, open-questions, leverage-analysis, competitive README, vision, users-and-jobs, glossary, and engagements-RESERVED
 
 ## [2026-04-25] delete | sessions.md | L3-1 lint fix: empty file at wiki top level violates schema (sessions live under sessions/). Confirmed empty.
+
+## [2026-04-25] write | _index.md | index L3-2 lint fix - add missing implementation-review session row, note third lint pass executed
