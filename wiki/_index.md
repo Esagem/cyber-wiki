@@ -5,7 +5,7 @@ tags: [index, master, navigation]
 status: active
 confidence: high
 created: 2026-04-21
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # CSAK Design Wiki — Master Index
@@ -14,7 +14,7 @@ updated: 2026-04-24
 
 The collaborative design space for building the **Cybersecurity Swiss Army Knife (CSAK)** — a tool that orchestrates security tools against a target, ingests their output, triages what matters, and emits coherent reports per organization.
 
-**Phase: slice 1 shipped, slice 2 ready for implementation.** Slice 1 spec is `active` and implementation is complete (83 tests pass, end-to-end verified 2026-04-24). Slice 2 spec is `active` (approved 2026-04-24); tool output reference for the slice 2 catalog modules is documented from official sources. The wiki is the reference alongside the CSAK repo.
+**Phase: slice 1 shipped, slice 2 in implementation, slice 3 in design.** Slice 1 spec is `active` and implementation is complete (83 tests pass, end-to-end verified 2026-04-24). Slice 2 spec is `active` (approved 2026-04-24) and the implementation is built and under test. Slice 3 design is in progress — strategic decisions taken (deterministic recursion via output→input type matching, structural dedup, `--max-depth` flag with default 3, sync-only, plugin-pluggable catalog). The wiki is the reference alongside the CSAK repo.
 
 See [[CYBER|CYBER.md]] for the operating schema. Rationale for every significant choice lives inline in the section that makes the choice — there are no separate decision records.
 
@@ -43,7 +43,8 @@ _`architecture/data-flow.md` was planned but folded into the overview's walkthro
 | Page | Status | Confidence | Tags |
 |------|--------|------------|------|
 | [[specs/slice-1\|Slice 1 — Ingest & Report]] | **active — shipped** | high | slice-1, ingest, triage, report |
-| [[specs/slice-2\|Slice 2 — Tool Orchestration]] | **active — ready for impl** | high | slice-2, orchestration, collect |
+| [[specs/slice-2\|Slice 2 — Tool Orchestration]] | **active — in implementation** | high | slice-2, orchestration, collect |
+| [[specs/slice-3\|Slice 3 — Recursion & Catalog]] | **planned (design in progress)** | — | slice-3, recursion, catalog, plugins |
 | [[specs/ingestion-model\|Ingestion Model]] | **planned** | — | ingestors, adapters, sources |
 | [[specs/triage-model\|Triage Model]] | **planned** | — | severity, confidence, importance |
 | [[specs/report-formats\|Report Formats]] | **planned** | — | internal-reviews, fix-it-tickets |
@@ -82,6 +83,7 @@ _Still to write: Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, on
 | [[synthesis/open-questions\|Open Questions]] | active | medium | questions, unknowns |
 | [[synthesis/roadmap\|Roadmap]] | active | high | sequencing, priorities |
 | [[synthesis/lint-report\|Lint Report]] | active | high | maintenance |
+| [[synthesis/deferred-features\|Deferred Features — Review Backlog]] | active | high | deferred, future, slice-3-plus, backlog |
 
 ## Reserved
 
@@ -95,6 +97,8 @@ _Empty until we choose to activate it. Note: the existence of an `Org` entity in
 
 ## Recent activity
 
+- **2026-04-25 (deferred-features consolidation page)** — Wrote [[synthesis/deferred-features|deferred-features.md]] consolidating every "later slice / slice 4+ / future work" item from across the wiki into one review backlog. Created during slice 3 design as the post-slice-3 review surface. The page is a view, not a relocation — source pages keep their deferred-item language; this page points at them. Headline new entry is plugin sandboxing for third-party tools (slice 3 ships unsandboxed, sandboxing is a later-slice question if/when third-party plugin distribution becomes common). Other consolidated items: async/background collect, recursion budgets beyond `--max-depth`, Nessus REST API, scoring tables to YAML, references page, engagements-RESERVED resolution, the LLM-layer slice in full, scheduled reports, period diffs, ticketing integrations, multi-user, web UI, distributed scanning, generic CSV ingest, reconFTW JSON ingest, DefectDojo bidirectional, quick rescan, additional export formats, additional target types, concurrent-collect soft warning, plus cross-cutting product questions and the definitively-declined list.
+- **2026-04-25 (slice 3 design strategic decisions)** — Slice 3 strategic shape settled: deterministic recursion via output→input type matching (no LLM); structural in-memory frontier dedup (no DB-backed history) as the natural termination mechanism; `--max-depth N` flag, default 3, 0 = infinite, 1 = no recursion, prompt-to-continue at depth limit; sync-only (async deferred); pluggable third-party tools in `~/.csak/tools/` joining the same toolbox as built-ins; `csak tools list/show` for catalog introspection; depth-aware live output; data model adds `parent_scan_id`, `depth`, `triggered_by_finding_id`. Type system extended: `network_block | host | domain | subdomain | url | service | finding_ref` with subtype hierarchy and metadata dict on `TypedTarget` values. Critical refinement: types are part of the toolbox (each tool can register types it brings), `classify()` is a dispatcher that consults the registry rather than hardcoded logic — this is what makes catalog expansion genuinely cheap. Spec drafting next.
 - **2026-04-24 (CYBER.md §9 rewritten for new MCP tools)** — CYBER.md §9 (working with the MCP tools) rewritten end-to-end to document five new tools the MCP server is being extended with: `wiki_edit` (patch primitive), `wiki_read` with `section=` filter, `wiki_read_many` (batched reads), `wiki_status_set` (front matter mutations with schema validation), `wiki_log_tail` (recent log entries as structured data). Includes decision rules and patterns the LLM should internalize for using the right tool for the job. The full design spec for these tools lives with the MCP server's implementation, not in this wiki.
 - **2026-04-24 (lint pass three executed)** — Third [[synthesis/lint-report|lint pass]] catalogued twelve issues caused by slice 2 spec finalization making forward-looking sections stale. All eight high/medium fixes executed in this pass: open-questions slice 2 section moved to Answered, scope and slices product pages updated to mirror slice 1 pattern, leverage-analysis slice 2 recommendations updated and status bumped to active, competitive/README index Verdict and Key takeaways updated, vision and users-and-jobs reconFTW framing corrected, glossary expanded with slice 2 vocabulary, engagements-RESERVED revisit-trigger updated. Plus one low fix (delete empty `sessions.md` at top level) and missing session row added to the index. Wiki at 25 pages, all internally consistent.
 - **2026-04-24 (tool output reference for slice 2)** — Wrote [[research/slice-2-tool-output-reference|tool output reference page]] documenting verified flag names, output formats, stderr patterns, and rate-limit signal heuristics for Subfinder, httpx, and Nuclei. Compiled from official ProjectDiscovery docs and verified GitHub issues. Key finding: nuclei does not emit a clean "429" signal — it surfaces target rate-limiting as `[WRN] context deadline exceeded` lines, which the catalog's `detect_rate_limit_signal` must heuristically detect. Avoiding a half-day discovery during build by surfacing this up front. Page is the reference Code reads to write the per-tool catalog modules in `csak/collect/tools/<tool>.py`.
