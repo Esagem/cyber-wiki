@@ -6,12 +6,12 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-23
+updated: 2026-04-24
 ---
 
 # CSAK — Scope
 
-> Reframed 2026-04-22 to reflect the slice-based plan. Corrected 2026-04-23 to separate invocation modes (on-demand vs. streaming vs. scheduled). Rewritten 2026-04-23 to point at the finalized [[specs/slice-1|slice 1 spec]] as the authoritative source of slice-1 in/out-of-scope rather than duplicating it here.
+> Reframed 2026-04-22 to reflect the slice-based plan. Corrected 2026-04-23 to separate invocation modes (on-demand vs. streaming vs. scheduled). Rewritten 2026-04-23 to point at the finalized [[specs/slice-1|slice 1 spec]] as the authoritative source of slice-1 in/out-of-scope rather than duplicating it here. Updated 2026-04-24 to point at the finalized [[specs/slice-2|slice 2 spec]] for slice 2.
 
 The slice-based approach makes scope a moving target by design — what's "in" depends on which slice you're asking about. This page summarizes the boundaries across slices; the per-slice specs hold the details.
 
@@ -25,7 +25,7 @@ Before the per-slice scope, it's worth naming how CSAK is *used*:
 
 Report *structure* being (org, time window) is independent of invocation *cadence*. A "May 2026 update" can be generated on May 31st, on June 15th, or regenerated weeks later — the structure is the same, the invocation is whenever the analyst asks.
 
-## Slice 1 — Ingest & Report (finalized)
+## Slice 1 — Ingest & Report (shipped)
 
 [[specs/slice-1|Slice 1 Spec]] is the authoritative source. Summary:
 
@@ -33,19 +33,13 @@ Report *structure* being (org, time window) is independent of invocation *cadenc
 
 **Out of scope for slice 1.** Tool execution (→ slice 2), tool selection (→ slice 2), recursion (→ slice 3), scheduled/automated report generation (→ slice 4+), streaming or continuous detection (indefinitely out), LLM use inside CSAK (later slice attaches over slice-1 outputs), re-scoring existing findings under updated tables (slice 1 scores are write-once at ingest), period summaries that diff reports against each other (slice 4+ if ever — reports are stateless), fractional "probably FP" downweighting (analyst commits via status = false-positive or doesn't), web UI, auth beyond single-user, bidirectional ticketing integrations, multi-user/multi-tenant features, any database record of past reports.
 
-## Slice 2 — Tool Orchestration (preview)
+## Slice 2 — Tool Orchestration (spec approved, ready for implementation)
 
-Adds CSAK's ability to **run tools itself** against a target. The slice 1 ingest pipeline becomes the back end; slice 2 puts a "collect" stage in front of it.
+[[specs/slice-2|Slice 2 Spec]] is the authoritative source. Summary:
 
-Open questions for slice 2 to settle before it starts:
+**In scope.** A new `csak collect` command that auto-detects target type (`domain | subdomain | ip | cidr | url`) and routes to the appropriate subset of three orchestrated tools (Subfinder, httpx, Nuclei). Three modes (`quick | standard | deep`) controlling intensity within each running tool, plus per-tool overrides at the CLI. Stage outputs flow as Artifacts through the existing slice 1 ingest pipeline — so collect-produced Findings are indistinguishable from ingest-produced Findings. Adaptive rate limiting default-on. Sync invocation with per-stage `--timeout` flags; live structured terminal output with progress bars and per-stage summaries. Stage failures and zero-finding outcomes both logged as Scans. New `csak doctor` command for permission-prompted dependency installation. Tool catalog as Python module per tool with reconFTW recipe attribution.
 
-- Tool selection strategy (heuristic / config / LLM-assisted).
-- Execution model (subprocess / container / mixed).
-- How CSAK infers tool parameters from a target.
-- Long-running tool handling.
-- Adaptive rate limiting (reconFTW treats this as first-class; CSAK should too).
-- Relationship to reconFTW (replace / augment / integrate). See [[competitive/reconftw|reconFTW]].
-- Whether generic-CSV ingest and reconFTW `report/report.json` ingest land here or earlier.
+**Out of scope for slice 2.** Zeek and osquery orchestration (operationally different shape — both stay ingest-only), Nessus API orchestration (deferred to slice 2.5+), reconFTW JSON ingest (deferred indefinitely; native orchestrator removes the motivation), generic CSV ingest (still deferred), recursion (slice 3), async/background/scheduled scans (slice 3 if needed), quick rescan / staleness detection (later slice if ever), tool selection beyond target type and mode, distributed/cloud-fleet scanning, LLM use of any kind, configuration-by-knob explosion (no 300-knob config file).
 
 ## Slice 3 — Recursion & Catalog (preview)
 
@@ -104,4 +98,5 @@ Scope changes happen in the affected spec, with the rationale stated briefly in 
 - [[product/vision|Vision]]
 - [[product/slices|Slice Plan]]
 - [[specs/slice-1|Slice 1 Spec]]
+- [[specs/slice-2|Slice 2 Spec]]
 - [[synthesis/roadmap|Design-phase Roadmap]]
