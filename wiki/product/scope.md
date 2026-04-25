@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-21
-updated: 2026-04-24
+updated: 2026-04-25
 ---
 
 # CSAK — Scope
@@ -33,7 +33,7 @@ Report *structure* being (org, time window) is independent of invocation *cadenc
 
 **Out of scope for slice 1.** Tool execution (→ slice 2), tool selection (→ slice 2), recursion (→ slice 3), scheduled/automated report generation (→ slice 4+), streaming or continuous detection (indefinitely out), LLM use inside CSAK (later slice attaches over slice-1 outputs), re-scoring existing findings under updated tables (slice 1 scores are write-once at ingest), period summaries that diff reports against each other (slice 4+ if ever — reports are stateless), fractional "probably FP" downweighting (analyst commits via status = false-positive or doesn't), web UI, auth beyond single-user, bidirectional ticketing integrations, multi-user/multi-tenant features, any database record of past reports.
 
-## Slice 2 — Tool Orchestration (spec approved, ready for implementation)
+## Slice 2 — Tool Orchestration (in implementation)
 
 [[specs/slice-2|Slice 2 Spec]] is the authoritative source. Summary:
 
@@ -41,14 +41,13 @@ Report *structure* being (org, time window) is independent of invocation *cadenc
 
 **Out of scope for slice 2.** Zeek and osquery orchestration (operationally different shape — both stay ingest-only), Nessus API orchestration (deferred to slice 2.5+), reconFTW JSON ingest (deferred indefinitely; native orchestrator removes the motivation), generic CSV ingest (still deferred), recursion (slice 3), async/background/scheduled scans (slice 3 if needed), quick rescan / staleness detection (later slice if ever), tool selection beyond target type and mode, distributed/cloud-fleet scanning, LLM use of any kind, configuration-by-knob explosion (no 300-knob config file).
 
-## Slice 3 — Recursion & Catalog (preview)
+## Slice 3 — Recursion & Catalog (spec drafted)
 
-Adds:
+[[specs/slice-3|Slice 3 Spec]] is the authoritative source. Summary:
 
-- **Recursion with budgets** — tool output can trigger further runs, with explicit time/depth/cost ceilings.
-- **Tool catalog growth** — adding a new tool becomes a user-facing operation, not a code change.
+**In scope.** Opt-in recursion via `csak collect --recurse`: each tool's output is scanned for typed values (subdomains, live hosts, URLs, etc.) that another registered tool accepts as input, and those become inputs for the next depth. Termination is by exhaustion of an in-memory `(tool, target_value, mode)` frontier dedup set; `--max-depth N` (default 3, 0 = infinite, 1 = no recursion) is the analyst's emergency brake with prompt-to-continue when the limit is reached. Sync-only with depth-aware live output (depth headers, frontier counts). Pluggable third-party tools via `*.py` files dropped in `~/.csak/tools/` joining the same toolbox as built-ins. New `csak tools list/show` for catalog introspection. Runtime type registry (`network_block | host | domain | subdomain | url | service | finding_ref` plus plugin-introduced types) with subtype hierarchy and a `classify()` dispatcher. Extended `Tool` interface with `accepts`, `produces`, `extract_outputs`. `csak doctor` validates plugin set and registry. Data model adds `Scan.parent_scan_id`, `Scan.depth`, `Scan.triggered_by_finding_id`.
 
-Most slice 3 design will only make sense after slice 2 has taught us what real orchestration patterns look like.
+**Out of scope for slice 3.** LLM-assisted recursion (deferred indefinitely), wall-clock / cost / token budgets (only depth; structural dedup is the natural termination mechanism), async / background `csak collect` (sync-only; live status compensates), new built-in tools (catalog stays at subfinder + httpx + nuclei, now recursion-aware), plugin sandboxing (full Python under analyst's permissions; sandboxing deferred to later slice if/when third-party plugin distribution becomes common), cross-invocation persistent dedup, recursion-rules YAML, recursing Zeek or osquery (stay ingest-only).
 
 ## LLM layer (future, not yet numbered)
 
@@ -99,4 +98,6 @@ Scope changes happen in the affected spec, with the rationale stated briefly in 
 - [[product/slices|Slice Plan]]
 - [[specs/slice-1|Slice 1 Spec]]
 - [[specs/slice-2|Slice 2 Spec]]
+- [[specs/slice-3|Slice 3 Spec]]
 - [[synthesis/roadmap|Design-phase Roadmap]]
+- [[synthesis/deferred-features|Deferred Features]]
