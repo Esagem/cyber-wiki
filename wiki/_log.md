@@ -227,3 +227,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] write | product/glossary.md | glossary M3-3 lint fix - add slice 2 vocabulary section (collect, target type, mode, tool catalog, adaptive rate limiting, csak doctor)
 
 ## [2026-04-25] write | product/scope.md | scope H3-2 lint fix - rewrite slice 2 preview to spec link plus summary, mirror slice 1 pattern
+
+## [2026-04-25] write | product/slices.md | slices H3-3 lint fix - rewrite slice 2 section to mirror slice 1 pattern, drop stale open-questions list
