@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-24
+updated: 2026-04-26
 sources:
   - "https://github.com/six2dez/reconftw"
   - "https://github.com/six2dez/reconftw/blob/main/reconftw.sh"
@@ -117,13 +117,9 @@ Most of this is **slice 2 and slice 3 territory**, not slice 1:
 
 ## Pricing / licensing model
 
-**⚠️ License status is ambiguous and unresolved.**
+**License: MIT.** The repository's `LICENSE` file contains the MIT License, Copyright (c) 2023 six2dez. The README and some documentation pages mention GPLv3 — this is documentation drift inside reconFTW's own repo, not a competing legal claim. The `LICENSE` file is the contractually-controlling document under standard interpretation; README/docs are descriptive prose. Third-party trackers occasionally surface the GPL string because they read the README rather than the LICENSE file.
 
-- The repository's `LICENSE` file contains the **MIT License**, Copyright (c) 2023 six2dez.
-- The repository's **README.md** and the official documentation pages state: "The material contained in this repository is licensed under GNU GPLv3."
-- Third-party license trackers disagree.
-
-**This is moot for CSAK's chosen approach.** Reading the modules to learn the recipes (then writing CSAK's own orchestrator that uses similar flags) doesn't trigger either license — it's not derivative work, just learning from public source. We're not forking, not embedding, not subprocess-invoking. So the license ambiguity, while still worth resolving as a courtesy, no longer blocks anything in slice 2.
+**Moot for CSAK's chosen approach regardless.** Reading the modules to learn the recipes (then writing CSAK's own orchestrator that uses similar flags) isn't derivative work — it's learning from public source. We're not forking, not embedding, not subprocess-invoking. The MIT-on-the-LICENSE-file reading would permit even those approaches; the documentation drift would constrain only the GPL-incompatible ones, which we aren't doing anyway.
 
 ## Verdict for CSAK design
 
