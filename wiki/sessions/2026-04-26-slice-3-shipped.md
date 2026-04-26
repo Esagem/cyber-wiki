@@ -127,12 +127,9 @@ The architecture overview's slice 3 walkthrough is still pending — the spec's 
 
 **Long-standing carryover items, unchanged:**
 
-- `engagements-RESERVED/README.md` retire/keep decision — longest-standing actionable, awaiting Eli's call. The `Org` entity in slice 1 may make the folder less necessary than originally planned.
 - More competitive pages (Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, an LLM-powered upstart). Non-blocking.
-- reconFTW GitHub issue on the MIT/GPL-3.0 license ambiguity. Courtesy / non-blocking.
 - Canva pitch deck slides 4 and 8 — periodic-mode language fix. External.
-- Christopher's onboarding (repo collaborator access, Claude connector setup, Obsidian+Git sync).
-- Move scoring tables from inline Python to YAML config files. Polish, deferred.
+- Move scoring tables from inline Python to YAML config files. Queued behind slice 3 thorough testing; bundles with a post-testing architecture overview update.
 - Architecture overview slice 3 walkthrough (see above).
 
 ## Related
