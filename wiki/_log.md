@@ -345,3 +345,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | sessions/2026-04-26-slice-3-shipped.md | slice 3 ship session note - drop reconFTW license issue (resolved 2026-04-26 - MIT) and Christo's onboarding (complete) from outstanding-items list; queue scoring-tables-to-YAML behind slice 3 testing
 
 ## [2026-04-26] edit | synthesis/deferred-features.md | deferred-features - scoring-tables-to-YAML moved from open-ended polish to queued behind slice 3 thorough testing - bundles with the post-testing architecture overview update; trigger explicit
+
+## [2026-04-26] write | test-plans/slice-3-recursion-demo.md | test-plans/slice-3-recursion-demo - first concrete testing plan; formalizes the slice 3 ship demo (test_target_recurse + linkfinder + run_slice3_demo) as a reusable testing scenario per the test-plans/README contract; covers goal / setup / procedure / expected observations / known limits
