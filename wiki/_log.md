@@ -337,3 +337,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | competitive/leverage-analysis.md | leverage-analysis - reconcile reconFTW license framing - drop the AMBIGUOUS framing (per Eli 2026-04-26 LICENSE file is controlling, MIT); also remove the courtesy-GitHub-issue carryover line on Strategy 1 since the license question is settled
 
 ## [2026-04-26] edit | competitive/leverage-analysis.md | leverage-analysis - retire the reconFTW license ambiguity recommendation entirely - per Eli 2026-04-26 the license is settled (MIT per LICENSE file) and the GitHub-issue-as-courtesy idea is dropped
+
+## [2026-04-26] edit | synthesis/roadmap.md | roadmap - drop reconFTW license GitHub issue (resolved 2026-04-26 - MIT per LICENSE file) and Christopher's onboarding (complete) from outstanding non-blocking items
