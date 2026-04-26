@@ -6,12 +6,108 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Lint Report
 
 > Health snapshots of the wiki. Each dated section records what was found and what was fixed. Most entries here will become **fix tasks** rather than prose commentary.
+
+---
+
+## 2026-04-26 — fifth pass (post slice 3 spec reconciliation against shipped slice 2 code)
+
+Triggered by: "lint" request after the slice 3 spec was reconciled against the shipped slice 2 codebase. Scope: any drift the reconciliation introduced or surfaced. Wiki at 28 pages, no page count change since pass four.
+
+### Summary
+
+The reconciliation pass identified seven issues against the shipped code and corrected them in `specs/slice-3.md`. Two of those corrections introduced or surfaced inconsistencies elsewhere on the wiki, both in the architecture overview's slice 3 module section (which was written before the reconciliation):
+
+1. The new module layout (`types.py` + `types/builtin.py`) is invalid Python — a flat module file and a package directory of the same name can't coexist. The same wording landed in the spec via my edit and was already in the architecture overview. Both need the same fix: `types/` becomes a package with `__init__.py`, mirroring the existing `csak/collect/tools/` pattern.
+2. The architecture overview's slice 3 §7 references `csak/collect/output.py` for the live-output extension. That file doesn't exist; the slice 2 `ProgressReporter` lives in `csak/cli/collect.py`. The reconciled spec's module table doesn't carry this mistake (it correctly puts the depth-aware output work in `pipeline.py` extension), but the architecture overview wasn't reconciled in the same pass and still has the wrong path.
+
+Plus two minor items: a small internal contradiction in how the spec describes `applies_to`'s post-slice-3 status, and a stale recent-activity entry on `_index.md` (no entry for the reconciliation).
+
+Severity scale, unchanged: **critical** (misleads readers about a finalized decision), **high** (contradicts a finalized decision or describes invalid code), **medium** (stale but not contradictory), **low** (cosmetic).
+
+### High
+
+**H5-1. `csak/collect/types.py` and `csak/collect/types/builtin.py` cannot coexist.**
+
+Python doesn't permit a flat module `types.py` and a package directory `types/` with the same parent. Two pages list both:
+
+- `specs/slice-3.md` §Module changes against current source, "New files" table.
+- `architecture/overview.md` §7 Collect, extended for recursion — slice 3, "Type registry" Lives-in paragraph.
+
+Three valid fixes (everything in `types.py`, split into `types.py` + `builtin_types.py`, or make `types/` a package). The right one is **make `types/` a package** mirroring the existing `csak/collect/tools/` layout: `csak/collect/types/__init__.py` for the registry / `classify` / `matches` / `register_type` / validation, plus `csak/collect/types/builtin.py` for the seven core types. Same shape as the tools-as-package pattern already in the slice 2 source tree.
+
+**Fix:** correct both pages. The spec is the authoritative source; the architecture overview should match.
+
+**H5-2. `architecture/overview.md` §7 references `csak/collect/output.py` which does not exist.**
+
+Verified against the shipped slice 2 code: there's no `output.py` in `csak/collect/`. The progress reporter (the `ProgressReporter` class with `print_header`, `handle_event`, `print_summary`, `_draw_bar_line`, etc.) lives in `csak/cli/collect.py`. Slice 3's depth-aware live output extends the CLI-side reporter — there is no collect-module-side reporter to extend.
+
+The slice 3 spec's §Module changes table doesn't carry this mistake (it correctly attributes recursion-runner + live-output work to `pipeline.py` extension, with no reference to a non-existent `output.py`). The architecture overview wasn't reconciled in the same pass and still has the wrong path.
+
+**Fix:** in §7 Recursion runner extension's Lives-in paragraph, replace the `csak/collect/output.py` reference with a pointer to the existing `csak/cli/collect.py:ProgressReporter`. The depth-aware extension lives there — not in a new file.
+
+### Medium
+
+**M5-1. Spec's `applies_to` story is slightly self-contradictory.**
+
+In `specs/slice-3.md`:
+
+- §`Tool catalog — extended interface` says: "The slice 2 method stays available as a thin wrapper for backward compatibility during the migration; slice 3 builds prefer using `accepts` directly."
+- §Module changes against current source — `router.py` row says: "Replace `tool.applies_to(target_type)` calls with `matches(candidate.type, tool.accepts)`."
+
+Readable as consistent (router goes direct because it has the `TypedTarget` in hand; `applies_to` stays for external callers like `csak doctor` and tests), but the spec doesn't quite say that. A reader could conclude the spec is changing its mind about whether `applies_to` survives.
+
+**Fix:** in the §Module changes `router.py` row, add a clarifying clause: `applies_to` is kept available as documented in §Tool catalog, but the router (which has the `TypedTarget` in hand from `classify()`) calls `matches()` directly because that's the path the new code prefers.
+
+**M5-2. `_index.md` recent-activity section is one entry behind.**
+
+No entry for the 2026-04-26 reconciliation against the shipped slice 2 codebase. The reconciliation applied seven specific corrections to the spec (httpx accepts, Tool interface fields, extract_outputs lineage, InvalidTargetError, depth-0 vs depth-1+ failure cascade, target promotion via slice 1 ingest path, module-by-module diff). A reader looking at the index would see the 2026-04-25 "slice 3 spec drafted" entry and assume the spec hasn't moved.
+
+**Fix:** add a recent-activity entry summarizing the reconciliation. Keep it brief — the spec itself is the authoritative source; the index entry just signals that the spec is now grounded against shipped code and that implementation can start cleanly when sign-off lands.
+
+### Low
+
+**L5-1. Phase-marker preamble in `_index.md` could mention the reconciliation.** "Slice 3 design is in progress" is still accurate — status is still `draft` awaiting sign-off, the reconciliation didn't change strategic decisions. The recent-activity entry (M5-2) covers the reconciliation explicitly; the phase marker doesn't need to. **No fix unless M5-2 lands in the same write and there's a natural place for it.**
+
+**L5-2. Spec doesn't repeat the `output.py` mistake.** Verified via search. The spec's module table correctly omits `output.py` and puts the depth-aware progress work under `pipeline.py` extension. Only the architecture overview needs the H5-2 correction. **No fix.**
+
+### Process notes
+
+**The reconciliation pass found seven things, none of which had been caught by lints to date.** Worth flagging: the prior four lint passes operated on the wiki internally — page-vs-page consistency, status drift, stale forward-looking sections. None of them checked the wiki against the shipped code. The reconciliation was its own pass triggered by Eli uploading the slice 2 codebase, and it caught issues like `httpx.accepts = ["host", "url"]` (wrong; `url` skips httpx in slice 2) that no internal lint could catch because the wiki was internally consistent on the wrong assumption.
+
+Lesson: a future fifth-pass kind of lint — cross-checking spec against shipped code — should run after every implementation hand-off. The first opportunity for one was after slice 1 shipped 2026-04-24; we did it informally as the implementation review session note. Slice 2's equivalent didn't happen (yet — there's no slice 2 implementation review session note). Worth adding to the workflow: when an implementation lands, the next session should be a "reconcile spec against shipped code" pass, the way 2026-04-26 did for the slice 3 spec retroactively against slice 2.
+
+### What I checked this pass
+
+- The spec's reconciliation edits for any contradictions they introduced.
+- The architecture overview's slice 3 §7 against the spec for consistency on module paths.
+- The shipped code (`src/csak/collect/`) for whether referenced files (`csak/collect/output.py`) actually exist.
+- The glossary's slice 3 vocabulary section for module-path references (none found; clean).
+- `_index.md` for an entry on the reconciliation (none yet).
+- `_log.md` via `wiki_log_tail` for the reconciliation entry (present, dated correctly).
+- Spec internal consistency on `applies_to` survival.
+
+### What's intentionally not changing
+
+- Strategic decisions in the spec (the reconciliation only added implementation precision; nothing about deterministic recursion / structural dedup / max-depth / sync-only / pluggable catalog has changed).
+- Spec status (`draft`, confidence `medium`). Eli's sign-off is still pending; the reconciliation strengthens the case for sign-off but doesn't replace it.
+- Session notes (historical record).
+- `engagements-RESERVED/README.md` (still awaiting Eli's call; same as pass four).
+- Anything else from the pass-four action plan — those nine items all landed 2026-04-25.
+
+### Proposed action plan
+
+Four items, in priority order:
+
+1. **`specs/slice-3.md`** (H5-1, M5-1) — fix the `types/` package layout in the new-files table; clarify `applies_to` survival in the `router.py` module-change row.
+2. **`architecture/overview.md`** (H5-1, H5-2) — fix the `types/` package layout in §7 Type registry; fix the `csak/collect/output.py` reference in §7 Recursion runner extension.
+3. **`_index.md`** (M5-2) — add recent-activity entry for the reconciliation.
+4. **`synthesis/lint-report.md`** (this section) — already written by this edit. STATUS markers will be added after items 1-3 land.
 
 ---
 
