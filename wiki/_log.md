@@ -319,3 +319,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | synthesis/roadmap.md | post slice 3 ship - flip the ship session note item from pending to done in the roadmap; add new session row to _index.md Sessions table
 
 ## [2026-04-26] edit | _index.md | post slice 3 ship - _index.md - add session row for 2026-04-26-slice-3-shipped to Sessions table
+
+## [2026-04-26] write | test-plans/README.md | test-plans/ created - replaces engagements-RESERVED/ folder; per Eli's call, the wiki will never store real engagement data (CSAK's Org entity holds that), but a place for testing plans is useful; first concrete entry is the slice 3 recursion demo, with future plans landing as their own pages
