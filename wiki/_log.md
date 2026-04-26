@@ -327,3 +327,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | _index.md | post test-plans creation - _index.md - replace Reserved table with Test Plans table; add 2026-04-26 recent-activity entry recording the engagements-RESERVED retire / test-plans repurpose
 
 ## [2026-04-26] edit | CYBER.md | CYBER.md - post engagements-RESERVED retire - drop the case-management/dogfood placeholder framing from §1 and replace with a clean not-a-case-management-system rule plus a positive description of test-plans/; replace engagements-RESERVED/ row in §3 directory layout with test-plans/
+
+## [2026-04-26] edit | CYBER.md | CYBER.md §8 - drop the engagements-RESERVED activation conditional - now obsolete since the folder retired and the wiki's policy is settled (real engagement data lives in CSAK's Org entity, never in the wiki)
