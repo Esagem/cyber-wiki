@@ -325,3 +325,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] delete | engagements-RESERVED/README.md | Per Eli 2026-04-26: the wiki will never store real engagement data (CSAK's Org entity is the system of record for that). The folder is repurposed as test-plans/ for testing plans, which fills the slot's "this category needs a purpose" intent with something concrete. Replacement page already created at test-plans/README.md (commit cec4907).
 
 ## [2026-04-26] edit | _index.md | post test-plans creation - _index.md - replace Reserved table with Test Plans table; add 2026-04-26 recent-activity entry recording the engagements-RESERVED retire / test-plans repurpose
+
+## [2026-04-26] edit | CYBER.md | CYBER.md - post engagements-RESERVED retire - drop the case-management/dogfood placeholder framing from §1 and replace with a clean not-a-case-management-system rule plus a positive description of test-plans/; replace engagements-RESERVED/ row in §3 directory layout with test-plans/
