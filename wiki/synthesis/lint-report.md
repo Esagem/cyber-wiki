@@ -104,10 +104,10 @@ Lesson: a future fifth-pass kind of lint — cross-checking spec against shipped
 
 Four items, in priority order:
 
-1. **`specs/slice-3.md`** (H5-1, M5-1) — fix the `types/` package layout in the new-files table; clarify `applies_to` survival in the `router.py` module-change row.
-2. **`architecture/overview.md`** (H5-1, H5-2) — fix the `types/` package layout in §7 Type registry; fix the `csak/collect/output.py` reference in §7 Recursion runner extension.
-3. **`_index.md`** (M5-2) — add recent-activity entry for the reconciliation.
-4. **`synthesis/lint-report.md`** (this section) — already written by this edit. STATUS markers will be added after items 1-3 land.
+1. **`specs/slice-3.md`** (H5-1, M5-1) — fix the `types/` package layout in the new-files table; clarify `applies_to` survival in the `router.py` module-change row. **STATUS: Applied 2026-04-26.**
+2. **`architecture/overview.md`** (H5-1, H5-2) — fix the `types/` package layout in §7 Type registry; fix the `csak/collect/output.py` reference in §7 Recursion runner extension. **STATUS: Applied 2026-04-26.**
+3. **`_index.md`** (M5-2) — add recent-activity entry for the reconciliation. **STATUS: Applied 2026-04-26.**
+4. **`synthesis/lint-report.md`** (this section) — already written by this edit. STATUS markers will be added after items 1-3 land. **STATUS: STATUS markers applied 2026-04-26 (this edit).**
 
 ---
 
