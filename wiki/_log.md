@@ -291,3 +291,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | synthesis/lint-report.md | lint pass five - post slice-3 reconciliation - 2 high, 2 medium, 2 low; main themes are the types-as-file-vs-package contradiction in spec and overview, and the architecture overview referencing non-existent csak/collect/output.py
 
 ## [2026-04-26] edit | specs/slice-3.md | lint H5-1 M5-1 - slice-3.md - fix types/ package layout in new-files table (types.py and types/builtin.py cant coexist; make types/ a package mirroring tools/ pattern); clarify applies_to survival in router.py module-change row (kept available for external callers; router calls matches() directly because it has TypedTarget in hand)
+
+## [2026-04-26] edit | architecture/overview.md | lint H5-1 H5-2 - architecture/overview.md - fix types/ package layout in §7 Type registry Lives-in (mirrors csak/collect/tools/ pattern); replace non-existent csak/collect/output.py reference with csak/cli/collect.py:ProgressReporter (verified against shipped slice 2 code)
