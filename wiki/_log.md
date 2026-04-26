@@ -301,3 +301,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] status | specs/slice-3.md | slice 3 spec sign-off - flip draft → active and confidence medium → high per Eli's approval; spec is reconciled against shipped slice 2 code and ready for implementation hand-off
 
 ## [2026-04-26] edit | _index.md | slice 3 sign-off bookkeeping - _index.md - bump slice 3 row in Specs table to active/high; update phase marker preamble to reflect slice 3 spec approved (ready for implementation hand-off); add 2026-04-26 sign-off recent-activity entry
+
+## [2026-04-26] edit | synthesis/roadmap.md | slice 3 sign-off bookkeeping - roadmap.md - flip Phase 4 items 4-7 to done (sign-off 2026-04-26, architecture overview / glossary / slice plan all completed 2026-04-25); update preamble to reflect slice 3 spec approved; rename Phase 4 from draft-complete to design done; mark Phase 5 trigger as satisfied
