@@ -102,6 +102,33 @@ Phase 2 runs in parallel with the build; none of it is load-bearing.
 
 **Slice 3 is complete pending the ship session note and real-target use.** The implementation faithfully follows every load-bearing spec decision; deviations were captured back into the spec; the demo verifies the full surface end-to-end against a local test target with a real working plugin.
 
+## Phase 6 — Hardening and catalog growth (active)
+
+**Trigger:** slice 3 shipped. *(Trigger satisfied 2026-04-26.)*
+
+**Goal:** the next focus is two-pronged — thorough testing of the current implementation, plus growing the tool catalog — both running through the slice 3 plugin model rather than as new slice work. This is hardening, not new slice design.
+
+### Thread A: Thorough testing
+
+Test plans live under [[test-plans/README|test-plans/]]. The folder is the prose-side complement to code-side `tests/` and demo scaffolding under `scripts/`. Each substantive testing scenario gets a plan covering goal, setup, procedure, expected observations, and known limits per the folder's contract.
+
+- [ ] [[test-plans/slice-3-recursion-demo|Slice 3 — Recursion Demo]] plan written from the existing artifacts (`scripts/test_target_recurse.py`, `scripts/csak_plugins/linkfinder.py`, `scripts/run_slice3_demo.py`). The demo already runs end-to-end; the plan formalizes which slice 3 exit criteria it exercises and what verification points to check on each run.
+- [ ] Real-client-target test plan. Eli runs `csak collect --recurse` against an actual client target during normal work; the plan captures setup, expected observations, and the verification questions that come up against real-world recon output rather than the synthetic test target.
+- [ ] Failure-mode test plan. Adversarial scenarios — a target that returns malformed nuclei output, a plugin with broken `extract_outputs`, a target that 429s aggressively, depth-1+ failure isolation under stress, schema migration on a corrupted database. The slice 3 implementation is designed to handle these gracefully; the plan verifies the design holds.
+- [ ] Regression suite plan. As the catalog grows and the slice 3 surface gets real use, accumulating test cases that protect against drift. Probably ends up as a single living plan rather than per-feature plans.
+
+### Thread B: New tools via plugins
+
+New tools join via the slice 3 plugin model — a Python file in `~/.csak/tools/`, registers via `register_tool()`, exposes `accepts`/`produces`/`extract_outputs`, optionally registers new types. Each new tool worth keeping is a plugin module with attribution comments where recipes were adapted.
+
+- [ ] First production plugin candidate to be chosen. Plausible options (rough order of leverage): `nmap` (port scan; new `service` type producer), `dig` / `dnsx` (DNS resolution; widens the type graph), `naabu` (port scan, ProjectDiscovery sibling), `katana` (web crawler; URL producer), `gowitness` (screenshot capture; produces `live_host` metadata). The choice should follow real testing demand — whichever tool comes up first as something Eli wants while exercising slice 3.
+- [ ] Plugin authoring template under `scripts/csak_plugins/` for each new tool, reviewed and merged.
+- [ ] Each merged plugin gets a one-paragraph description added to a future tool catalog page (or absorbed into `csak tools list`'s output — wiki page only if catalog growth makes that useful).
+
+### What graduates this phase
+
+Phase 6 is open-ended; there's no "done" state for hardening. Phase 7 would be the next slice with strategic shape worth designing, which arrives when something concrete demands it (LLM layer, async, web UI, multi-user, etc. — see [[synthesis/deferred-features|deferred-features]]). Until then, the work is plugins and tests.
+
 ## Pre-design → build transition
 
 The transition completed 2026-04-24. Pre-design exit criteria:
