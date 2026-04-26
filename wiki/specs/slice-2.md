@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-26
 ---
 
 # Slice 2 — Tool Orchestration
@@ -565,6 +565,8 @@ Slice 2 is "done" when:
 - Methodology in `csak report generate` output correctly cites "via csak collect" Scans, distinguishable from analyst-uploaded ingest Scans.
 - Slice 1 surface (`findings list/show/update`, `target list/update`, `scan list`, `report generate`) works identically against collect-produced data.
 - At least one analyst (Eli) has used `csak collect` on a real client target and not hated it.
+
+**Status: all criteria except real-client-target use met as of 2026-04-26.** Slice 2 is on `origin/main`; the implementation built and tested per Eli 2026-04-25, then exercised directly by the slice 3 build 2026-04-26 — the slice 3 migration extended the slice 2 catalog modules (subfinder, httpx, nuclei) with `accepts`/`produces`/`extract_outputs` and routed through the new `matches()` matcher, but the slice 2 single-pass behavior (subfinder → httpx → nuclei chain at depth 0, target-type auto-detection, three modes, adaptive rate limiting, stage timeouts, partial output capture, doctor binary checks) is preserved bit-for-bit and is exercised by both the slice 1/2 test suite (which migrated cleanly through the type-name renames `cidr` → `network_block` and IP → host) and the slice 3 max-depth=1 test (which is verified equivalent to slice 2 single-pass). 275 tests pass in the combined slice 1/2/3 suite. Real-client-target use by Eli is the one remaining bullet — expected to follow naturally as slice 2 / slice 3 surfaces are exercised in normal cybersecurity work.
 
 ## Related
 
