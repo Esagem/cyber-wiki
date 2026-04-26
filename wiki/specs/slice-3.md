@@ -2,8 +2,8 @@
 title: "Slice 3 — Recursion & Catalog Expansion"
 category: specs
 tags: [slice-3, recursion, catalog, plugins, types, spec]
-status: draft
-confidence: medium
+status: active
+confidence: high
 owner: shared
 created: 2026-04-25
 updated: 2026-04-26
