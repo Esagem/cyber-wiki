@@ -339,3 +339,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | competitive/leverage-analysis.md | leverage-analysis - retire the reconFTW license ambiguity recommendation entirely - per Eli 2026-04-26 the license is settled (MIT per LICENSE file) and the GitHub-issue-as-courtesy idea is dropped
 
 ## [2026-04-26] edit | synthesis/roadmap.md | roadmap - drop reconFTW license GitHub issue (resolved 2026-04-26 - MIT per LICENSE file) and Christopher's onboarding (complete) from outstanding non-blocking items
+
+## [2026-04-26] edit | synthesis/roadmap.md | roadmap - add Phase 6 framing the new focus - hardening and catalog growth (thorough slice 3 testing + new tool plugins, all running through the slice 3 plugin model rather than as new slice work)
