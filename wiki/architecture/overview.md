@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-23
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Architecture Overview
@@ -199,11 +199,11 @@ Slice 3 doesn't add a seventh module — it extends the existing **Collect** mod
 
 **Recursion runner extension.** Wraps the existing slice 2 runner. After every stage completes, calls the tool's `extract_outputs(artifact, scan)` to harvest typed outputs, consults the in-memory frontier dedup set, and queues the deduped survivors for the next depth. Maintains the per-invocation dedup set as a Python `set[(tool_name, target_value, mode)]`. Owns the depth-aware live output (depth headers, frontier counts, prompt-to-continue at `--max-depth` limit). Also owns the `Scan.parent_scan_id` / `depth` / `triggered_by_finding_id` write-through when persisting recursion-spawned Scans.
 
-**Lives in:** `csak/collect/recursion.py` (new) for the runner extension; the slice 2 `runner.py` stays the per-stage subprocess wrapper. Live output extension in `csak/collect/output.py` (slice 2's progress reporter, extended for depth headers). The split keeps the per-stage primitives reusable by future non-recursive callers.
+**Lives in:** `csak/collect/recursion.py` (new) for the runner extension; the slice 2 `runner.py` stays the per-stage subprocess wrapper. Live output extension lives in `csak/cli/collect.py:ProgressReporter` (slice 2's existing reporter, extended for depth headers and frontier counts). The split keeps the per-stage primitives reusable by future non-recursive callers, and keeps the live-output rendering on the CLI side where the slice 2 reporter already lives — there is no `csak/collect/output.py` file in the slice 2 source tree.
 
 **Type registry.** A runtime collection of `TargetType` rows, populated at startup from built-in types and any plugins. Provides `register_type()`, `classify(value)`, `matches(candidate_type, accepts)`, and the validation that runs at startup (no name collisions, no parent cycles, all accepts/produces references resolve). `classify()` is the dispatcher both the CLI's `--target` resolution and per-tool `extract_outputs` consult — single seam for type detection.
 
-**Lives in:** `csak/collect/types.py` for the registry, `TargetType` dataclass, and `classify()` / `matches()`. `csak/collect/types/builtin.py` registers the seven core types (`network_block | host | domain | subdomain | url | service | finding_ref`) at import. The slice 2 `csak/collect/detect.py` is replaced by `classify()` calls; the file is removed in the slice 3 migration.
+**Lives in:** `csak/collect/types/__init__.py` for the registry, `TargetType` dataclass, `TypedTarget` value object, and `classify()` / `matches()`. `csak/collect/types/builtin.py` registers the seven core types (`network_block | host | domain | subdomain | url | service | finding_ref`) at import. The `types/` directory is a package mirroring the existing `csak/collect/tools/` layout — not a flat module file. The slice 2 `csak/collect/detect.py` is replaced by `classify()` calls; the file is removed in the slice 3 migration.
 
 **Plugin discovery.** At `csak collect` startup, imports every `*.py` under `~/.csak/tools/` in alphabetical order. Plugins use the same `register_type()` and `register_tool()` entry points as built-ins. Validation runs after all imports complete; failures fail-closed with the offending plugin identified. `csak doctor` runs the same discovery + validation on demand for plugin-debugging.
 
