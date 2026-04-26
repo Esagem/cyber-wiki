@@ -6,7 +6,7 @@ status: draft
 confidence: medium
 owner: shared
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Slice 3 — Recursion & Catalog Expansion
@@ -138,6 +138,10 @@ The next depth runs each tool in the queue in dependency order — same router l
 
 **Stage failures and zero-outputs at any depth** behave exactly as in slice 2 — Scan recorded with `status=failed` or zero findings, pipeline continues with whatever data exists, dedup set still updated for the (tool, target, mode) tuple so we don't retry on the next depth.
 
+**Failure cascade differs by depth.** At depth 0 the slice 2 cascade rule still applies: a subfinder failure leaves the next stage to fall back to the bare target; a httpx failure aborts the root pass's nuclei stage because there's no live host list. At depth 1+, each `(tool, target, mode)` is its own independent attempt against one typed target — a single tool failing on one target does not abort sibling tasks at that depth. The depth-0 cascade rule survives because depth 0 *is* the slice 2 single-pass behavior.
+
+**Recursion-spawned Scans go through the existing slice 1 ingest path.** Target promotion (creating Target rows for newly-discovered subdomains, hosts, URLs) happens via the existing `csak.ingest.targets` module, same as slice 2. The recursion runner doesn't pre-create Targets for the typed values it queues — it lets the stage's ingest pass do that as part of its normal Finding-creation flow. `Scan.target_ids` is populated normally from there.
+
 ## Type system
 
 The type system is the load-bearing piece of slice 3's catalog ergonomics. It needs to be small enough to understand, extensible enough that adding a new tool with a new type is a one-file change, and deterministic enough to give the same routing answers across runs.
@@ -220,6 +224,8 @@ def classify(value: str) -> TypedTarget:
 
 When a string matches multiple types — `"api.acmecorp.com"` matches both `subdomain` and `host` — the classifier returns the most-specific match (`subdomain`), because `subdomain.parents = [host]` and the topological walk hits the leaf first.
 
+**Unparseable strings raise `InvalidTargetError`.** When `classify` walks the registry without finding any matching type, it raises rather than returning a sentinel — mirroring slice 2's `detect.detect_target_type` returning the `"invalid"` literal. The CLI catches `InvalidTargetError` at `--target` resolution and exits with a clear message; `extract_outputs` implementations catch it and silently drop the offending value (a tool's artifact may legitimately contain strings that aren't typed targets, e.g. response bodies, error messages, free-text fields).
+
 `classify` does not need to know the universe of types ahead of time. It iterates the runtime type registry. Adding a type → it shows up in the classifier with no other code changes.
 
 `classify` is used in **two places**:
@@ -259,19 +265,24 @@ Validation failures stop the run before any tool executes, with the message iden
 
 ## Tool catalog — extended interface
 
-Slice 3 extends the slice 2 `Tool` interface with three new fields:
+Slice 3 extends the slice 2 `Tool` interface with three new fields. The slice 2 interface as it exists in the shipped code (`csak/collect/tool.py`) carries more than just the four routing-relevant methods listed below — it also has `output_filename`, `rate_limit: RateLimitDefaults`, `version_args`, `override_flags: dict`, `is_skipped_by_mode(mode)`, and `parse_version(...)`. Slice 3 doesn't change any of those; the diff is additive.
 
 ```python
 class Tool:
-    # slice 2 fields
+    # slice 2 fields shown for context (see csak/collect/tool.py for the full set)
     name: str
     binary: str
     minimum_version: str
     install_command: str
+    output_filename: str
+    rate_limit: RateLimitDefaults | None
+    override_flags: dict[str, str]
     def applies_to(target_type: str) -> bool: ...        # legacy slice 2; see note
     def invocation(target, mode, overrides) -> list[str]: ...
     def parse_progress(stderr_line) -> ProgressUpdate | None: ...
     def detect_rate_limit_signal(stderr_line) -> bool: ...
+    def is_skipped_by_mode(mode) -> bool: ...
+    def parse_version(output) -> str | None: ...
 
     # slice 3 additions
     accepts: list[str]                                    # ["domain", "subdomain"]
@@ -280,6 +291,8 @@ class Tool:
 ```
 
 **`accepts` replaces `applies_to` for routing.** The slice 2 `applies_to(target_type)` is now derivable from `accepts` plus the subtype matcher (`applies_to(t) == matches(t, self.accepts)`). The slice 2 method stays available as a thin wrapper for backward compatibility during the migration; slice 3 builds prefer using `accepts` directly. After the slice 3 migration completes, `applies_to` can be removed.
+
+**`extract_outputs` formalizes existing per-tool logic.** The slice 2 collect pipeline already extracts typed values from one stage's artifact to feed the next — see `_prepare_input_for_next_stage` and `_extract_field_to_list` in `csak/collect/pipeline.py`, which read subfinder's JSONL `host` field and httpx's JSONL `url` field (with `host` fallback) to build the next stage's input list. Slice 3 lifts this hardcoded subfinder→httpx, httpx→nuclei pipe into a method on each `Tool` and routes outputs through the type registry instead of a fixed two-step chain. The existing helpers can be deleted once `extract_outputs` is in place; their behavior is subsumed.
 
 **`extract_outputs` is the new per-tool work.** Each tool implements it to pull recursion candidates out of its own artifact. Implementations are typically small — read the artifact (JSONL, XML, whatever the tool produces), extract the relevant strings, call `classify` on each:
 
@@ -380,7 +393,6 @@ httpx  (built-in)
 
   Accepts:
     host    (matches: domain, subdomain, ip)
-    url
 
   Produces:
     live_host    (with metadata: status, tech, title)
@@ -403,6 +415,8 @@ httpx  (built-in)
       nuclei     (accepts: host, url)
       testssl    (accepts: service; not directly downstream from httpx unless service extracted)
 ```
+
+Note on httpx and `url`: httpx does not accept `url` as a target type, mirroring the slice 2 routing decision. A URL is already a known live endpoint, so feeding it to httpx for liveness probing is redundant — the slice 2 router emits "URL is already a known endpoint; httpx step skipped" for url-typed targets. Slice 3 inherits this: `httpx.accepts = ["host"]` and url-typed candidates from the recursion frontier go straight to nuclei without a httpx hop.
 
 The recursion graph section is computed at runtime from the full registered toolbox. A new plugin appears in the graph the moment it's loaded, with no edits to httpx's catalog file.
 
@@ -611,6 +625,32 @@ A new soft case: when the user declines the prompt-to-continue at depth limit, e
 ## Storage
 
 No new tables. Three new columns on `Scan` (see Data model additions above). The slice 1 ingest path is unchanged. The slice 2 collect path is unchanged except that the runner now consults the dedup set and threads `parent_scan_id` / `depth` / `triggered_by_finding_id` into the new Scan rows it creates.
+
+## Module changes against current source
+
+The slice 2 codebase is in `src/csak/collect/`. Slice 3's diff against it:
+
+| Current file | Slice 3 change |
+|---|---|
+| `tool.py` | Extend `Tool` with `accepts: list[str]`, `produces: list[str]`, `extract_outputs(...)`. Keep `applies_to` as a thin wrapper over the subtype matcher for backward compatibility during migration. Existing slice 2 fields (`output_filename`, `rate_limit`, `override_flags`, `is_skipped_by_mode`, `parse_version`) untouched. The `TargetType = Literal["domain", ...]` alias becomes a string — the runtime registry takes over. |
+| `detect.py` | Removed. The single `detect_target_type(target) -> str` function is replaced by `classify(value) -> TypedTarget` in the new `types.py`. |
+| `router.py` | Replace `tool.applies_to(target_type)` calls with `matches(candidate.type, tool.accepts)` from the new type matcher (subtype widening). Skip-reason strings stay; they're user-facing and the routing outcome is the same for slice 2's flat target types. |
+| `pipeline.py` | Add the recursion runner (frontier dedup set, depth loop, prompt-to-continue). Delete `_prepare_input_for_next_stage` and `_extract_field_to_list` — their behavior is now in each tool's `extract_outputs`. Thread `parent_scan_id` / `depth` / `triggered_by_finding_id` into Scan creation. The non-recursive path (no `--recurse`) is bit-for-bit slice 2: `run_collect` is called once at depth 0 and exits. |
+| `runner.py` | Unchanged. Per-stage subprocess invocation, rate limiting, progress events stay as-is. |
+| `tools/__init__.py` | `ALL_TOOLS` becomes the runtime tool registry consulted by the recursion runner; built-in tools are registered via the same `register_tool()` entry point plugins use. |
+| `tools/subfinder.py`, `tools/httpx.py`, `tools/nuclei.py` | Each gains `accepts`, `produces`, and `extract_outputs(...)`. Existing `applies_to`, `invocation`, etc. unchanged. |
+
+New files:
+
+| New file | Responsibility |
+|---|---|
+| `csak/collect/types.py` | `TargetType`, `TypedTarget`, the runtime registry, `register_type()`, `classify(value)`, `matches(candidate_type, accepts)`, validation. |
+| `csak/collect/types/builtin.py` | Registers the seven core types at import (`network_block`, `host`, `domain`, `subdomain`, `url`, `service`, `finding_ref`). |
+| `csak/collect/recursion.py` | The recursion runner extension — frontier dedup, depth loop, depth-aware progress. Wraps the existing per-stage runner. |
+| `csak/collect/plugins.py` | Plugin discovery from `~/.csak/tools/`, fail-soft loading, type/tool registration entry points. |
+| `csak/cli/tools.py` | The new `csak tools list` and `csak tools show <tool>` command group. |
+
+Storage: `csak/storage/schema.py` bumps `SCHEMA_VERSION` from 1 to 2 and the `scans` table CREATE statement gains three columns (`parent_scan_id TEXT REFERENCES scans(id)`, `depth INTEGER NOT NULL DEFAULT 0`, `triggered_by_finding_id TEXT REFERENCES findings(id)`). `csak/storage/models.py` adds the matching dataclass fields with `None` / `0` defaults. `csak/storage/repository.py` insert / select helpers carry the new columns through.
 
 ## Dependencies
 
