@@ -220,7 +220,7 @@ Note on log formatting: the short description field is plaintext, not further pi
 
 This is a private repo, but assume anything written here might be shared with a future hire, a future client, or a future investor. Don't put anything in that wouldn't be appropriate to show one of them — personal rants, unflattering vendor commentary without specifics, etc.
 
-If we ever activate `engagements-RESERVED/` and start holding real engagement data, the rules change substantially and a new section gets added to this file.
+This wiki will not hold real engagement data. CSAK's `Org` entity (slice 1) is the system of record for that, and the wiki stays focused on designing and exercising the *product*. The `test-plans/` folder holds prose-side testing plans for the product itself; testing fixtures, mock targets, and synthetic data are fine here — real client targets, real findings, and real engagement details are not.
 
 ---
 
