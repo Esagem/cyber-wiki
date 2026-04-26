@@ -119,10 +119,8 @@ The wiki's role has shifted: it is now the reference alongside the CSAK repo, no
 Tracked so they don't get lost:
 
 - More competitive pages (Faraday, PlexTrac, AttackForge, Splunk, Wazuh, Tenable, n8n, an LLM-powered upstart).
-- reconFTW GitHub issue on the MIT/GPL-3.0 license ambiguity. Only matters before code-level leverage, which is slice 2 territory.
 - Canva pitch deck slides 4 and 8 — periodic-mode language fix. External to this wiki.
-- Christopher's onboarding (repo collaborator access, Claude connector setup, Obsidian+Git sync).
-- Move scoring tables from inline Python (`csak/ingest/scoring.py`) to YAML config files under `config/triage/severity/<tool>.yaml`. Low priority polish; noted in the architecture overview.
+- Move scoring tables from inline Python (`csak/ingest/scoring.py`) to YAML config files under `config/triage/severity/<tool>.yaml`. Queued behind slice 3 thorough testing; bundles with a post-testing architecture overview update. Tracked in [[synthesis/deferred-features|deferred-features]].
 
 ## Related
 
