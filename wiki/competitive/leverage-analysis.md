@@ -188,7 +188,7 @@ Even with both tools fully leveraged (in the documentation-source sense, since n
 
 All four numbered recommendations from the original analysis are now resolved, demoted, or deferred with a referral elsewhere. Kept here (with status annotations) for the audit trail; live items moved to [[synthesis/deferred-features|deferred-features]] which is the canonical home for cross-page deferral tracking.
 
-1. ~~Resolve reconFTW license ambiguity.~~ **Demoted to courtesy/non-blocking.** No CSAK decision depends on the resolution since CSAK has no runtime dependency on reconFTW. Worth opening a GitHub issue at some point as a contribution back to the reconFTW community, but not on any CSAK critical path.
+1. ~~Resolve reconFTW license ambiguity.~~ **Resolved 2026-04-26.** Per Eli: the LICENSE file is the contractually-controlling document; the project is MIT. The README's GPLv3 mentions are documentation drift inside reconFTW's own repo, not a competing legal claim. No CSAK decision depended on the resolution since CSAK has no runtime dependency on reconFTW; the reconciliation is bookkeeping.
 2. **Foreign-JSON ingest stays deferred indefinitely** for both DefectDojo and reconFTW. Re-evaluation tracked in [[synthesis/deferred-features|deferred-features §Slice 4+]].
 3. ~~Defer the "fork vs integrate reconFTW" question.~~ **Resolved 2026-04-24** by the [[specs/slice-2|slice 2 spec]] and the [[competitive/reconftw|reconFTW case study]]. None of fork/integrate/replace; build our own and adapt recipes with attribution.
 4. **Do not fork either project.** Settled. Both are architecturally unsuitable foundations for CSAK, even setting aside license concerns. See [[competitive/build-vs-adapt|build-vs-adapt]] for the full argument.
