@@ -140,6 +140,10 @@ The next depth runs each tool in the queue in dependency order — same router l
 
 **Failure cascade differs by depth.** At depth 0 the slice 2 cascade rule still applies: a subfinder failure leaves the next stage to fall back to the bare target; a httpx failure aborts the root pass's nuclei stage because there's no live host list. At depth 1+, each `(tool, target, mode)` is its own independent attempt against one typed target — a single tool failing on one target does not abort sibling tasks at that depth. The depth-0 cascade rule survives because depth 0 *is* the slice 2 single-pass behavior.
 
+**Depth-0 dedup interaction.** The recursion runner passes `dedup_set=None` to the depth-0 `run_collect` call. Depth 0 must be free to do slice 2's input chaining without dedup interference — subfinder's output feeds httpx's input, httpx's output feeds nuclei's input, and the cascade rule above governs failure handling. Dedup applies depth-1 forward, where independent `(tool, target, mode)` tasks need to avoid redundant scans. This is the concrete mechanism behind "depth 0 is the slice 2 single-pass behavior."
+
+**Dedup-set seeding before depth 0.** Before the depth-0 root pass runs, the recursion runner seeds the dedup set with `(tool, root_target_value, mode)` for every registered tool. This prevents a depth-0 finding from re-queueing an identical depth-1 scan — e.g. nuclei at depth 0 produces a finding pointing at the root target, and without seeding, the recursion runner would queue another nuclei scan against the same root at depth 1. Seeding keeps the depth-1 frontier focused on genuinely new targets discovered during depth 0. The behavior is what the spec describes as "don't retry on the next depth"; the seeding step is the implementation mechanism.
+
 **Recursion-spawned Scans go through the existing slice 1 ingest path.** Target promotion (creating Target rows for newly-discovered subdomains, hosts, URLs) happens via the existing `csak.ingest.targets` module, same as slice 2. The recursion runner doesn't pre-create Targets for the typed values it queues — it lets the stage's ingest pass do that as part of its normal Finding-creation flow. `Scan.target_ids` is populated normally from there.
 
 ## Type system
@@ -224,6 +228,8 @@ def classify(value: str) -> TypedTarget:
 
 When a string matches multiple types — `"api.acmecorp.com"` matches both `subdomain` and `host` — the classifier returns the most-specific match (`subdomain`), because `subdomain.parents = [host]` and the topological walk hits the leaf first.
 
+**Host recognizer is conservative.** `_recognizes_host` (the predicate behind the `host` type's `recognizes` callable) rejects strings whose final label has no alphabetic character. Without this, `"10.0.0.42"` parses as a 4-label hostname (each octet looks like a valid label under permissive rules) and `classify` returns `subdomain` instead of falling through to the IP-address branch. The conservative recognizer ensures bare IPs land at `host` via the IP recognizer, and only genuine hostnames — with at least one TLD-like label — reach the domain/subdomain split.
+
 **Unparseable strings raise `InvalidTargetError`.** When `classify` walks the registry without finding any matching type, it raises rather than returning a sentinel — mirroring slice 2's `detect.detect_target_type` returning the `"invalid"` literal. The CLI catches `InvalidTargetError` at `--target` resolution and exits with a clear message; `extract_outputs` implementations catch it and silently drop the offending value (a tool's artifact may legitimately contain strings that aren't typed targets, e.g. response bodies, error messages, free-text fields).
 
 `classify` does not need to know the universe of types ahead of time. It iterates the runtime type registry. Adding a type → it shows up in the classifier with no other code changes.
@@ -261,7 +267,7 @@ At `csak collect` startup, after all built-ins and plugins have registered, CSAK
 - **All `parents` references resolve.** A type declaring `parents: [host]` when no `host` type is registered fails.
 - **All tool `accepts` and `produces` references resolve.** A tool declaring `accepts: [pcap]` when no `pcap` type is registered fails.
 
-Validation failures stop the run before any tool executes, with the message identifying which plugin or built-in caused the conflict. `csak doctor` runs the same checks on demand, so an analyst dropping in a plugin can validate without launching a collect run.
+Validation failures stop the run before any tool executes, with the message identifying which plugin or built-in caused the conflict. The gate is concrete: `csak collect` calls `validate_registry()` after plugin discovery and before any tool runs; failures raise a `ClickException` pointing at `csak doctor` and exit with non-zero status. `csak doctor` runs the same checks on demand and exits non-zero on any registry error, so an analyst dropping in a plugin can validate without launching a collect run, and CI scripts can gate on `csak doctor` exit status.
 
 ## Tool catalog — extended interface
 
@@ -295,6 +301,8 @@ class Tool:
 **`extract_outputs` formalizes existing per-tool logic.** The slice 2 collect pipeline already extracts typed values from one stage's artifact to feed the next — see `_prepare_input_for_next_stage` and `_extract_field_to_list` in `csak/collect/pipeline.py`, which read subfinder's JSONL `host` field and httpx's JSONL `url` field (with `host` fallback) to build the next stage's input list. Slice 3 lifts this hardcoded subfinder→httpx, httpx→nuclei pipe into a method on each `Tool` and routes outputs through the type registry instead of a fixed two-step chain. The existing helpers can be deleted once `extract_outputs` is in place; their behavior is subsumed.
 
 **`extract_outputs` is the new per-tool work.** Each tool implements it to pull recursion candidates out of its own artifact. Implementations are typically small — read the artifact (JSONL, XML, whatever the tool produces), extract the relevant strings, call `classify` on each:
+
+**`network_block` in `accepts`.** Subfinder, httpx, and nuclei each accept `network_block` in addition to their primary types: `subfinder.accepts = ["domain", "network_block"]` (already true in slice 2 since CIDRs were one of the accepted target types via the legacy `cidr` literal); `httpx.accepts = ["host", "network_block"]` (URL targets continue to skip httpx); `nuclei.accepts = ["host", "url", "network_block"]`. This preserves slice 2's CIDR routing exactly — a `--target 10.0.0.0/24` invocation goes to the same tool set under slice 3 as it did under slice 2. The `csak tools show httpx` example earlier in this section omits `network_block` for brevity; the live `csak tools show` output reflects all accepted types.
 
 ```python
 # csak/collect/tools/subfinder.py
@@ -348,6 +356,8 @@ Plugins live alongside built-ins in the runtime registry — there is no second-
 **Why `~/.csak/tools/` and not a standard Python entry-point mechanism.** Entry points require the plugin to be a pip-installed package, which is overhead for the "drop a file in" use case. A flat directory of Python files matches how analysts will actually write and try plugins — clone a gist, copy from a tutorial, edit a built-in to make a variant. Pip-installable plugins remain possible (the analyst installs the package and then either symlinks or copies the file into `~/.csak/tools/`), but they're not required.
 
 **Plugin loading errors.** A plugin file that fails to import (syntax error, missing dependency) is reported by `csak doctor` and skipped at collect time; the run continues with the remaining tools. The analyst sees which plugin failed and why. This is gentler than refusing to run — one broken plugin shouldn't take CSAK down.
+
+**Plugin parser registration contract.** Every plugin tool that produces an artifact needs an ingest parser registered with the slice 1 ingest pipeline, or `csak.ingest.pipeline` raises "no parser registered for tool 'X'" when it tries to ingest the plugin's output. The plugin can either: (a) register a parser inline via `csak.ingest.pipeline.register_parser("plugin_tool_name", parser_fn)` at module-import time, or (b) ship a parser module and import it from the plugin file. The parser may be a no-op (returning an empty list of findings) if the plugin's output is purely a recursion driver (URLs, hosts, etc.) and not a finding source — in that case the plugin file declares the no-op explicitly so the contract is visible. The error path is non-fatal: the plugin's Scan row records the ingest failure in `notes` and the recursion frontier still gets the plugin's `extract_outputs` results, but findings are lost. Treating this as a contract failure rather than a silent drop on the implementation side is deliberate — a plugin without a parser is an incomplete plugin.
 
 ### Plugin trust posture
 
@@ -575,7 +585,7 @@ The slice 2 `csak doctor` already checks built-in tool binaries. Slice 3 adds:
 
 - Plugin discovery validation (importable, registers correctly, no type collisions, no parent cycles, all references resolve).
 - Plugin binary checks for any binary the plugin declares it depends on.
-- Recursion graph validation (no orphan tools that produce types nothing accepts — these are warnings, not errors; an analyst may have a tool that produces outputs they intend to consume manually).
+- Recursion graph validation (no orphan tools that produce types nothing accepts — these are warnings, not errors; an analyst may have a tool that produces outputs they intend to consume manually). The orphan check considers same-tool feedback as valid — nuclei producing `url` and accepting `url` is not an orphan because nuclei's own next pass would consume the output. Only types that no registered tool accepts at all flag as orphans; in slice 3's built-in catalog, `finding_ref` is the one orphan output (registered for forward-compat with future tools that consume findings as input).
 
 ```
 $ csak doctor
