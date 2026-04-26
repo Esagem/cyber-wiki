@@ -42,9 +42,11 @@ A testing plan should be readable by someone who has never run CSAK and gives th
 
 | Plan | Status | Covers | Source artifacts |
 |------|--------|--------|------------------|
-| [[test-plans/slice-3-recursion-demo\|Slice 3 — Recursion Demo]] | planned | slice 3 exit criteria: end-to-end recursion, frontier dedup, prompt-to-continue, lineage columns, plugin discovery | `scripts/test_target_recurse.py`, `scripts/csak_plugins/linkfinder.py`, `scripts/run_slice3_demo.py` |
+| [[test-plans/slice-3-recursion-demo\|Slice 3 — Recursion Demo]] | active | slice 3 exit criteria: end-to-end recursion, frontier dedup, prompt-to-continue, lineage columns, plugin discovery | `scripts/test_target_recurse.py`, `scripts/csak_plugins/linkfinder.py`, `scripts/run_slice3_demo.py` |
+| [[test-plans/failure-modes\|Failure Modes]] | seed | adversarial scenarios: malformed tool output, broken plugins, schema corruption, depth-1+ failure isolation, network pathologies | (no artifacts yet — sections fill in as scenarios get exercised) |
+| [[test-plans/real-client-target\|Real-Client-Target Use]] | seed | the last unmet slice 3 exit criterion: `csak collect --recurse` against a real client target during normal cybersecurity work | (filled in at run time by Eli) |
 
-Backfilling the slice 3 plan is the natural first piece of work in this folder — the artifacts already exist in the repo from the slice 3 ship; a wiki-side plan describing them as a testing scenario hasn't been written yet.
+A fourth plan — a regression suite that grows as the catalog grows and slice 3 gets real use — is anticipated but not yet started. Probably ends up as a single living plan rather than per-feature plans.
 
 ## Why a folder, not a section under synthesis
 
