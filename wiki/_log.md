@@ -285,3 +285,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-25] edit | product/glossary.md | lint M4-1 - glossary.md - add slice-3-supersedes pointer to slice 2 Target type entry plus cidr-renamed-to-network_block note
 
 ## [2026-04-25] edit | competitive/README.md | lint M4-4 - competitive/README.md - small wording fix in Key takeaway 3 - shift means to does (cleaner retrospective tense matching surrounding bullet)
+
+## [2026-04-26] edit | specs/slice-3.md | slice 3 spec - reconcile with slice 2 codebase - fix httpx accepts (drop url; URL targets skip httpx per shipped slice 2); expand slice 2 Tool fields list to match shipped interface (output_filename, rate_limit, version_args, override_flags, is_skipped_by_mode, parse_version); acknowledge extract_outputs formalizes existing _prepare_input_for_next_stage / _extract_field_to_list logic; add InvalidTargetError handling note; clarify failure-cascade at depth 0 vs depth 1+; add Module changes subsection mapping current files to slice 3 deltas; note recursion-spawned scans go through slice 1 ingest path which handles target promotion
