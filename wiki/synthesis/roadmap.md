@@ -11,7 +11,7 @@ updated: 2026-04-26
 
 # Roadmap
 
-> The design roadmap that sequenced slices 1, 2, and 3 from blank-page through design and (for slices 1 and 2) into build. Slice 1 is implemented and shipped. Slice 2 is implemented and under test. Slice 3 design is complete — spec is `active` and reconciled against shipped slice 2 code; implementation hand-off can proceed. The wiki's role has shifted from primary design surface to reference alongside the build, with new design work happening in concentrated bursts when the next slice's strategic shape needs settling.
+> The design roadmap that sequenced slices 1, 2, and 3 from blank-page through design and into build. Slice 1 is implemented and shipped. Slice 2 is implemented and shipped (on `origin/main`; exercised directly by the slice 3 build). Slice 3 is implemented and shipped (commit `422b8ef` on `origin/main`, 2026-04-26). The wiki is now reference-only alongside the build; further design work happens in concentrated bursts when a new slice's strategic shape needs settling.
 
 ## Phase 0 — Framing (done)
 
@@ -71,7 +71,7 @@ Phase 2 runs in parallel with the build; none of it is load-bearing.
 - [x] [[specs/slice-2|slice 2 spec]] approved by Eli, status `draft` → `active`, confidence medium → high. *(Approved 2026-04-24.)*
 - [x] [[research/slice-2-tool-output-reference|tool output reference]] written before build to lock down flag names, output formats, and rate-limit signal heuristics for subfinder, httpx, nuclei. *(Written 2026-04-24.)*
 - [x] [[architecture/overview|architecture overview]] extended with the collect module section, slice 2 walkthrough, and slice 2 extension points. *(Updated 2026-04-24.)*
-- [x] Slice 2 implementation built and under test. *(Per Eli 2026-04-25; no shipped session note yet — status will flip to fully shipped when implementation review session lands.)*
+- [x] Slice 2 implementation built, tested, and shipped to `origin/main`. *(Built and under test per Eli 2026-04-25; status flipped to fully shipped 2026-04-26 after the slice 3 build extended the slice 2 catalog modules with `accepts`/`produces`/`extract_outputs` and the slice 2 single-pass behavior was verified preserved at depth 0 of the slice 3 recursion runner. The slice 2 implementation review session note is folded into the slice 3 ship session note rather than written separately, since slice 2 was exercised through slice 3's test surface.)*
 
 ## Phase 4 — Slice 3 design (done)
 
@@ -85,13 +85,22 @@ Phase 2 runs in parallel with the build; none of it is load-bearing.
 - [x] [[product/glossary|glossary]] extended with slice 3 vocabulary (`TypedTarget`, target type registry, recursion frontier, depth, plugin tool, classify, extract_outputs). *(Updated 2026-04-25.)*
 - [x] [[product/slices|slice plan]] slice 3 section rewritten to mirror the slice 1 / slice 2 pattern (summary + spec link, drop the "deliberately not specced in detail yet" framing). *(Updated 2026-04-25.)*
 
-## Phase 5 — Slice 3 implementation (ready to start)
+## Phase 5 — Slice 3 implementation (done)
 
 **Trigger:** slice 3 spec approved. *(Trigger satisfied 2026-04-26.)*
 
-The slice 3 spec is `active` and reconciled against shipped slice 2 code; the module-by-module diff in the spec maps every existing file in `csak/collect/` to its slice 3 delta and lists the new files (`types/__init__.py`, `types/builtin.py`, `recursion.py`, `plugins.py`, `cli/tools.py`) plus the storage migration. Implementation hand-off to Claude Code can proceed when Eli kicks it off; same pattern as slice 2's hand-off.
+- [x] **Implementation hand-off prompt sent to Claude Code.** Spec referenced as authoritative source; load-bearing constraints flagged up front (httpx accepts, types/ as package, ProgressReporter location, extract_outputs lineage, depth-0 cascade, InvalidTargetError, backward compat, ingest target promotion, applies_to wrapper survival, fail-soft plugins). *(Sent 2026-04-26.)*
+- [x] **Build sequence followed the spec's module-by-module diff.** Storage migration first (`SCHEMA_VERSION` 1→2 with three nullable columns; idempotent against existing slice 1/2 DB), then types package (`types/__init__.py` registry plus `types/builtin.py` for the seven core types), then `Tool` interface extension, then router via `matches()`, then recursion runner with frontier dedup and prompt-to-continue, then CLI surface (`--recurse`, `--max-depth`, `--no-plugins`, depth-aware `ProgressReporter`, `csak tools list`/`show`), then plugin discovery, then `csak doctor` extensions for type registry plus recursion graph plus plugin status. *(Built 2026-04-26.)*
+- [x] **All slice 3 exit criteria met** (see [[specs/slice-3|spec exit criteria]]) except real-client-target use by Eli, which is expected to follow as slice 3 is exercised in normal cybersecurity work. *(Verified 2026-04-26.)*
+- [x] **275 tests pass.** Slice 1/2 suite migrated cleanly through type-name renames (`cidr` → `network_block`, IP → host); slice 3-specific tests added for type registry, classify, extract_outputs, recursion runner, plugin discovery, schema migration, and the new CLI surface. *(Verified 2026-04-26.)*
+- [x] **End-to-end demo wired.** `scripts/run_slice3_demo.py` orchestrates `scripts/test_target_recurse.py` (3-port test target with tier-0 / tier-1 / tier-2 disclosure fixtures across app/admin/api roles) plus the example `linkfinder` plugin (real working plugin under `scripts/csak_plugins/`). Recursion completes in 1.9 seconds with 16 scans across two depths; lineage columns persist correctly. *(Verified 2026-04-26.)*
+- [x] **Six post-implementation deviations written back into the spec.** `httpx`/`nuclei` accepts include `network_block`; conservative host recognizer; depth-0 dedup interaction (`dedup_set=None` for root pass); dedup-set seeding before depth 0; doctor's same-tool-feedback handling; registry validation gating `csak collect` startup. *(Spec edit committed 2026-04-26 as commit `2f02e87`.)*
+- [x] **Plugin parser registration contract surfaced as a new spec bullet.** Every plugin tool that produces an artifact must register an ingest parser (no-op acceptable) with `csak.ingest.pipeline.register_parser` or the slice 1 ingest pipeline raises "no parser registered for tool 'X'". Now documented under §Plugin discovery. *(Spec edit committed 2026-04-26 as commit `2f02e87`.)*
+- [x] **Slice 3 spec status closed with "Status: all criteria met as of 2026-04-26."** Mirrors slice 1's pattern. *(Closed 2026-04-26 as commit `18406d3`.)*
+- [ ] Slice 3 ship session note written. *(Pending; mirrors `[[sessions/2026-04-24-slice-1-shipped|2026-04-24-slice-1-shipped]]` shape; covers Claude Code's implementation, the six deviations, the parser-registration gap, and the demo scaffolding.)*
+- [ ] Real-client-target use by Eli on slice 3's `csak collect --recurse`. *(Expected to follow naturally during normal cybersecurity work.)*
 
-Goals when started: recursion mechanics work end-to-end against a real target; structural dedup prevents redundant scans; type registry handles built-ins and at least one example plugin; `csak tools list/show` produce documented output; `csak doctor` validates the plugin set; data model migration runs cleanly on existing slice 1/2 databases; live output meets the depth-aware spec; slice 1/2 surfaces work identically against recursion-produced data.
+**Slice 3 is complete pending the ship session note and real-target use.** The implementation faithfully follows every load-bearing spec decision; deviations were captured back into the spec; the demo verifies the full surface end-to-end against a local test target with a real working plugin.
 
 ## Pre-design → build transition
 
