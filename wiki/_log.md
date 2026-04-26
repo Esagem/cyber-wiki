@@ -323,3 +323,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] write | test-plans/README.md | test-plans/ created - replaces engagements-RESERVED/ folder; per Eli's call, the wiki will never store real engagement data (CSAK's Org entity holds that), but a place for testing plans is useful; first concrete entry is the slice 3 recursion demo, with future plans landing as their own pages
 
 ## [2026-04-26] delete | engagements-RESERVED/README.md | Per Eli 2026-04-26: the wiki will never store real engagement data (CSAK's Org entity is the system of record for that). The folder is repurposed as test-plans/ for testing plans, which fills the slot's "this category needs a purpose" intent with something concrete. Replacement page already created at test-plans/README.md (commit cec4907).
+
+## [2026-04-26] edit | _index.md | post test-plans creation - _index.md - replace Reserved table with Test Plans table; add 2026-04-26 recent-activity entry recording the engagements-RESERVED retire / test-plans repurpose
