@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-21
-updated: 2026-04-24
+updated: 2026-04-26
 ---
 
 # CYBER.md — Wiki Schema & Operating Guide
@@ -35,7 +35,7 @@ This wiki is where we figure out the scope, architecture, data models, tool inte
 
 A few important non-goals, so the LLM doesn't drift:
 
-- **Not a case-management system.** No real client engagements, no live findings, no triaged alerts. The `engagements-RESERVED/` folder exists as a placeholder for a possible future where we dogfood CSAK on real work — but it is empty and stays empty until we explicitly decide to activate it.
+- **Not a case-management system.** No real client engagements, no live findings, no triaged alerts. CSAK's `Org` entity (slice 1) is the system of record for engagement-shaped data; this wiki is about designing and exercising the *product*, not about *uses* of the product. The `test-plans/` folder holds the testing-plan side of that posture — prose that describes what testing scenarios exercise and why their fixtures look the way they do, complementary to the code-side `tests/` and `scripts/` directories in the CSAK repo.
 - **Not the tool's code.** Code will live in separate repos once we start building. Code-adjacent specs (API shapes, data schemas, protocol designs) live here; the actual implementation does not.
 - **Not personal notes.** Keep personal scratch elsewhere. Pages here are for shared team understanding.
 - **Not a drafting surface for client deliverables.** If later we decide to use CSAK on real engagements, those deliverables go through CSAK, not through this wiki.
@@ -86,13 +86,15 @@ wiki/
 ├── sessions/             # Notes from collaborative working sessions
 │   └── YYYY-MM-DD-<slug>.md
 │
-├── synthesis/            # Cross-cutting views of the wiki
-│   ├── open-questions.md # Every known unknown, with owner and status
-│   ├── lint-report.md    # Wiki health snapshots
-│   └── roadmap.md        # Rough sequencing of what we're designing next
+├── test-plans/           # Testing plans for CSAK (prose-side complement to code tests/)
+│   └── README.md          # Folder index + what counts as a testing plan
+│   └── *.md               # One page per testing plan as we write them
 │
-└── engagements-RESERVED/ # Placeholder. Empty until we choose to activate it.
-    └── README.md         # Explains why this is here and what would change it.
+└── synthesis/            # Cross-cutting views of the wiki
+    ├── open-questions.md  # Every known unknown, with owner and status
+    ├── lint-report.md     # Wiki health snapshots
+    ├── deferred-features.md # Post-slice-3 review backlog
+    └── roadmap.md         # Rough sequencing of what we're designing next
 ```
 
 Folders = categories. Filenames use `kebab-case.md`.
