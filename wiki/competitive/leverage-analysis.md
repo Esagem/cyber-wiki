@@ -6,7 +6,7 @@ status: active
 confidence: medium
 owner: shared
 created: 2026-04-23
-updated: 2026-04-25
+updated: 2026-04-26
 sources:
   - "[[competitive/defectdojo]]"
   - "[[competitive/reconftw]]"
@@ -104,14 +104,13 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 ## reconFTW
 
-**License: AMBIGUOUS.** See the note in [[competitive/reconftw|reconFTW analysis]]. The repo's `LICENSE` file says MIT; the README and docs say GPL-3.0; third-party trackers disagree. **This ambiguity no longer affects any CSAK decision** — slice 2 builds its own orchestrator and adapts reconFTW recipes via documentation reading rather than code inclusion or invocation. Worth resolving as a courtesy via a GitHub issue, but doesn't block anything.
+**License: MIT** per the repo's `LICENSE` file. The README mentions GPLv3 in places — documentation drift, not a competing legal claim; see [[competitive/reconftw|reconFTW analysis §Pricing / licensing model]]. **The license doesn't affect any CSAK decision regardless** — slice 2 builds its own orchestrator and adapts reconFTW recipes via documentation reading rather than code inclusion or invocation.
 
 ### Strategy 1: Fork / embed
 
 **Legal:**
 
-- If MIT: fully permitted, no copyleft.
-- If GPL-3.0: CSAK must also be GPL-3.0 (or compatible). This is a significant constraint.
+- MIT permits forking, embedding, modifying, redistributing — just preserve attribution.
 
 **Technical feasibility:** Low. reconFTW is thousands of lines of bash orchestration. Porting to Python/Go is essentially a rewrite — you'd keep the *logic* but none of the *code*.
 
@@ -123,7 +122,7 @@ Strategies closer to the top require more from the tool's license. Strategies cl
 
 ### Strategy 3: Subprocess invocation
 
-**Legal:** Permitted under both MIT and GPL-3.0. GPL's viral clause applies to combining code, not to running separate programs.
+**Legal:** Permitted. GPL's viral clause wouldn't apply even under the strictest reading because that clause governs combining code, not running separate programs — and per the LICENSE file, the project is MIT regardless.
 
 **Technical feasibility:** High. reconFTW has a well-defined CLI (`./reconftw.sh -d target.com -r`), exits with status codes, and produces output in a known directory structure. CSAK could invoke it and wait for completion.
 
