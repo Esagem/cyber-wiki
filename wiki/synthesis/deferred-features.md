@@ -77,9 +77,9 @@ Small, low-risk items that don't need a full slice. Could be picked up at any po
 ### Move scoring tables from Python to YAML config
 
 - **What.** Slice 1 ships scoring tables inline in `csak/ingest/scoring.py`. Move them to per-tool YAML files under `config/triage/severity/<tool>.yaml` so analysts can edit them without touching code.
-- **Why deferred.** Polish, not load-bearing. Slice 1 shipped in code and works.
-- **Trigger.** Any slice that touches the scoring layer for another reason; or analyst friction with the inline-Python approach.
-- **Source.** [[architecture/overview|architecture overview §Module 3 — Ingest]]; [[synthesis/roadmap|roadmap §Outstanding non-blocking items]].
+- **Why deferred.** Polish, not load-bearing. Slice 1 shipped in code and works. Eli has confirmed (2026-04-26) that this lands once slice 3 is thoroughly tested — bundled with the post-testing architecture overview update so the moves happen in a single coherent pass.
+- **Trigger.** Slice 3 testing wraps (real-client-target use plus the failure-mode and regression test plans under [[test-plans/README|test-plans/]]). Trigger is fired when Eli judges slice 3 stable enough to do the YAML migration plus architecture overview revision in one pass.
+- **Source.** [[architecture/overview|architecture overview §Module 3 — Ingest]]; [[synthesis/roadmap|roadmap §Outstanding non-blocking items]]; Eli's 2026-04-26 confirmation.
 
 ### `research/references.md` consolidating attributions
 
