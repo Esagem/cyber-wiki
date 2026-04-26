@@ -295,3 +295,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | architecture/overview.md | lint H5-1 H5-2 - architecture/overview.md - fix types/ package layout in §7 Type registry Lives-in (mirrors csak/collect/tools/ pattern); replace non-existent csak/collect/output.py reference with csak/cli/collect.py:ProgressReporter (verified against shipped slice 2 code)
 
 ## [2026-04-26] edit | _index.md | lint M5-2 - _index.md - add recent-activity entry for the 2026-04-26 slice 3 spec reconciliation against shipped slice 2 codebase (seven corrections applied)
+
+## [2026-04-26] edit | synthesis/lint-report.md | lint pass five - lint-report - mark fifth-pass action plan items 1-3 as applied 2026-04-26 per CYBER.md §5.4 STATUS-marker pattern
