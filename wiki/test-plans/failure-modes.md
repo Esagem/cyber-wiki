@@ -1,0 +1,81 @@
+---
+title: "Failure Modes — Adversarial Scenarios"
+category: test-plans
+tags: [testing, failure-modes, adversarial, robustness]
+status: seed
+confidence: medium
+owner: shared
+created: 2026-04-26
+updated: 2026-04-26
+---
+
+# Failure Modes — Adversarial Scenarios
+
+Testing plans for what happens when things go wrong — malformed inputs, broken plugins, network conditions that don't behave nicely, schema migrations on corrupted databases, depth-1+ failure isolation under stress.
+
+## Status
+
+**Seed.** This page exists to mark intent. The slice 3 implementation handles many of these scenarios by design (fail-soft plugin loading, `InvalidTargetError` silent-drop in `extract_outputs`, depth-1+ task independence, doctor exit-code on registry errors), but they haven't been exercised as a coherent testing plan. Each scenario below gets fleshed out as it's actually tested — typically when something pushes back during real use, or when a deliberate adversarial test session is run.
+
+## Scenarios to cover
+
+The following list is the inventory of "things the slice 3 design says should be handled gracefully." Each becomes its own plan section (or its own page if the scenarios diverge enough) when first exercised.
+
+### Tool output malformation
+
+- A plugin produces output that isn't valid JSONL.
+- A built-in tool's output is truncated mid-line (subprocess killed during write).
+- A nuclei artifact contains values that aren't typed targets (response bodies, error messages, free text). `extract_outputs` should silently drop these via `InvalidTargetError` catch.
+- A subfinder run produces zero output but exits cleanly. Pipeline should continue with the bare target as input to httpx (slice 2 cascade rule).
+
+### Plugin pathologies
+
+- Plugin file with a syntax error. Doctor reports it; collect run continues with the remaining tools.
+- Plugin file imports a module that isn't installed. Same expected behavior.
+- Plugin declares `accepts: [pcap]` with no `pcap` type registered. Registry validation rejects at startup, doctor exits non-zero, collect refuses to run.
+- Plugin's `extract_outputs` raises an unexpected exception (not `InvalidTargetError`). Slice 3 design: scan recorded as failed, frontier still gets whatever earlier extraction produced, run continues.
+- Plugin's `extract_outputs` returns malformed `TypedTarget` objects (wrong type field, missing value). Should be caught at the type-system boundary.
+- Two plugins try to register the same type name. Registry collision detection rejects at startup.
+- Plugin tool produces an artifact but no parser is registered for it. Slice 3 spec contract: ingest pipeline raises "no parser registered for tool 'X'", scan records the ingest failure in `notes`, recursion frontier still gets the plugin's `extract_outputs` results, but findings are lost. The plugin author is expected to register a parser (no-op acceptable).
+
+### Network conditions
+
+- Target returns 429 aggressively. Adaptive rate limiting kicks in; scan completes at reduced rate; rate-adjustment events visible in live output.
+- Target hangs (slow response, no eventual answer). Stage timeout fires; partial output captured as Artifact; Scan marked failed; pipeline continues.
+- Target returns invalid responses (200 with garbage body). `extract_outputs` silently drops via `InvalidTargetError`.
+- Target redirects to a different domain. The plugin's scope filter (where applicable) should keep recursion bounded; without a scope filter, recursion would follow the redirect.
+
+### Recursion stress
+
+- Target with deeply nested URL discovery. Default `--max-depth 3` should fire prompt-to-continue at depth 2 with non-empty frontier; user can extend or decline cleanly.
+- Target where every URL produces a new URL not in the dedup set. Default `--max-depth 3` plus the prompt-to-continue eventually terminates by user decline; `--max-depth 0` would run forever (intentional, but worth verifying the dedup set is the limiting factor in practice).
+- Many tools at depth 1+ failing simultaneously on different targets. Failure isolation: each `(tool, target, mode)` is its own attempt; sibling tasks at the same depth complete normally.
+- Tool that produces a finding pointing at the root target. Dedup-set seeding before depth 0 should prevent re-queueing at depth 1.
+
+### Schema and storage
+
+- Schema migration on a slice 1/2 DB with existing scan rows. Old rows survive; new columns populate with defaults; idempotent on re-open. Verified during the slice 3 ship; should be folded into a formal scenario.
+- Schema migration on a corrupted database (partial transaction, malformed row). Migration should fail with a clear error rather than silently succeeding with bad state.
+- Concurrent collect runs against the same org. Slice 2 spec allows this (SQLite WAL handles concurrent writes); verify under recursion that lineage columns don't cross-contaminate.
+- Collect run with a database file that was generated by a future schema version. Should refuse to run rather than silently rolling back the schema version.
+
+### CLI behaviors
+
+- `csak collect --recurse` with `--max-depth 0` and `--yes` and a target that produces unbounded recursion. Verify the dedup set is the limiting factor; verify there's no path to actual unbounded loop.
+- `csak collect` interrupted by Ctrl-C mid-recursion. Current stage SIGTERMs cleanly; partial Artifacts captured; ingest runs on what we have; exit non-zero with a clear summary.
+- `csak doctor` on a system with no plugins. Should exit cleanly with just the built-in checks.
+- `csak tools show <unknown-tool>` should exit non-zero with a clear "no such tool" message, not a stack trace.
+
+## How to use this page
+
+When a scenario above gets actively tested, write a section here covering: setup (what fixture or harness is needed), procedure (how to trigger the failure), expected observation (what graceful handling looks like), what would count as a regression. Promote to its own page if the section grows past ~half a page.
+
+For now, this page's role is to make sure the scenarios aren't forgotten — they were all considered during slice 3 design and many are covered by code-side tests, but a coherent prose-side plan for each doesn't yet exist.
+
+## Related
+
+- [[test-plans/README|Test Plans index]]
+- [[test-plans/slice-3-recursion-demo|Slice 3 — Recursion Demo]]
+- [[specs/slice-3|Slice 3 Spec]] (most of these scenarios are spec-defined behaviors)
+- [[specs/slice-2|Slice 2 Spec]] (failure cascade rules for depth 0)
+- [[specs/slice-1|Slice 1 Spec]] (storage and ingest contracts)
