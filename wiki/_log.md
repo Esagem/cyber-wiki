@@ -331,3 +331,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | CYBER.md | CYBER.md §8 - drop the engagements-RESERVED activation conditional - now obsolete since the folder retired and the wiki's policy is settled (real engagement data lives in CSAK's Org entity, never in the wiki)
 
 ## [2026-04-26] edit | synthesis/deferred-features.md | deferred-features - resolve engagements-RESERVED entry - per Eli 2026-04-26 the wiki will never store real engagement data; folder retired and slot repurposed as test-plans/; the question is settled rather than deferred
+
+## [2026-04-26] edit | competitive/reconftw.md | reconftw page - license framing reconciled - per Eli 2026-04-26 the LICENSE file is the controlling document (MIT); README's GPL claim is documentation drift, not a competing legal claim; section retitled to drop the unresolved framing
