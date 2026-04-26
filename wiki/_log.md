@@ -347,3 +347,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | synthesis/deferred-features.md | deferred-features - scoring-tables-to-YAML moved from open-ended polish to queued behind slice 3 thorough testing - bundles with the post-testing architecture overview update; trigger explicit
 
 ## [2026-04-26] write | test-plans/slice-3-recursion-demo.md | test-plans/slice-3-recursion-demo - first concrete testing plan; formalizes the slice 3 ship demo (test_target_recurse + linkfinder + run_slice3_demo) as a reusable testing scenario per the test-plans/README contract; covers goal / setup / procedure / expected observations / known limits
+
+## [2026-04-26] write | test-plans/failure-modes.md | test-plans/failure-modes - placeholder for adversarial test plans (malformed tool output, broken plugins, schema corruption, depth-1+ failure isolation under stress); seed status until real scenarios get exercised
