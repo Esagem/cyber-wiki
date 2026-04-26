@@ -353,3 +353,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] write | test-plans/real-client-target.md | test-plans/real-client-target - placeholder for Eli's first real-target run; seed status until run actually happens; the plan section will fill in observations from the live run rather than be backfilled prose
 
 ## [2026-04-26] edit | test-plans/README.md | test-plans/README - update plan index to reflect three concrete plans landed (slice-3-recursion-demo active, failure-modes seed, real-client-target seed); drop the backfill note since the recursion demo plan is now written
+
+## [2026-04-26] edit | _index.md | _index - bookkeeping pass - Test Plans table updated to list all four test plan pages (README + slice-3 demo + failure modes + real-client-target); recent-activity entry covering reconFTW license resolution / Christo onboarding closure / scoring-tables-to-YAML queueing / Phase 6 scaffold / test plan scaffold
