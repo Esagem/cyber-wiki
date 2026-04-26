@@ -634,7 +634,7 @@ The slice 2 codebase is in `src/csak/collect/`. Slice 3's diff against it:
 |---|---|
 | `tool.py` | Extend `Tool` with `accepts: list[str]`, `produces: list[str]`, `extract_outputs(...)`. Keep `applies_to` as a thin wrapper over the subtype matcher for backward compatibility during migration. Existing slice 2 fields (`output_filename`, `rate_limit`, `override_flags`, `is_skipped_by_mode`, `parse_version`) untouched. The `TargetType = Literal["domain", ...]` alias becomes a string — the runtime registry takes over. |
 | `detect.py` | Removed. The single `detect_target_type(target) -> str` function is replaced by `classify(value) -> TypedTarget` in the new `types.py`. |
-| `router.py` | Replace `tool.applies_to(target_type)` calls with `matches(candidate.type, tool.accepts)` from the new type matcher (subtype widening). Skip-reason strings stay; they're user-facing and the routing outcome is the same for slice 2's flat target types. |
+| `router.py` | Replace `tool.applies_to(target_type)` calls with `matches(candidate.type, tool.accepts)` from the new type matcher (subtype widening). The router has the `TypedTarget` in hand from `classify()`, so calling `matches()` directly is the natural path; `applies_to` itself is kept available as a thin wrapper (per §Tool catalog) for external callers like `csak doctor` and any test code that wants to ask the legacy question. Skip-reason strings stay; they're user-facing and the routing outcome is the same for slice 2's flat target types. |
 | `pipeline.py` | Add the recursion runner (frontier dedup set, depth loop, prompt-to-continue). Delete `_prepare_input_for_next_stage` and `_extract_field_to_list` — their behavior is now in each tool's `extract_outputs`. Thread `parent_scan_id` / `depth` / `triggered_by_finding_id` into Scan creation. The non-recursive path (no `--recurse`) is bit-for-bit slice 2: `run_collect` is called once at depth 0 and exits. |
 | `runner.py` | Unchanged. Per-stage subprocess invocation, rate limiting, progress events stay as-is. |
 | `tools/__init__.py` | `ALL_TOOLS` becomes the runtime tool registry consulted by the recursion runner; built-in tools are registered via the same `register_tool()` entry point plugins use. |
@@ -644,8 +644,8 @@ New files:
 
 | New file | Responsibility |
 |---|---|
-| `csak/collect/types.py` | `TargetType`, `TypedTarget`, the runtime registry, `register_type()`, `classify(value)`, `matches(candidate_type, accepts)`, validation. |
-| `csak/collect/types/builtin.py` | Registers the seven core types at import (`network_block`, `host`, `domain`, `subdomain`, `url`, `service`, `finding_ref`). |
+| `csak/collect/types/__init__.py` | `TargetType`, `TypedTarget`, the runtime registry, `register_type()`, `classify(value)`, `matches(candidate_type, accepts)`, validation. The `types/` directory is a package mirroring the existing `csak/collect/tools/` layout — not a flat module file. |
+| `csak/collect/types/builtin.py` | Registers the seven core types at import (`network_block`, `host`, `domain`, `subdomain`, `url`, `service`, `finding_ref`). Imported by `types/__init__.py` so a single `from csak.collect import types` pulls in the registry plus all built-ins. |
 | `csak/collect/recursion.py` | The recursion runner extension — frontier dedup, depth loop, depth-aware progress. Wraps the existing per-stage runner. |
 | `csak/collect/plugins.py` | Plugin discovery from `~/.csak/tools/`, fail-soft loading, type/tool registration entry points. |
 | `csak/cli/tools.py` | The new `csak tools list` and `csak tools show <tool>` command group. |
