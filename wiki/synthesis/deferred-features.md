@@ -6,7 +6,7 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Deferred Features — Review Backlog
@@ -88,12 +88,9 @@ Small, low-risk items that don't need a full slice. Could be picked up at any po
 - **Trigger.** When the second tool catalog file lands a reconFTW-derived recipe, or when we add attributions from a third source.
 - **Source.** [[specs/slice-2|slice 2 spec §Attribution]]; [[competitive/build-vs-adapt|build-vs-adapt §A central references page]].
 
-### `engagements-RESERVED/` activation or retirement
+### `engagements-RESERVED/` activation or retirement — RESOLVED 2026-04-26
 
-- **What.** Decide whether to retire the placeholder folder, rescope it to "notes-about-engagements" that don't fit CSAK's data model, or keep as-is for dogfooding CSAK output.
-- **Why deferred.** Awaiting deliberate decision. Not blocking anything.
-- **Trigger.** Either we dogfood CSAK on real engagement work and the question becomes concrete, or we don't and the default (retire) takes over.
-- **Source.** [[engagements-RESERVED/README|engagements-RESERVED README]].
+- **Resolution.** Per Eli 2026-04-26: the wiki will never be used to store real engagement data. CSAK's `Org` entity (slice 1) is the system of record for engagement-shaped data; the wiki is for designing and exercising the *product*, not for *uses* of the product. The `engagements-RESERVED/` folder is retired (commit `b17c73f`) and the slot repurposed as `test-plans/` for testing plans — a useful prose-side complement to code-side `tests/` and the demo scaffolding under `scripts/`. See [[test-plans/README|test-plans/README]]. Updates landed: new test-plans README (commit `cec4907`), CYBER.md §1 / §3 / §8 updated to drop the engagements-RESERVED references (commits `bd54b00` and `b1846bb`), index Reserved section replaced with Test Plans section (commit `c589ba6`), this entry resolved.
 
 ---
 
