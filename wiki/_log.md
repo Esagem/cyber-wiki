@@ -317,3 +317,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] write | sessions/2026-04-26-slice-3-shipped.md | slice 3 shipped session note - mirrors 2026-04-24-slice-1-shipped shape; covers Claude Code's slice 3 implementation (commit 422b8ef on origin/main), the six post-implementation deviations written back into the spec, the plugin parser registration contract gap, the demo scaffolding (test_target_recurse + linkfinder plugin + run_slice3_demo orchestrator), and the slice 2 fold-in (slice 2 implementation review session note folded into this note since slice 2 was exercised through slice 3's test surface)
 
 ## [2026-04-26] edit | synthesis/roadmap.md | post slice 3 ship - flip the ship session note item from pending to done in the roadmap; add new session row to _index.md Sessions table
+
+## [2026-04-26] edit | _index.md | post slice 3 ship - _index.md - add session row for 2026-04-26-slice-3-shipped to Sessions table
