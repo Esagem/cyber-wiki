@@ -6,12 +6,12 @@ status: active
 confidence: high
 owner: shared
 created: 2026-04-21
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Roadmap
 
-> The design roadmap that sequenced slices 1, 2, and 3 from blank-page through design and (for slices 1 and 2) into build. Slice 1 is implemented and shipped. Slice 2 is implemented and under test. Slice 3 design is draft-complete. The wiki's role has shifted from primary design surface to reference alongside the build, with new design work happening in concentrated bursts when the next slice's strategic shape needs settling.
+> The design roadmap that sequenced slices 1, 2, and 3 from blank-page through design and (for slices 1 and 2) into build. Slice 1 is implemented and shipped. Slice 2 is implemented and under test. Slice 3 design is complete — spec is `active` and reconciled against shipped slice 2 code; implementation hand-off can proceed. The wiki's role has shifted from primary design surface to reference alongside the build, with new design work happening in concentrated bursts when the next slice's strategic shape needs settling.
 
 ## Phase 0 — Framing (done)
 
@@ -73,21 +73,23 @@ Phase 2 runs in parallel with the build; none of it is load-bearing.
 - [x] [[architecture/overview|architecture overview]] extended with the collect module section, slice 2 walkthrough, and slice 2 extension points. *(Updated 2026-04-24.)*
 - [x] Slice 2 implementation built and under test. *(Per Eli 2026-04-25; no shipped session note yet — status will flip to fully shipped when implementation review session lands.)*
 
-## Phase 4 — Slice 3 design (draft-complete)
+## Phase 4 — Slice 3 design (done)
 
 **Goal:** slice 3 spec is detailed enough that implementation can start; strategic decisions captured; deferred items consolidated for post-slice-3 review.
 
 - [x] **Strategic shape settled in conversation 2026-04-25.** Deterministic recursion via output-to-input type matching; structural in-memory frontier dedup (no DB-backed history); `--max-depth N` flag default 3 with prompt-to-continue; sync-only; pluggable third-party tools in `~/.csak/tools/`; `csak tools list/show`; depth-aware live output; data model adds `parent_scan_id`, `depth`, `triggered_by_finding_id`; type registry with toolbox-driven type registration; `classify()` as dispatcher.
 - [x] [[synthesis/deferred-features|deferred-features.md]] written to consolidate every "later slice / future work" item across the wiki for post-slice-3 review. *(Written 2026-04-25.)*
 - [x] [[specs/slice-3|slice 3 spec]] drafted, status `draft`, confidence medium. *(Drafted 2026-04-25.)*
-- [ ] [[specs/slice-3|slice 3 spec]] reviewed and approved by Eli; status flips `draft` → `active`, confidence medium → high.
-- [ ] [[architecture/overview|architecture overview]] extended with the slice 3 module work (recursion runner, type registry, plugin discovery), slice 3 walkthrough, updated extension points.
-- [ ] [[product/glossary|glossary]] extended with slice 3 vocabulary (`TypedTarget`, target type registry, recursion frontier, depth, plugin tool, classify, extract_outputs).
-- [ ] [[product/slices|slice plan]] slice 3 section rewritten to mirror the slice 1 / slice 2 pattern (summary + spec link, drop the "deliberately not specced in detail yet" framing).
+- [x] [[specs/slice-3|slice 3 spec]] reviewed and approved by Eli; status flips `draft` → `active`, confidence medium → high. *(Approved 2026-04-26.)*
+- [x] [[architecture/overview|architecture overview]] extended with the slice 3 module work (recursion runner, type registry, plugin discovery), slice 3 walkthrough, updated extension points. *(Slice 3 module section added 2026-04-25; reconciled against shipped slice 2 code and corrected 2026-04-26 — walkthrough still pending and will follow when slice 3 implementation lands.)*
+- [x] [[product/glossary|glossary]] extended with slice 3 vocabulary (`TypedTarget`, target type registry, recursion frontier, depth, plugin tool, classify, extract_outputs). *(Updated 2026-04-25.)*
+- [x] [[product/slices|slice plan]] slice 3 section rewritten to mirror the slice 1 / slice 2 pattern (summary + spec link, drop the "deliberately not specced in detail yet" framing). *(Updated 2026-04-25.)*
 
-## Phase 5 — Slice 3 implementation (not started)
+## Phase 5 — Slice 3 implementation (ready to start)
 
-**Trigger:** slice 3 spec approved.
+**Trigger:** slice 3 spec approved. *(Trigger satisfied 2026-04-26.)*
+
+The slice 3 spec is `active` and reconciled against shipped slice 2 code; the module-by-module diff in the spec maps every existing file in `csak/collect/` to its slice 3 delta and lists the new files (`types/__init__.py`, `types/builtin.py`, `recursion.py`, `plugins.py`, `cli/tools.py`) plus the storage migration. Implementation hand-off to Claude Code can proceed when Eli kicks it off; same pattern as slice 2's hand-off.
 
 Goals when started: recursion mechanics work end-to-end against a real target; structural dedup prevents redundant scans; type registry handles built-ins and at least one example plugin; `csak tools list/show` produce documented output; `csak doctor` validates the plugin set; data model migration runs cleanly on existing slice 1/2 databases; live output meets the depth-aware spec; slice 1/2 surfaces work identically against recursion-produced data.
 
