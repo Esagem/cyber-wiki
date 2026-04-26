@@ -297,3 +297,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | _index.md | lint M5-2 - _index.md - add recent-activity entry for the 2026-04-26 slice 3 spec reconciliation against shipped slice 2 codebase (seven corrections applied)
 
 ## [2026-04-26] edit | synthesis/lint-report.md | lint pass five - lint-report - mark fifth-pass action plan items 1-3 as applied 2026-04-26 per CYBER.md §5.4 STATUS-marker pattern
+
+## [2026-04-26] status | specs/slice-3.md | slice 3 spec sign-off - flip draft → active and confidence medium → high per Eli's approval; spec is reconciled against shipped slice 2 code and ready for implementation hand-off
