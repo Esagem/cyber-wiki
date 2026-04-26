@@ -341,3 +341,5 @@ Operations: `ingest`, `adr`, `session`, `spec`, `lint`, `schema`, `write`.
 ## [2026-04-26] edit | synthesis/roadmap.md | roadmap - drop reconFTW license GitHub issue (resolved 2026-04-26 - MIT per LICENSE file) and Christopher's onboarding (complete) from outstanding non-blocking items
 
 ## [2026-04-26] edit | synthesis/roadmap.md | roadmap - add Phase 6 framing the new focus - hardening and catalog growth (thorough slice 3 testing + new tool plugins, all running through the slice 3 plugin model rather than as new slice work)
+
+## [2026-04-26] edit | sessions/2026-04-26-slice-3-shipped.md | slice 3 ship session note - drop reconFTW license issue (resolved 2026-04-26 - MIT) and Christo's onboarding (complete) from outstanding-items list; queue scoring-tables-to-YAML behind slice 3 testing
